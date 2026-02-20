@@ -9,49 +9,54 @@ All colors MUST be HSL.
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 220 20% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 220 20% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 220 20% 12%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 220 20% 12%;
+    --primary-foreground: 0 0% 98%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 220 15% 96%;
+    --secondary-foreground: 220 20% 12%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 220 15% 96%;
+    --muted-foreground: 220 10% 50%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 220 15% 93%;
+    --accent-foreground: 220 20% 12%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 220 15% 90%;
+    --input: 220 15% 90%;
+    --ring: 220 20% 12%;
 
     --radius: 0.5rem;
 
+    /* Navbar tokens */
+    --navbar-bg: 220 25% 8%;
+    --navbar-border: 220 20% 16%;
+    --nav-link: 220 15% 72%;
+    --nav-link-hover: 0 0% 100%;
+    --nav-hover: 220 20% 16%;
+
+    /* CTA button */
+    --cta: 43 96% 56%;
+    --cta-foreground: 220 25% 8%;
+    --cta-hover: 43 96% 50%;
+
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
@@ -101,5 +106,90 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  /* ── Navbar ── */
+  .navbar-root {
+    @apply fixed top-0 left-0 right-0 z-50;
+    background: hsl(var(--navbar-bg));
+    border-bottom: 1px solid hsl(var(--navbar-border));
+    backdrop-filter: blur(12px);
+  }
+
+  .navbar-container {
+    @apply mx-auto flex h-16 max-w-7xl items-center justify-between px-6;
+  }
+
+  .navbar-logo {
+    @apply flex items-center gap-2 font-bold text-xl no-underline;
+    color: hsl(var(--nav-link-hover));
+  }
+
+  .navbar-logo-icon {
+    @apply h-5 w-5;
+    color: hsl(var(--cta));
+  }
+
+  .navbar-logo-text {
+    letter-spacing: -0.02em;
+  }
+
+  .navbar-links {
+    @apply hidden md:flex items-center gap-1;
+  }
+
+  .navbar-link {
+    @apply px-4 py-2 rounded-md text-sm font-medium no-underline transition-all duration-200;
+    color: hsl(var(--nav-link));
+  }
+
+  .navbar-link:hover {
+    color: hsl(var(--nav-link-hover));
+    background: hsl(var(--nav-hover));
+  }
+
+  .navbar-actions {
+    @apply hidden md:flex items-center gap-2;
+  }
+
+  .navbar-toggle {
+    @apply md:hidden flex items-center justify-center h-9 w-9 rounded-md transition-colors;
+    color: hsl(var(--nav-link));
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+
+  .navbar-toggle:hover {
+    background: hsl(var(--nav-hover));
+    color: hsl(var(--nav-link-hover));
+  }
+
+  .navbar-mobile {
+    @apply md:hidden flex flex-col gap-1 px-4 pb-4;
+    background: hsl(var(--navbar-bg));
+    border-top: 1px solid hsl(var(--navbar-border));
+  }
+
+  .navbar-mobile-link {
+    @apply block px-4 py-3 rounded-md text-sm font-medium no-underline transition-all duration-200;
+    color: hsl(var(--nav-link));
+  }
+
+  .navbar-mobile-link:hover {
+    color: hsl(var(--nav-link-hover));
+    background: hsl(var(--nav-hover));
+  }
+
+  .navbar-mobile-actions {
+    @apply flex flex-col gap-2 mt-2 pt-4;
+    border-top: 1px solid hsl(var(--navbar-border));
+  }
+
+  /* CTA shadow */
+  .shadow-cta {
+    box-shadow: 0 4px 20px hsl(var(--cta) / 0.35);
   }
 }
