@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../../domain/failures/app_failure.dart';
+import '../../domain/models/route_instruction.dart';
 import '../../domain/models/route_models.dart';
 import '../../domain/repositories/routing_repository.dart';
 
@@ -9,6 +10,36 @@ class ValhallaRoutingRepository implements RoutingRepository {
 
   ValhallaRoutingRepository(this._dio);
 
+  Map<String, dynamic> _buildRequestJson({
+    required double startLat,
+    required double startLng,
+    required double endLat,
+    required double endLng,
+    required String profile,
+    List<RoutePoint>? waypoints,
+  }) {
+    final locations = <Map<String, dynamic>>[
+      {'lat': startLat, 'lon': startLng},
+      ...?waypoints?.map((p) => {'lat': p.latitude, 'lon': p.longitude}),
+      {'lat': endLat, 'lon': endLng},
+    ];
+
+    return {
+      'locations': locations,
+      'costing': _mapProfileToCosting(profile),
+      'units': 'kilometers',
+    };
+  }
+
+  Future<Response> _callValhalla(Map<String, dynamic> requestJson) async {
+    return _dio.get(
+      'https://valhalla.openstreetmap.de/route',
+      queryParameters: {
+        'json': jsonEncode(requestJson),
+      },
+    );
+  }
+
   @override
   Future<RouteData> getRoute({
     required double startLat,
@@ -16,21 +47,19 @@ class ValhallaRoutingRepository implements RoutingRepository {
     required double endLat,
     required double endLng,
     required String profile,
+    List<RoutePoint>? waypoints,
   }) async {
     late final Response response;
     try {
-      response = await _dio.get(
-        'https://valhalla.openstreetmap.de/route',
-        queryParameters: {
-          'json': jsonEncode({
-            'locations': [
-              {'lat': startLat, 'lon': startLng},
-              {'lat': endLat, 'lon': endLng}
-            ],
-            'costing': _mapProfileToCosting(profile),
-            'units': 'kilometers'
-          })
-        },
+      response = await _callValhalla(
+        _buildRequestJson(
+          startLat: startLat,
+          startLng: startLng,
+          endLat: endLat,
+          endLng: endLng,
+          profile: profile,
+          waypoints: waypoints,
+        ),
       );
     } on DioException catch (e) {
       throw AppFailure('Impossible de calculer l’itinéraire.', cause: e);
@@ -75,6 +104,64 @@ class ValhallaRoutingRepository implements RoutingRepository {
       durationMinutes: durationSeconds / 60.0,
       profile: profile,
     );
+  }
+
+  @override
+  Future<List<RouteInstruction>> getRouteInstructions({
+    required double startLat,
+    required double startLng,
+    required double endLat,
+    required double endLng,
+    required String profile,
+    List<RoutePoint>? waypoints,
+  }) async {
+    late final Response response;
+    try {
+      response = await _callValhalla(
+        _buildRequestJson(
+          startLat: startLat,
+          startLng: startLng,
+          endLat: endLat,
+          endLng: endLng,
+          profile: profile,
+          waypoints: waypoints,
+        ),
+      );
+    } on DioException catch (e) {
+      throw AppFailure('Impossible de récupérer les instructions.', cause: e);
+    } catch (e) {
+      throw AppFailure('Erreur inattendue lors de la récupération des instructions.', cause: e);
+    }
+
+    final data = response.data as Map<String, dynamic>;
+    final trip = (data['trip'] ?? const <String, dynamic>{}) as Map<String, dynamic>;
+    final legs = (trip['legs'] is List) ? (trip['legs'] as List) : const [];
+
+    final instructions = <RouteInstruction>[];
+    for (final leg in legs) {
+      if (leg is! Map<String, dynamic>) continue;
+      final maneuvers = leg['maneuvers'];
+      if (maneuvers is! List) continue;
+
+      for (final m in maneuvers) {
+        if (m is! Map<String, dynamic>) continue;
+        final instr = m['instruction']?.toString();
+        if (instr == null || instr.trim().isEmpty) continue;
+
+        final len = m['length'];
+        final time = m['time'];
+
+        instructions.add(
+          RouteInstruction(
+            instruction: instr,
+            distanceKm: len is num ? len.toDouble() : null,
+            timeSeconds: time is num ? time.toDouble() : null,
+          ),
+        );
+      }
+    }
+
+    return instructions;
   }
 
   List<RoutePoint> _decodeValhallaPolyline(String encoded) {

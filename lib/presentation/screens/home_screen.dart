@@ -3,11 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'dart:async';
 import '../../domain/models/weather_condition.dart';
 import '../../domain/models/user_profile.dart';
+import '../../domain/models/poi.dart';
 import '../../domain/failures/app_failure.dart';
 import '../providers/profile_provider.dart';
 import '../providers/current_weather_provider.dart';
+import '../providers/rainviewer_provider.dart';
+import '../providers/weather_layers_provider.dart';
+import '../providers/poi_provider.dart';
+import '../providers/weather_grid_provider.dart';
 import '../widgets/profile_switcher.dart';
 import '../widgets/weather_timeline.dart';
 
@@ -20,9 +26,170 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   MapLibreMapController? mapController;
+  final List<Symbol> _poiSymbols = [];
+  final List<Symbol> _gridSymbols = [];
+  Set<String> _poiIds = const {};
+  LatLng _mapCenter = const LatLng(48.8566, 2.3522);
+  LatLng _debouncedCenter = const LatLng(48.8566, 2.3522);
+  Timer? _cameraDebounce;
+  String? _poiRequestKey;
+  String? _gridRequestKey;
+
+  static const _radarSourceId = 'rainviewer_radar_source';
+  static const _radarLayerId = 'rainviewer_radar_layer';
 
   void _onMapCreated(MapLibreMapController controller) {
     mapController = controller;
+  }
+
+  @override
+  void dispose() {
+    _cameraDebounce?.cancel();
+    super.dispose();
+  }
+
+  LatLng _roundCenter(LatLng c) {
+    double r(double v) => double.parse(v.toStringAsFixed(3));
+    return LatLng(r(c.latitude), r(c.longitude));
+  }
+
+  void _onCameraIdle() {
+    final controller = mapController;
+    if (controller == null) return;
+    final pos = controller.cameraPosition;
+    if (pos == null) return;
+
+    _mapCenter = pos.target;
+    _cameraDebounce?.cancel();
+    _cameraDebounce = Timer(const Duration(milliseconds: 600), () {
+      if (!mounted) return;
+      setState(() {
+        _debouncedCenter = _roundCenter(_mapCenter);
+      });
+    });
+  }
+
+  Future<void> _applyGridSymbols(List<GridPointWeather> grid, WeatherLayersState layers) async {
+    final controller = mapController;
+    if (controller == null) return;
+
+    for (final s in _gridSymbols) {
+      try {
+        await controller.removeSymbol(s);
+      } catch (_) {}
+    }
+    _gridSymbols.clear();
+
+    final showWind = layers.enabled.contains(WeatherLayer.wind);
+    final showTemp = layers.enabled.contains(WeatherLayer.temperature);
+    if (!showWind && !showTemp) return;
+
+    for (final g in grid) {
+      final textParts = <String>[];
+      if (showTemp) {
+        textParts.add('${g.condition.temperature.round()}°');
+      }
+      if (showWind) {
+        textParts.add('${g.condition.windSpeed.round()}');
+      }
+
+      final text = textParts.join(' ');
+      final rotate = showWind ? g.condition.windDirection : 0.0;
+
+      try {
+        final sym = await controller.addSymbol(
+          SymbolOptions(
+            geometry: LatLng(g.latitude, g.longitude),
+            iconImage: showWind ? 'triangle-15' : 'marker-15',
+            iconRotate: rotate,
+            iconSize: 1.0,
+            textField: text.isEmpty ? null : text,
+            textSize: 11,
+            textOffset: const Offset(0, 1.2),
+          ),
+        );
+        _gridSymbols.add(sym);
+      } catch (_) {}
+    }
+  }
+
+  
+
+  Future<void> _applyPois(List<Poi> pois) async {
+    final controller = mapController;
+    if (controller == null) return;
+
+    final nextIds = pois.map((p) => p.id).toSet();
+    if (nextIds.length == _poiIds.length && nextIds.difference(_poiIds).isEmpty) {
+      return;
+    }
+
+    for (final s in _poiSymbols) {
+      try {
+        await controller.removeSymbol(s);
+      } catch (_) {}
+    }
+    _poiSymbols.clear();
+
+    for (final p in pois) {
+      try {
+        final sym = await controller.addSymbol(
+          SymbolOptions(
+            geometry: LatLng(p.latitude, p.longitude),
+            iconImage: 'marker-15',
+            iconSize: 1.2,
+            textField: p.name,
+            textSize: 11,
+            textOffset: const Offset(0, 1.2),
+          ),
+        );
+        _poiSymbols.add(sym);
+      } catch (_) {}
+    }
+
+    _poiIds = nextIds;
+  }
+
+  Future<void> _applyRadarLayerIfNeeded(WeatherLayersState layers, int? radarTime) async {
+    final controller = mapController;
+    if (controller == null) return;
+
+    final enabled = layers.enabled.contains(WeatherLayer.radar);
+
+    if (!enabled || radarTime == null) {
+      try {
+        await controller.removeLayer(_radarLayerId);
+      } catch (_) {}
+      try {
+        await controller.removeSource(_radarSourceId);
+      } catch (_) {}
+      return;
+    }
+
+    final tilesUrl = 'https://tilecache.rainviewer.com/v2/radar/$radarTime/256/{z}/{x}/{y}/2/1_1.png';
+
+    try {
+      await controller.removeLayer(_radarLayerId);
+    } catch (_) {}
+    try {
+      await controller.removeSource(_radarSourceId);
+    } catch (_) {}
+
+    await controller.addSource(
+      _radarSourceId,
+      RasterSourceProperties(
+        tiles: [tilesUrl],
+        tileSize: 256,
+      ),
+    );
+
+    await controller.addLayer(
+      _radarSourceId,
+      _radarLayerId,
+      RasterLayerProperties(
+        rasterOpacity: 0.65,
+      ),
+    );
   }
 
   @override
@@ -31,6 +198,62 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final parisWeather = ref.watch(
       currentWeatherProvider(const LatLngRequest(lat: 48.8566, lng: 2.3522)),
     );
+
+    final layers = ref.watch(weatherLayersProvider);
+    final radarTimeAsync = ref.watch(rainViewerLatestTimeProvider);
+
+    final poiFilter = ref.watch(poiFilterProvider);
+    final center = _debouncedCenter;
+
+    final showGrid = layers.enabled.contains(WeatherLayer.wind) || layers.enabled.contains(WeatherLayer.temperature);
+    final nextGridKey = '${center.latitude},${center.longitude}|${showGrid ? '1' : '0'}';
+    final gridAsync = showGrid
+        ? ref.watch(
+            weatherGridProvider(
+              WeatherGridRequest(
+                centerLat: center.latitude,
+                centerLng: center.longitude,
+              ),
+            ),
+          )
+        : const AsyncValue.data(<GridPointWeather>[]);
+
+    gridAsync.whenData((grid) {
+      if (_gridRequestKey != nextGridKey) {
+        _gridRequestKey = nextGridKey;
+        _applyGridSymbols(grid, layers);
+      }
+    });
+
+    final nextPoiKey = '${center.latitude},${center.longitude}|${poiFilter.radiusMeters}|${poiFilter.categories.map((c) => c.name).join(',')}|${poiFilter.enabled ? '1' : '0'}';
+    final poisAsync = poiFilter.enabled
+        ? ref.watch(
+            poiSearchProvider(
+              PoiRequest(
+                lat: center.latitude,
+                lng: center.longitude,
+                radiusMeters: poiFilter.radiusMeters,
+                categories: poiFilter.categories,
+              ),
+            ),
+          )
+        : const AsyncValue.data(<Poi>[]);
+
+    poisAsync.whenData((items) {
+      if (_poiRequestKey != nextPoiKey) {
+        _poiRequestKey = nextPoiKey;
+        if (!poiFilter.enabled) {
+          _applyPois(const <Poi>[]);
+        } else {
+          _applyPois(items);
+        }
+      }
+    });
+
+    // Apply radar layer when state changes (best-effort)
+    radarTimeAsync.whenData((t) {
+      _applyRadarLayerIfNeeded(layers, t);
+    });
 
     return Scaffold(
       bottomNavigationBar: BottomNavigationBar(
@@ -51,6 +274,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // Map
           MapLibreMap(
             onMapCreated: _onMapCreated,
+            onCameraIdle: _onCameraIdle,
             initialCameraPosition: const CameraPosition(
               target: LatLng(48.8566, 2.3522), // Paris
               zoom: 12.0,
@@ -59,6 +283,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             myLocationEnabled: true,
             trackCameraPosition: true,
           ),
+
+          if (layers.enabled.contains(WeatherLayer.wind) || layers.enabled.contains(WeatherLayer.temperature))
+            Positioned(
+              left: 16,
+              right: 16,
+              top: 110,
+              child: IgnorePointer(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.92),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey[200]!),
+                  ),
+                  child: Text(
+                    _buildOverlayStatusText(layers),
+                    style: const TextStyle(color: Colors.black87),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            ),
 
           // Top Search Bar
           Positioned(
@@ -108,7 +354,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             bottom: 120,
             child: Column(
               children: [
-                _buildFloatingButton(LucideIcons.layers, () {}),
+                _buildFloatingButton(LucideIcons.layers, () => _showLayersSheet(context)),
+                const SizedBox(height: 12),
+                _buildFloatingButton(LucideIcons.mapPin, () => _showPoiSheet(context)),
                 const SizedBox(height: 12),
                 _buildFloatingButton(LucideIcons.crosshair, () {
                   // Center on user
@@ -160,8 +408,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
   }
-
-  
 
   Widget _buildFloatingButton(IconData icon, VoidCallback onPressed) {
     return FloatingActionButton.small(
@@ -222,6 +468,148 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ),
     );
+  }
+
+  void _showLayersSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      builder: (context) {
+        return Consumer(
+          builder: (context, ref, _) {
+            final layers = ref.watch(weatherLayersProvider);
+            final notifier = ref.read(weatherLayersProvider.notifier);
+            final profile = ref.watch(profileNotifierProvider);
+            return Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Couches météo', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => notifier.resetToProfile(profile),
+                      child: const Text('Réinitialiser selon profil'),
+                    ),
+                  ),
+                  SwitchListTile(
+                    value: layers.enabled.contains(WeatherLayer.radar),
+                    onChanged: (_) => notifier.toggle(WeatherLayer.radar),
+                    title: const Text('Radar précipitations'),
+                    subtitle: const Text('RainViewer'),
+                  ),
+                  SwitchListTile(
+                    value: layers.enabled.contains(WeatherLayer.wind),
+                    onChanged: (_) => notifier.toggle(WeatherLayer.wind),
+                    title: const Text('Vent'),
+                    subtitle: const Text('Overlay simple (P0)'),
+                  ),
+                  SwitchListTile(
+                    value: layers.enabled.contains(WeatherLayer.temperature),
+                    onChanged: (_) => notifier.toggle(WeatherLayer.temperature),
+                    title: const Text('Température'),
+                    subtitle: const Text('Overlay simple (P0)'),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  String _buildOverlayStatusText(WeatherLayersState layers) {
+    final parts = <String>[];
+    if (layers.enabled.contains(WeatherLayer.wind)) parts.add('Vent');
+    if (layers.enabled.contains(WeatherLayer.temperature)) parts.add('Température');
+    return 'Overlays actifs: ${parts.join(' + ')}';
+  }
+
+  void _showPoiSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      builder: (context) {
+        return Consumer(
+          builder: (context, ref, _) {
+            final filter = ref.watch(poiFilterProvider);
+            final notifier = ref.read(poiFilterProvider.notifier);
+
+            return Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Points d’intérêt', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  SwitchListTile(
+                    value: filter.enabled,
+                    onChanged: (_) => notifier.toggleEnabled(),
+                    title: const Text('Afficher les POIs'),
+                    subtitle: const Text('Source: OpenStreetMap (Overpass)'),
+                  ),
+                  if (filter.enabled) ...[
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: PoiCategory.values.map((c) {
+                        final selected = filter.categories.contains(c);
+                        return FilterChip(
+                          selected: selected,
+                          onSelected: (_) => notifier.toggleCategory(c),
+                          label: Text(_poiLabel(c)),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        const Text('Rayon'),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Slider(
+                            value: filter.radiusMeters.toDouble().clamp(500, 10000),
+                            min: 500,
+                            max: 10000,
+                            divisions: 19,
+                            label: '${filter.radiusMeters} m',
+                            onChanged: (v) => notifier.setRadius(v.round()),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Centre: ${_debouncedCenter.latitude.toStringAsFixed(4)}, ${_debouncedCenter.longitude.toStringAsFixed(4)}',
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  String _poiLabel(PoiCategory c) {
+    switch (c) {
+      case PoiCategory.shelter:
+        return 'Abris';
+      case PoiCategory.hut:
+        return 'Refuges';
+      case PoiCategory.weatherStation:
+        return 'Stations météo';
+      case PoiCategory.port:
+        return 'Ports';
+    }
   }
 }
 

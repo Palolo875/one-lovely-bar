@@ -1,12 +1,13 @@
+import '../models/route_instruction.dart';
 import '../models/route_models.dart';
 import '../repositories/routing_repository.dart';
 
-class GetRoute {
+class GetRouteInstructions {
   final RoutingRepository _repository;
 
-  const GetRoute(this._repository);
+  const GetRouteInstructions(this._repository);
 
-  Future<RouteData> call({
+  Future<List<RouteInstruction>> call({
     required double startLat,
     required double startLng,
     required double endLat,
@@ -14,7 +15,7 @@ class GetRoute {
     required String profile,
     List<RoutePoint>? waypoints,
   }) {
-    return _repository.getRoute(
+    return _repository.getRouteInstructions(
       startLat: startLat,
       startLng: startLng,
       endLat: endLat,

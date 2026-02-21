@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/weather_condition.dart';
+import '../../domain/usecases/get_current_weather.dart';
 import 'repository_providers.dart';
 
 class LatLngRequest {
@@ -19,5 +20,5 @@ class LatLngRequest {
 
 final currentWeatherProvider = FutureProvider.autoDispose.family<WeatherCondition, LatLngRequest>((ref, req) async {
   final repo = ref.watch(weatherRepositoryProvider);
-  return repo.getCurrentWeather(req.lat, req.lng);
+  return GetCurrentWeather(repo)(req.lat, req.lng);
 });

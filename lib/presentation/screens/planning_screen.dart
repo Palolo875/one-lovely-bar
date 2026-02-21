@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../providers/profile_provider.dart';
 import '../providers/route_provider.dart';
+import '../../domain/models/place_suggestion.dart';
 
 class PlanningScreen extends ConsumerStatefulWidget {
   const PlanningScreen({super.key});
@@ -17,6 +18,7 @@ class _PlanningScreenState extends ConsumerState<PlanningScreen> {
   final _startLngController = TextEditingController(text: '2.3522');
   final _endLatController = TextEditingController(text: '48.8049');
   final _endLngController = TextEditingController(text: '2.1204');
+  DateTime _departureTime = DateTime.now();
 
   String _profileToRoutingProfile(ProfileType type) {
     switch (type) {
@@ -57,19 +59,51 @@ class _PlanningScreenState extends ConsumerState<PlanningScreen> {
           children: [
             const Text('Quand partez-vous ?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey[200]!),
-              ),
-              child: const Row(
-                children: [
-                  Icon(LucideIcons.calendar),
-                  SizedBox(width: 12),
-                  Text('Aujourd\'hui, 14:00'),
-                ],
+            GestureDetector(
+              onTap: () async {
+                final pickedDate = await showDatePicker(
+                  context: context,
+                  initialDate: _departureTime,
+                  firstDate: DateTime.now().subtract(const Duration(days: 1)),
+                  lastDate: DateTime.now().add(const Duration(days: 14)),
+                );
+                if (pickedDate == null) return;
+
+                if (!context.mounted) return;
+
+                final pickedTime = await showTimePicker(
+                  context: context,
+                  initialTime: TimeOfDay.fromDateTime(_departureTime),
+                );
+                if (pickedTime == null) return;
+
+                setState(() {
+                  _departureTime = DateTime(
+                    pickedDate.year,
+                    pickedDate.month,
+                    pickedDate.day,
+                    pickedTime.hour,
+                    pickedTime.minute,
+                  );
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(LucideIcons.calendar),
+                    const SizedBox(width: 12),
+                    Text(
+                      '${_departureTime.day.toString().padLeft(2, '0')}/${_departureTime.month.toString().padLeft(2, '0')}/${_departureTime.year} '
+                      '${_departureTime.hour.toString().padLeft(2, '0')}:${_departureTime.minute.toString().padLeft(2, '0')}',
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 32),
@@ -111,6 +145,7 @@ class _PlanningScreenState extends ConsumerState<PlanningScreen> {
                     endLat: endLat,
                     endLng: endLng,
                     profile: _profileToRoutingProfile(profile.type),
+                    departureTime: _departureTime,
                   );
 
                   context.push('/simulation', extra: req);
@@ -151,6 +186,17 @@ class _PlanningScreenState extends ConsumerState<PlanningScreen> {
               Icon(icon, size: 20, color: Colors.blue),
               const SizedBox(width: 12),
               Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+              const Spacer(),
+              TextButton(
+                onPressed: () async {
+                  final result = await context.push<PlaceSuggestion>('/search?title=${Uri.encodeComponent(title)}');
+                  if (result == null) return;
+
+                  latController.text = result.latitude.toStringAsFixed(6);
+                  lngController.text = result.longitude.toStringAsFixed(6);
+                },
+                child: const Text('Rechercher'),
+              ),
             ],
           ),
           const SizedBox(height: 12),

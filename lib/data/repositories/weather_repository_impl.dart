@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:hive/hive.dart';
 import '../../domain/failures/app_failure.dart';
 import '../../domain/models/route_models.dart';
 import '../../domain/models/weather_condition.dart';
@@ -6,11 +7,89 @@ import '../../domain/repositories/weather_repository.dart';
 
 class OpenMeteoRepository implements WeatherRepository {
   final Dio _dio;
+  final Box _settings;
 
-  OpenMeteoRepository(this._dio);
+  OpenMeteoRepository(this._dio) : _settings = Hive.box('settings');
+
+  static const _currentTtl = Duration(minutes: 10);
+  static const _forecastTtl = Duration(hours: 1);
+
+  String _keyForLatLng(String prefix, double lat, double lng) {
+    // Reduce key explosion
+    final latKey = lat.toStringAsFixed(3);
+    final lngKey = lng.toStringAsFixed(3);
+    return '$prefix:$latKey,$lngKey';
+  }
+
+  WeatherCondition? _readCurrentFromCache(double lat, double lng) {
+    final key = _keyForLatLng('wx_current', lat, lng);
+    final raw = _settings.get(key);
+    if (raw is! Map) return null;
+    final ts = raw['ts'];
+    final data = raw['data'];
+    if (ts is! int || data is! Map) return null;
+    final age = DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(ts));
+    if (age > _currentTtl) return null;
+    return WeatherCondition.fromJson(Map<String, dynamic>.from(data));
+  }
+
+  WeatherCondition? _readCurrentFromCacheAllowStale(double lat, double lng) {
+    final key = _keyForLatLng('wx_current', lat, lng);
+    final raw = _settings.get(key);
+    if (raw is! Map) return null;
+    final data = raw['data'];
+    if (data is! Map) return null;
+    return WeatherCondition.fromJson(Map<String, dynamic>.from(data));
+  }
+
+  void _writeCurrentToCache(double lat, double lng, WeatherCondition c) {
+    final key = _keyForLatLng('wx_current', lat, lng);
+    _settings.put(key, {
+      'ts': DateTime.now().millisecondsSinceEpoch,
+      'data': c.toJson(),
+    });
+  }
+
+  List<WeatherCondition>? _readForecastFromCache(double lat, double lng, int days) {
+    final key = _keyForLatLng('wx_forecast:$days', lat, lng);
+    final raw = _settings.get(key);
+    if (raw is! Map) return null;
+    final ts = raw['ts'];
+    final data = raw['data'];
+    if (ts is! int || data is! List) return null;
+    final age = DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(ts));
+    if (age > _forecastTtl) return null;
+    return data
+        .whereType<Map>()
+        .map((m) => WeatherCondition.fromJson(Map<String, dynamic>.from(m)))
+        .toList();
+  }
+
+  List<WeatherCondition>? _readForecastFromCacheAllowStale(double lat, double lng, int days) {
+    final key = _keyForLatLng('wx_forecast:$days', lat, lng);
+    final raw = _settings.get(key);
+    if (raw is! Map) return null;
+    final data = raw['data'];
+    if (data is! List) return null;
+    return data
+        .whereType<Map>()
+        .map((m) => WeatherCondition.fromJson(Map<String, dynamic>.from(m)))
+        .toList();
+  }
+
+  void _writeForecastToCache(double lat, double lng, int days, List<WeatherCondition> list) {
+    final key = _keyForLatLng('wx_forecast:$days', lat, lng);
+    _settings.put(key, {
+      'ts': DateTime.now().millisecondsSinceEpoch,
+      'data': list.map((c) => c.toJson()).toList(),
+    });
+  }
 
   @override
   Future<WeatherCondition> getCurrentWeather(double lat, double lng) async {
+    final cached = _readCurrentFromCache(lat, lng);
+    if (cached != null) return cached;
+
     late final Response response;
     try {
       response = await _dio.get(
@@ -23,13 +102,17 @@ class OpenMeteoRepository implements WeatherRepository {
         },
       );
     } on DioException catch (e) {
+      final stale = _readCurrentFromCacheAllowStale(lat, lng);
+      if (stale != null) return stale;
       throw AppFailure('Impossible de récupérer la météo actuelle.', cause: e);
     } catch (e) {
+      final stale = _readCurrentFromCacheAllowStale(lat, lng);
+      if (stale != null) return stale;
       throw AppFailure('Erreur inattendue lors de la récupération de la météo actuelle.', cause: e);
     }
 
     final current = response.data['current_weather'];
-    return WeatherCondition(
+    final condition = WeatherCondition(
       temperature: current['temperature'],
       precipitation: 0.0, // Open-Meteo current doesn't always have it directly
       windSpeed: current['windspeed'],
@@ -37,10 +120,16 @@ class OpenMeteoRepository implements WeatherRepository {
       weatherCode: current['weathercode'],
       timestamp: DateTime.parse(current['time']),
     );
+
+    _writeCurrentToCache(lat, lng, condition);
+    return condition;
   }
 
   @override
   Future<List<WeatherCondition>> getForecast(double lat, double lng, {int days = 7}) async {
+    final cached = _readForecastFromCache(lat, lng, days);
+    if (cached != null) return cached;
+
     late final Response response;
     try {
       response = await _dio.get(
@@ -53,8 +142,12 @@ class OpenMeteoRepository implements WeatherRepository {
         },
       );
     } on DioException catch (e) {
+      final stale = _readForecastFromCacheAllowStale(lat, lng, days);
+      if (stale != null) return stale;
       throw AppFailure('Impossible de récupérer les prévisions météo.', cause: e);
     } catch (e) {
+      final stale = _readForecastFromCacheAllowStale(lat, lng, days);
+      if (stale != null) return stale;
       throw AppFailure('Erreur inattendue lors de la récupération des prévisions météo.', cause: e);
     }
 
@@ -73,6 +166,8 @@ class OpenMeteoRepository implements WeatherRepository {
         cloudCover: hourly['cloudcover'][i].toDouble(),
       ));
     }
+
+    _writeForecastToCache(lat, lng, days, conditions);
     return conditions;
   }
 
