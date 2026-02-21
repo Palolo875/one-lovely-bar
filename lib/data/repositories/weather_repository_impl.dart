@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive.dart';
 import '../../domain/failures/app_failure.dart';
 import '../../domain/models/route_models.dart';
 import '../../domain/models/weather_condition.dart';

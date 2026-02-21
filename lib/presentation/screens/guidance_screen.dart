@@ -1,55 +1,678 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:async';
+import 'package:geolocator/geolocator.dart';
+import 'package:go_router/go_router.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
+import '../../core/tts/tts_service.dart';
+import '../../core/tts/tts_service_factory_impl.dart';
 import '../../domain/failures/app_failure.dart';
+import '../../domain/models/poi.dart';
+import '../../domain/models/route_alert.dart';
+import '../../domain/models/route_models.dart';
 import '../providers/route_instructions_provider.dart';
 import '../providers/route_provider.dart';
+import '../providers/poi_provider.dart';
+import '../providers/route_alerts_provider.dart';
+import '../providers/weather_timeline_eta_provider.dart';
+import '../providers/map_style_provider.dart';
 
-class GuidanceScreen extends ConsumerWidget {
+class GuidanceScreen extends ConsumerStatefulWidget {
   final RouteRequest request;
 
   const GuidanceScreen({super.key, required this.request});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final instructionsAsync = ref.watch(routeInstructionsProvider(request));
+  ConsumerState<GuidanceScreen> createState() => _GuidanceScreenState();
+}
+
+class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
+  late final TtsService _tts;
+  bool _speaking = false;
+
+  MapLibreMapController? _map;
+  Line? _routeLine;
+  bool _centering = false;
+
+  StreamSubscription<Position>? _posSub;
+  LatLng? _user;
+  int _nearestPointIndex = 0;
+  List<double>? _cumMeters;
+  double? _totalMeters;
+  String? _routeKey;
+
+  bool _followUser = true;
+  DateTime? _lastManualMove;
+
+  @override
+  void initState() {
+    super.initState();
+    _tts = createTtsService();
+    WakelockPlus.enable();
+    _startLocationStream();
+  }
+
+  Future<void> _startLocationStream() async {
+    try {
+      final enabled = await Geolocator.isLocationServiceEnabled();
+      if (!enabled) return;
+
+      var perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+      if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) {
+        return;
+      }
+
+      _posSub?.cancel();
+      _posSub = Geolocator.getPositionStream(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: 10,
+        ),
+      ).listen((pos) {
+        if (!mounted) return;
+        final next = LatLng(pos.latitude, pos.longitude);
+        setState(() => _user = next);
+
+        if (_followUser && _map != null) {
+          final sinceManual = _lastManualMove == null ? null : DateTime.now().difference(_lastManualMove!);
+          if (sinceManual == null || sinceManual.inSeconds > 8) {
+            try {
+              final dyn = _map as dynamic;
+              dyn.animateCamera(CameraUpdate.newLatLng(next));
+            } catch (_) {}
+          }
+        }
+
+        final cum = _cumMeters;
+        final total = _totalMeters;
+        if (cum != null && total != null && total > 0) {
+          _updateNearestPointIndex(user: _user!);
+        }
+      });
+    } catch (_) {}
+  }
+
+  void _updateNearestPointIndex({required LatLng user}) {
+    final cum = _cumMeters;
+    if (cum == null) return;
+    final routeAsync = ref.read(routeProvider(widget.request));
+    if (!routeAsync.hasValue) return;
+    final route = routeAsync.value!;
+
+    int bestIdx = _nearestPointIndex;
+    double best = double.infinity;
+
+    final start = (_nearestPointIndex - 50).clamp(0, route.points.length - 1);
+    final end = (_nearestPointIndex + 200).clamp(0, route.points.length - 1);
+    for (int i = start; i <= end; i++) {
+      final p = route.points[i];
+      final d = Geolocator.distanceBetween(user.latitude, user.longitude, p.latitude, p.longitude);
+      if (d < best) {
+        best = d;
+        bestIdx = i;
+      }
+    }
+
+    if (bestIdx != _nearestPointIndex) {
+      setState(() => _nearestPointIndex = bestIdx);
+    }
+  }
+
+  void dispose() {
+    _tts.dispose();
+    _posSub?.cancel();
+    WakelockPlus.disable();
+    super.dispose();
+  }
+
+  Future<void> _speakAll(List<String> lines) async {
+    setState(() => _speaking = true);
+    try {
+      await _tts.speakLines(lines);
+    } catch (_) {
+      // ignore
+    }
+    if (mounted) setState(() => _speaking = false);
+  }
+
+  Future<void> _stop() async {
+    setState(() => _speaking = false);
+    try {
+      await _tts.stop();
+    } catch (_) {}
+  }
+
+  Future<LatLng?> _getUserLatLng() async {
+    try {
+      final enabled = await Geolocator.isLocationServiceEnabled();
+      if (!enabled) return null;
+
+      var perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+      if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) {
+        return null;
+      }
+
+      final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      return LatLng(pos.latitude, pos.longitude);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _centerOnUser() async {
+    if (_centering) return;
+    setState(() => _centering = true);
+    try {
+      final user = await _getUserLatLng();
+      final controller = _map;
+      if (user != null && controller != null) {
+        setState(() => _followUser = true);
+        final dyn = controller as dynamic;
+        try {
+          await dyn.animateCamera(CameraUpdate.newLatLng(user));
+        } catch (_) {}
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _centering = false);
+  }
+
+  Future<void> _drawRoute(RouteData route) async {
+    final controller = _map;
+    if (controller == null) return;
+
+    final key = '${route.points.length}:${route.points.first.latitude},${route.points.first.longitude}:${route.points.last.latitude},${route.points.last.longitude}:${route.distanceKm}:${route.durationMinutes}';
+    if (_routeKey == key && _routeLine != null) return;
+    _routeKey = key;
+
+    final cum = <double>[0];
+    double sum = 0;
+    for (int i = 1; i < route.points.length; i++) {
+      final a = route.points[i - 1];
+      final b = route.points[i];
+      sum += Geolocator.distanceBetween(a.latitude, a.longitude, b.latitude, b.longitude);
+      cum.add(sum);
+    }
+    _cumMeters = cum;
+    _totalMeters = sum;
+
+    try {
+      if (_routeLine != null) {
+        await controller.removeLine(_routeLine!);
+      }
+    } catch (_) {}
+
+    try {
+      _routeLine = await controller.addLine(
+        LineOptions(
+          geometry: route.points.map((p) => LatLng(p.latitude, p.longitude)).toList(),
+          lineColor: '#2563EB',
+          lineWidth: 6.0,
+          lineOpacity: 0.9,
+        ),
+      );
+    } catch (_) {}
+  }
+
+  String _formatDuration(Duration d) {
+    final totalMin = d.inMinutes;
+    if (totalMin < 60) return '${totalMin} min';
+    final h = totalMin ~/ 60;
+    final m = totalMin % 60;
+    return '${h}h${m.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _showShelters() async {
+    final user = await _getUserLatLng();
+    if (!mounted) return;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Localisation indisponible.')),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return SafeArea(
+          child: Consumer(
+            builder: (context, ref, _) {
+              final async = ref.watch(
+                poiSearchProvider(
+                  PoiRequest(
+                    lat: user.latitude,
+                    lng: user.longitude,
+                    radiusMeters: 2500,
+                    categories: const {PoiCategory.shelter, PoiCategory.hut},
+                  ),
+                ),
+              );
+
+              return async.when(
+                data: (pois) {
+                  if (pois.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text('Aucun abri trouvé autour de vous.'),
+                    );
+                  }
+
+                  return ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: pois.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, i) {
+                      final p = pois[i];
+                      return ListTile(
+                        leading: const Icon(LucideIcons.home),
+                        title: Text(p.name),
+                        subtitle: Text(p.category.name),
+                        onTap: () async {
+                          if (context.mounted) Navigator.of(context).pop();
+
+                          try {
+                            final controller = _map;
+                            if (controller != null) {
+                              final dyn = controller as dynamic;
+                              await dyn.animateCamera(
+                                CameraUpdate.newLatLngZoom(LatLng(p.latitude, p.longitude), 15),
+                              );
+                            }
+                          } catch (_) {}
+
+                          if (!mounted) return;
+                          showModalBottomSheet(
+                            context: context,
+                            builder: (ctx) {
+                              return SafeArea(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    children: [
+                                      Text(p.name, style: Theme.of(context).textTheme.titleMedium),
+                                      const SizedBox(height: 6),
+                                      Text('Abri • rayon 2.5 km', style: Theme.of(context).textTheme.bodySmall),
+                                      const SizedBox(height: 12),
+                                      ElevatedButton.icon(
+                                        onPressed: () {
+                                          Navigator.of(ctx).pop();
+                                          final req = widget.request;
+                                          final nextReq = RouteRequest(
+                                            startLat: user.latitude,
+                                            startLng: user.longitude,
+                                            endLat: p.latitude,
+                                            endLng: p.longitude,
+                                            profile: req.profile,
+                                            waypoints: const [],
+                                            departureTime: DateTime.now(),
+                                          );
+                                          Future.microtask(() {
+                                            if (mounted) context.pushReplacement('/guidance', extra: nextReq);
+                                          });
+                                        },
+                                        icon: const Icon(LucideIcons.navigation),
+                                        label: const Text('Remplacer le guidage vers cet abri'),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      OutlinedButton.icon(
+                                        onPressed: () {
+                                          Navigator.of(ctx).pop();
+                                          final req = widget.request;
+                                          final nextReq = RouteRequest(
+                                            startLat: user.latitude,
+                                            startLng: user.longitude,
+                                            endLat: p.latitude,
+                                            endLng: p.longitude,
+                                            profile: req.profile,
+                                            waypoints: const [],
+                                            departureTime: DateTime.now(),
+                                          );
+                                          Future.microtask(() {
+                                            if (mounted) context.push('/guidance', extra: nextReq);
+                                          });
+                                        },
+                                        icon: const Icon(LucideIcons.layers),
+                                        label: const Text('Empiler un nouveau guidage'),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      OutlinedButton.icon(
+                                        onPressed: () => Navigator.of(ctx).pop(),
+                                        icon: const Icon(LucideIcons.x),
+                                        label: const Text('Fermer'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
+                loading: () => const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+                error: (err, st) {
+                  final msg = err is AppFailure ? err.message : err.toString();
+                  return Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(msg),
+                  );
+                },
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final instructionsAsync = ref.watch(routeInstructionsProvider(widget.request));
+    final routeAsync = ref.watch(routeProvider(widget.request));
+    final mapStyle = ref.watch(mapStyleProvider);
+    final departure = widget.request.departureTime ?? DateTime.now();
+
+    final alertsAsync = routeAsync.when(
+      data: (route) => ref.watch(routeAlertsProvider(WeatherTimelineEtaRequest(route: route, departureTime: departure))),
+      loading: () => const AsyncValue<List<RouteAlert>>.loading(),
+      error: (e, st) => AsyncValue<List<RouteAlert>>.error(e, st),
+    );
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Guidage'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: instructionsAsync.when(
-          data: (items) {
-            if (items.isEmpty) {
-              return const Center(child: Text('Aucune instruction disponible.'));
-            }
+      body: Stack(
+        children: [
+          MapLibreMap(
+            onMapCreated: (c) {
+              _map = c;
+              _centerOnUser();
+            },
+            onCameraTrackingDismissed: () {
+              if (!_followUser) return;
+              setState(() {
+                _followUser = false;
+                _lastManualMove = DateTime.now();
+              });
+            },
+            initialCameraPosition: const CameraPosition(
+              target: LatLng(48.8566, 2.3522),
+              zoom: 12.0,
+              tilt: 60.0,
+            ),
+            styleString: mapStyle.styleUrl,
+            myLocationEnabled: true,
+            trackCameraPosition: false,
+          ),
 
-            return ListView.separated(
-              itemCount: items.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
-              itemBuilder: (context, i) {
-                final ins = items[i];
-                final metaParts = <String>[];
-                if (ins.distanceKm != null) metaParts.add('${ins.distanceKm!.toStringAsFixed(2)} km');
-                if (ins.timeSeconds != null) metaParts.add('${(ins.timeSeconds! / 60).round()} min');
+          routeAsync.when(
+            data: (route) {
+              _drawRoute(route);
+              return const SizedBox.shrink();
+            },
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+          ),
 
-                return ListTile(
-                  leading: Text('${i + 1}'),
-                  title: Text(ins.instruction),
-                  subtitle: metaParts.isEmpty ? null : Text(metaParts.join(' • ')),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      IconButton.filledTonal(
+                        onPressed: () => Navigator.of(context).maybePop(),
+                        icon: const Icon(LucideIcons.x),
+                      ),
+                      const Spacer(),
+                      IconButton.filledTonal(
+                        onPressed: _showShelters,
+                        icon: const Icon(LucideIcons.umbrella),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton.filledTonal(
+                        onPressed: _centering ? null : _centerOnUser,
+                        icon: _centering
+                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                            : Icon(_followUser ? LucideIcons.locateFixed : LucideIcons.locateOff),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  instructionsAsync.when(
+                    data: (items) {
+                      if (items.isEmpty) {
+                        return _InfoBanner(
+                          icon: LucideIcons.route,
+                          title: 'Guidage',
+                          subtitle: 'Aucune instruction disponible.',
+                        );
+                      }
+                      int idx = 0;
+                      final totalM = _totalMeters;
+                      final cum = _cumMeters;
+                      if (totalM != null && totalM > 0 && cum != null && _nearestPointIndex < cum.length) {
+                        final progressedM = cum[_nearestPointIndex];
+                        final progressedKm = progressedM / 1000.0;
+
+                        double accKm = 0;
+                        for (int i = 0; i < items.length; i++) {
+                          final d = items[i].distanceKm;
+                          if (d == null) {
+                            idx = (progressedM / totalM * items.length).floor().clamp(0, items.length - 1);
+                            break;
+                          }
+                          accKm += d;
+                          if (accKm >= progressedKm) {
+                            idx = i;
+                            break;
+                          }
+                          if (i == items.length - 1) idx = items.length - 1;
+                        }
+                      }
+
+                      final next = items[idx];
+                      final dist = next.distanceKm != null ? '${(next.distanceKm! * 1000).round()} m' : null;
+                      return _InfoBanner(
+                        icon: LucideIcons.navigation,
+                        title: next.instruction,
+                        subtitle: dist,
+                      );
+                    },
+                    loading: () => const _InfoBanner(
+                      icon: LucideIcons.navigation,
+                      title: 'Chargement...',
+                      subtitle: null,
+                    ),
+                    error: (err, st) {
+                      final msg = err is AppFailure ? err.message : err.toString();
+                      return _InfoBanner(
+                        icon: LucideIcons.alertTriangle,
+                        title: 'Erreur',
+                        subtitle: msg,
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  alertsAsync.when(
+                    data: (alerts) {
+                      if (alerts.isEmpty) return const SizedBox.shrink();
+                      final a = alerts.first;
+                      return _AlertBanner(text: a.message);
+                    },
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, __) => const SizedBox.shrink(),
+                  ),
+
+                  const Spacer(),
+
+                  routeAsync.when(
+                    data: (route) {
+                      final totalM = _totalMeters ?? (route.distanceKm * 1000);
+                      final cum = _cumMeters;
+                      final progressedM = (cum != null && _nearestPointIndex < cum.length) ? cum[_nearestPointIndex] : 0.0;
+                      final remainingM = (totalM - progressedM).clamp(0.0, totalM);
+                      final remainingRatio = totalM > 0 ? (remainingM / totalM) : 1.0;
+
+                      final remaining = Duration(minutes: (route.durationMinutes * remainingRatio).round());
+                      final eta = DateTime.now().add(remaining);
+                      final km = remainingM / 1000.0;
+                      return _BottomStatsBar(
+                        left: 'Restant: ${_formatDuration(remaining)}',
+                        center: 'Distance: ${km.toStringAsFixed(1)} km',
+                        right: 'Arrivée: ${eta.hour.toString().padLeft(2, '0')}:${eta.minute.toString().padLeft(2, '0')}',
+                      );
+                    },
+                    loading: () => const _BottomStatsBar(
+                      left: 'Restant: —',
+                      center: 'Distance: —',
+                      right: 'Arrivée: —',
+                    ),
+                    error: (err, st) {
+                      final msg = err is AppFailure ? err.message : err.toString();
+                      return _BottomStatsBar(
+                        left: 'Route: erreur',
+                        center: msg,
+                        right: ' ',
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          Positioned(
+            right: 12,
+            bottom: 110,
+            child: instructionsAsync.maybeWhen(
+              data: (items) {
+                if (items.isEmpty) return const SizedBox.shrink();
+                final lines = items.map((e) => e.instruction).toList();
+                return FloatingActionButton(
+                  onPressed: _speaking ? _stop : () => _speakAll(lines),
+                  child: Icon(_speaking ? LucideIcons.volumeX : LucideIcons.volume2),
                 );
               },
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, st) {
-            final msg = err is AppFailure ? err.message : err.toString();
-            return Center(child: Text(msg));
-          },
-        ),
+              orElse: () => const SizedBox.shrink(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoBanner extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+
+  const _InfoBanner({required this.icon, required this.title, required this.subtitle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface.withOpacity(0.92),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: const [BoxShadow(blurRadius: 12, color: Colors.black26)],
+      ),
+      child: Row(
+        children: [
+          Icon(icon),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(title, style: Theme.of(context).textTheme.titleMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
+                if (subtitle != null)
+                  Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AlertBanner extends StatelessWidget {
+  final String text;
+  const _AlertBanner({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.orange.withOpacity(0.92),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: const [BoxShadow(blurRadius: 12, color: Colors.black26)],
+      ),
+      child: Row(
+        children: [
+          const Icon(LucideIcons.alertTriangle, color: Colors.black87),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.black87),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BottomStatsBar extends StatelessWidget {
+  final String left;
+  final String center;
+  final String right;
+
+  const _BottomStatsBar({required this.left, required this.center, required this.right});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface.withOpacity(0.94),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [BoxShadow(blurRadius: 12, color: Colors.black26)],
+      ),
+      child: Row(
+        children: [
+          Expanded(child: Text(left, style: Theme.of(context).textTheme.bodyMedium)),
+          Expanded(child: Text(center, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium)),
+          Expanded(child: Text(right, textAlign: TextAlign.end, style: Theme.of(context).textTheme.bodyMedium)),
+        ],
       ),
     );
   }

@@ -2,6 +2,7 @@
     "name": "WeatherNav",
     "short_name": "WeatherNav",
     "start_url": ".",
+    "scope": ".",
     "display": "standalone",
     "background_color": "#F5F3EF",
     "theme_color": "#2563EB",

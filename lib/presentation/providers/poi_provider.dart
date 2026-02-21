@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive.dart';
 import '../../data/repositories/poi_repository_impl.dart';
 import '../../domain/models/poi.dart';
 import '../../domain/repositories/poi_repository.dart';

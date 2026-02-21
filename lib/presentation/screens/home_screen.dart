@@ -4,16 +4,21 @@ import 'package:go_router/go_router.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'dart:async';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:hive_ce/hive.dart';
 import '../../domain/models/weather_condition.dart';
 import '../../domain/models/user_profile.dart';
 import '../../domain/models/poi.dart';
 import '../../domain/failures/app_failure.dart';
 import '../providers/profile_provider.dart';
 import '../providers/current_weather_provider.dart';
+import '../providers/forecast_provider.dart';
 import '../providers/rainviewer_provider.dart';
 import '../providers/weather_layers_provider.dart';
 import '../providers/poi_provider.dart';
 import '../providers/weather_grid_provider.dart';
+import '../providers/map_style_provider.dart';
 import '../widgets/profile_switcher.dart';
 import '../widgets/weather_timeline.dart';
 
@@ -35,11 +40,64 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   String? _poiRequestKey;
   String? _gridRequestKey;
 
+  bool _centering = false;
+
   static const _radarSourceId = 'rainviewer_radar_source';
   static const _radarLayerId = 'rainviewer_radar_layer';
 
   void _onMapCreated(MapLibreMapController controller) {
     mapController = controller;
+    _ensureLocationPermission();
+  }
+
+  Future<void> _ensureLocationPermission() async {
+    try {
+      final status = await Permission.locationWhenInUse.status;
+      if (status.isDenied || status.isRestricted) {
+        await Permission.locationWhenInUse.request();
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _centerOnUser() async {
+    if (_centering) return;
+    setState(() => _centering = true);
+    try {
+      await _ensureLocationPermission();
+
+      final enabled = await Geolocator.isLocationServiceEnabled();
+      if (!enabled) return;
+
+      final perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        await Geolocator.requestPermission();
+      }
+
+      final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
+      final target = LatLng(pos.latitude, pos.longitude);
+
+      // Best-effort camera movement (dynamic to avoid compilation issues across maplibre_gl versions)
+      final controller = mapController;
+      if (controller != null) {
+        final dyn = controller as dynamic;
+        try {
+          await dyn.animateCamera(CameraUpdate.newLatLngZoom(target, 13.5));
+        } catch (_) {
+          try {
+            await dyn.moveCamera(CameraUpdate.newLatLngZoom(target, 13.5));
+          } catch (_) {}
+        }
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _mapCenter = target;
+        _debouncedCenter = _roundCenter(target);
+      });
+    } catch (_) {
+      // ignore
+    }
+    if (mounted) setState(() => _centering = false);
   }
 
   @override
@@ -183,11 +241,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
 
+    final opacity = layers.opacity[WeatherLayer.radar] ?? 0.65;
+
     await controller.addLayer(
       _radarSourceId,
       _radarLayerId,
       RasterLayerProperties(
-        rasterOpacity: 0.65,
+        rasterOpacity: opacity,
       ),
     );
   }
@@ -195,15 +255,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final activeProfile = ref.watch(profileNotifierProvider);
-    final parisWeather = ref.watch(
-      currentWeatherProvider(const LatLngRequest(lat: 48.8566, lng: 2.3522)),
+    final center = _debouncedCenter;
+    final currentWeatherAsync = ref.watch(
+      currentWeatherProvider(LatLngRequest(lat: center.latitude, lng: center.longitude)),
+    );
+    final forecastAsync = ref.watch(
+      forecastProvider(ForecastRequest(lat: center.latitude, lng: center.longitude, days: 7)),
     );
 
     final layers = ref.watch(weatherLayersProvider);
+    final layersNotifier = ref.read(weatherLayersProvider.notifier);
     final radarTimeAsync = ref.watch(rainViewerLatestTimeProvider);
+    final mapStyle = ref.watch(mapStyleProvider);
 
     final poiFilter = ref.watch(poiFilterProvider);
-    final center = _debouncedCenter;
 
     final showGrid = layers.enabled.contains(WeatherLayer.wind) || layers.enabled.contains(WeatherLayer.temperature);
     final nextGridKey = '${center.latitude},${center.longitude}|${showGrid ? '1' : '0'}';
@@ -256,19 +321,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
 
     return Scaffold(
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
-        onTap: (index) {
-          if (index == 1) context.push('/planning');
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(LucideIcons.map), label: 'Carte'),
-          BottomNavigationBarItem(icon: Icon(LucideIcons.calendar), label: 'Planifier'),
-          BottomNavigationBarItem(icon: Icon(LucideIcons.user), label: 'Profil'),
-        ],
-      ),
       body: Stack(
         children: [
           // Map
@@ -279,7 +331,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               target: LatLng(48.8566, 2.3522), // Paris
               zoom: 12.0,
             ),
-            styleString: 'https://tiles.openfreemap.org/styles/positron',
+            styleString: mapStyle.styleUrl,
             myLocationEnabled: true,
             trackCameraPosition: true,
           ),
@@ -311,40 +363,61 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             top: 50,
             left: 16,
             right: 16,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => context.go('/planning'),
                 borderRadius: BorderRadius.circular(30),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                ],
+                  child: Row(
+                    children: [
+                      const Icon(LucideIcons.search, color: Colors.grey),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Où allez-vous ?',
+                          style: TextStyle(color: Colors.grey, fontSize: 16),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => _showProfileSwitcher(context),
+                        child: CircleAvatar(
+                          backgroundColor: Colors.blue.withOpacity(0.1),
+                          radius: 18,
+                          child: Icon(
+                            _getProfileIcon(activeProfile.type),
+                            size: 18,
+                            color: Colors.blue,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              child: Row(
-                children: [
-                  const Icon(LucideIcons.search, color: Colors.grey),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      'Où allez-vous ?',
-                      style: TextStyle(color: Colors.grey, fontSize: 16),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => _showProfileSwitcher(context),
-                    child: CircleAvatar(
-                      backgroundColor: Colors.blue.withOpacity(0.1),
-                      radius: 18,
-                      child: Icon(_getProfileIcon(activeProfile.type),
-                        size: 18, color: Colors.blue),
-                    ),
-                  ),
-                ],
-              ),
+            ),
+          ),
+
+          // Active layer chips
+          Positioned(
+            top: 110,
+            left: 16,
+            right: 16,
+            child: _ActiveLayerChips(
+              layers: layers,
+              onToggle: (l) => layersNotifier.toggle(l),
             ),
           ),
 
@@ -358,50 +431,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 12),
                 _buildFloatingButton(LucideIcons.mapPin, () => _showPoiSheet(context)),
                 const SizedBox(height: 12),
-                _buildFloatingButton(LucideIcons.crosshair, () {
-                  // Center on user
-                }),
+                _buildFloatingButton(
+                  LucideIcons.crosshair,
+                  _centerOnUser,
+                ),
               ],
             ),
           ),
 
-          // Bottom Sheet Handle (Indicator)
           Align(
             alignment: Alignment.bottomCenter,
-            child: GestureDetector(
-              onTap: () => _showWeatherDetails(context),
-              child: Container(
-                height: 80,
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 10,
-                      offset: Offset(0, -2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 8),
-                    Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: _BottomWeatherIndicator(weather: parisWeather),
-                    ),
-                  ],
-                ),
-              ),
+            child: _PersistentWeatherSheet(
+              currentWeather: currentWeatherAsync,
+              forecast: forecastAsync,
+              profile: activeProfile,
             ),
           ),
         ],
@@ -488,6 +531,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 children: [
                   const Text('Couches météo', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
+                  Text(
+                    'Max 3 couches actives pour garder la carte lisible.',
+                    style: TextStyle(color: Colors.grey[700]),
+                  ),
+                  const SizedBox(height: 8),
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
@@ -501,6 +549,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     title: const Text('Radar précipitations'),
                     subtitle: const Text('RainViewer'),
                   ),
+                  if (layers.enabled.contains(WeatherLayer.radar))
+                    Padding(
+                      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+                      child: Row(
+                        children: [
+                          const Text('Opacité'),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Slider(
+                              value: (layers.opacity[WeatherLayer.radar] ?? 0.65).clamp(0.0, 1.0),
+                              min: 0.0,
+                              max: 1.0,
+                              divisions: 10,
+                              label: '${(((layers.opacity[WeatherLayer.radar] ?? 0.65) * 100).round())}%',
+                              onChanged: (v) => notifier.setOpacity(WeatherLayer.radar, v),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   SwitchListTile(
                     value: layers.enabled.contains(WeatherLayer.wind),
                     onChanged: (_) => notifier.toggle(WeatherLayer.wind),
@@ -615,8 +683,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
 class _BottomWeatherIndicator extends StatelessWidget {
   final AsyncValue<WeatherCondition> weather;
+  final DateTime? cachedAt;
 
-  const _BottomWeatherIndicator({required this.weather});
+  const _BottomWeatherIndicator({required this.weather, required this.cachedAt});
 
   @override
   Widget build(BuildContext context) {
@@ -624,13 +693,17 @@ class _BottomWeatherIndicator extends StatelessWidget {
       data: (w) {
         final icon = _iconForCode(w.weatherCode);
         final subtitle = '${w.temperature.round()}°C • Vent ${w.windSpeed.round()} km/h';
+        final cacheText = cachedAt == null
+            ? null
+            : 'Données: ${cachedAt!.hour.toString().padLeft(2, '0')}:${cachedAt!.minute.toString().padLeft(2, '0')}';
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Paris', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                if (cacheText != null) Text(cacheText, style: const TextStyle(color: Colors.grey, fontSize: 12)),
               ],
             ),
             Expanded(
@@ -690,5 +763,460 @@ class _BottomWeatherIndicator extends StatelessWidget {
     if (code < 50) return LucideIcons.cloud;
     if (code < 70) return LucideIcons.cloudRain;
     return LucideIcons.cloudLightning;
+  }
+
+  String _conditionLabel(int code) {
+    if (code == 0) return 'Ciel clair';
+    if (code < 3) return 'Peu nuageux';
+    if (code < 50) return 'Nuageux';
+    if (code < 70) return 'Pluie';
+    return 'Orage';
+  }
+}
+
+class _ActiveLayerChips extends StatelessWidget {
+  final WeatherLayersState layers;
+  final void Function(WeatherLayer layer) onToggle;
+
+  const _ActiveLayerChips({required this.layers, required this.onToggle});
+
+  String _label(WeatherLayer l) {
+    switch (l) {
+      case WeatherLayer.radar:
+        return 'Rain';
+      case WeatherLayer.wind:
+        return 'Wind';
+      case WeatherLayer.temperature:
+        return 'Temp';
+    }
+  }
+
+  IconData _icon(WeatherLayer l) {
+    switch (l) {
+      case WeatherLayer.radar:
+        return LucideIcons.cloudRain;
+      case WeatherLayer.wind:
+        return LucideIcons.wind;
+      case WeatherLayer.temperature:
+        return LucideIcons.thermometer;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = layers.enabled.toList();
+    if (enabled.isEmpty) return const SizedBox.shrink();
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            for (final l in enabled) ...[
+              FilterChip(
+                selected: true,
+                onSelected: (_) => onToggle(l),
+                avatar: Icon(_icon(l), size: 16),
+                label: Text(_label(l)),
+              ),
+              const SizedBox(width: 8),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WeatherMetricsRow extends StatelessWidget {
+  final AsyncValue<WeatherCondition> currentWeather;
+  final AsyncValue<List<WeatherCondition>> forecast;
+  final Widget Function(BuildContext context, String label, String value) metricTile;
+
+  const _WeatherMetricsRow({
+    required this.currentWeather,
+    required this.forecast,
+    required this.metricTile,
+  });
+
+  WeatherCondition? _nearestForecast(List<WeatherCondition> list) {
+    if (list.isEmpty) return null;
+    final now = DateTime.now();
+    WeatherCondition best = list.first;
+    int bestDelta = (best.timestamp.difference(now).inMinutes).abs();
+    for (final e in list) {
+      final d = (e.timestamp.difference(now).inMinutes).abs();
+      if (d < bestDelta) {
+        best = e;
+        bestDelta = d;
+      }
+    }
+    return best;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return currentWeather.when(
+      data: (w) {
+        return forecast.when(
+          data: (list) {
+            final near = _nearestForecast(list);
+            final visibility = w.visibility ?? near?.visibility;
+            final uv = w.uvIndex ?? near?.uvIndex;
+
+            String visText;
+            if (visibility == null) {
+              visText = '—';
+            } else if (visibility >= 10000) {
+              visText = '${(visibility / 1000).toStringAsFixed(0)} km';
+            } else {
+              visText = '${visibility.toStringAsFixed(0)} m';
+            }
+
+            final uvText = uv == null ? '—' : uv.toStringAsFixed(0);
+
+            return Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(child: metricTile(context, 'Temp.', '${w.temperature.round()}°')),
+                    const SizedBox(width: 12),
+                    Expanded(child: metricTile(context, 'Vent', '${w.windSpeed.round()} km/h')),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(child: metricTile(context, 'Visib.', visText)),
+                    const SizedBox(width: 12),
+                    Expanded(child: metricTile(context, 'UV', uvText)),
+                  ],
+                ),
+              ],
+            );
+          },
+          loading: () {
+            return Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(child: metricTile(context, 'Temp.', '${w.temperature.round()}°')),
+                    const SizedBox(width: 12),
+                    Expanded(child: metricTile(context, 'Vent', '${w.windSpeed.round()} km/h')),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(child: metricTile(context, 'Visib.', '—')),
+                    const SizedBox(width: 12),
+                    Expanded(child: metricTile(context, 'UV', '—')),
+                  ],
+                ),
+              ],
+            );
+          },
+          error: (_, __) {
+            return Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(child: metricTile(context, 'Temp.', '${w.temperature.round()}°')),
+                    const SizedBox(width: 12),
+                    Expanded(child: metricTile(context, 'Vent', '${w.windSpeed.round()} km/h')),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(child: metricTile(context, 'Visib.', '—')),
+                    const SizedBox(width: 12),
+                    Expanded(child: metricTile(context, 'UV', '—')),
+                  ],
+                ),
+              ],
+            );
+          },
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+}
+
+class _PersistentWeatherSheet extends StatelessWidget {
+  final AsyncValue<WeatherCondition> currentWeather;
+  final AsyncValue<List<WeatherCondition>> forecast;
+  final UserProfile profile;
+
+  const _PersistentWeatherSheet({
+    required this.currentWeather,
+    required this.forecast,
+    required this.profile,
+  });
+
+  String _hhmm(DateTime dt) {
+    final h = dt.hour.toString().padLeft(2, '0');
+    final m = dt.minute.toString().padLeft(2, '0');
+    return '$h:$m';
+  }
+
+  String _dmy(DateTime dt) {
+    final d = dt.day.toString().padLeft(2, '0');
+    final m = dt.month.toString().padLeft(2, '0');
+    return '$d/$m';
+  }
+
+  IconData _iconForCode(int code) {
+    if (code == 0) return LucideIcons.sun;
+    if (code < 3) return LucideIcons.cloudSun;
+    if (code < 50) return LucideIcons.cloud;
+    if (code < 70) return LucideIcons.cloudRain;
+    return LucideIcons.cloudLightning;
+  }
+
+  List<WeatherCondition> _nextHours(List<WeatherCondition> items, int hours) {
+    final now = DateTime.now();
+    final future = items.where((e) => e.timestamp.isAfter(now.subtract(const Duration(minutes: 1)))).toList();
+    future.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    if (future.length <= hours) return future;
+    return future.take(hours).toList();
+  }
+
+  List<WeatherCondition> _dailySummary(List<WeatherCondition> items) {
+    final byDay = <String, List<WeatherCondition>>{};
+    for (final e in items) {
+      final key = '${e.timestamp.year}-${e.timestamp.month}-${e.timestamp.day}';
+      (byDay[key] ??= []).add(e);
+    }
+
+    final days = byDay.values.toList();
+    days.sort((a, b) => a.first.timestamp.compareTo(b.first.timestamp));
+
+    final out = <WeatherCondition>[];
+    for (final day in days) {
+      day.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+      final best = day.firstWhere(
+        (e) => e.timestamp.hour == 12,
+        orElse: () => day[day.length ~/ 2],
+      );
+      out.add(best);
+      if (out.length >= 7) break;
+    }
+    return out;
+  }
+
+  Widget _metricTile(BuildContext context, String label, String value) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: 6),
+          Text(value, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    DateTime? cachedAt;
+    try {
+      final box = Hive.box('settings');
+      final raw = box.get('wx_current:48.857,2.352');
+      if (raw is Map && raw['ts'] is int) {
+        cachedAt = DateTime.fromMillisecondsSinceEpoch(raw['ts'] as int);
+      }
+    } catch (_) {}
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.14,
+      minChildSize: 0.14,
+      maxChildSize: 0.90,
+      snap: true,
+      snapSizes: const [0.14, 0.48, 0.90],
+      builder: (context, scrollController) {
+        return Material(
+          elevation: 12,
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          child: ListView(
+            controller: scrollController,
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              currentWeather.when(
+                data: (w) {
+                  final icon = _iconForCode(w.weatherCode);
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(icon, size: 32, color: Theme.of(context).colorScheme.primary),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${w.temperature.round()}°',
+                              style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                                    fontSize: 72,
+                                    height: 0.9,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _conditionLabel(w.weatherCode),
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Vent ${w.windSpeed.round()} km/h',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        _hhmm(w.timestamp),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      if (cachedAt != null)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 10, top: 2),
+                          child: Text(
+                            'Cache: ${_hhmm(cachedAt!)}',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+                loading: () => const SizedBox(
+                  height: 28,
+                  child: Center(child: LinearProgressIndicator(minHeight: 2)),
+                ),
+                error: (err, st) {
+                  final msg = err is AppFailure ? err.message : 'Météo indisponible';
+                  return Row(
+                    children: [
+                      const Icon(LucideIcons.alertTriangle, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(msg, overflow: TextOverflow.ellipsis)),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              _WeatherMetricsRow(currentWeather: currentWeather, forecast: forecast, metricTile: _metricTile),
+              const SizedBox(height: 18),
+              Text('Prochaines 24h', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 10),
+              forecast.when(
+                data: (items) {
+                  final hours = _nextHours(items, 24);
+                  if (hours.isEmpty) return const Text('Prévisions indisponibles.');
+                  return SizedBox(
+                    height: 92,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: hours.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 10),
+                      itemBuilder: (context, i) {
+                        final h = hours[i];
+                        return Container(
+                          width: 76,
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surface,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(_hhmm(h.timestamp), style: Theme.of(context).textTheme.bodySmall),
+                              const SizedBox(height: 6),
+                              Icon(_iconForCode(h.weatherCode), size: 18),
+                              const SizedBox(height: 6),
+                              Text('${h.temperature.round()}°', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700)),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+                loading: () => const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: LinearProgressIndicator(minHeight: 2),
+                ),
+                error: (err, st) {
+                  final msg = err is AppFailure ? err.message : 'Prévisions indisponibles';
+                  return Text(msg);
+                },
+              ),
+              const SizedBox(height: 18),
+              Text('Prévisions 7 jours', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 10),
+              forecast.when(
+                data: (items) {
+                  final daily = _dailySummary(items);
+                  if (daily.isEmpty) return const Text('Prévisions indisponibles.');
+                  return Column(
+                    children: [
+                      for (final d in daily)
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: Icon(_iconForCode(d.weatherCode)),
+                          title: Text(_dmy(d.timestamp)),
+                          trailing: Text('${d.temperature.round()}°'),
+                        ),
+                    ],
+                  );
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+              const SizedBox(height: 18),
+              Text('Pour votre profil', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 10),
+              currentWeather.when(
+                data: (w) {
+                  final line = profile.type == ProfileType.cyclist
+                      ? 'Vent: ${w.windSpeed.round()} km/h (utile pour l’effort / vent de face)'
+                      : profile.type == ProfileType.driver
+                          ? 'Précip.: ${w.precipitation.toStringAsFixed(1)} mm (adhérence / visibilité)'
+                          : 'Vent: ${w.windSpeed.round()} km/h • UV: ${w.uvIndex?.toStringAsFixed(0) ?? '—'}';
+                  return Text(line, style: Theme.of(context).textTheme.bodyLarge);
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }

@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>WeatherNav a besoin de votre position pour afficher la carte et la météo locale.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>WeatherNav peut utiliser votre position pour rafraîchir la météo en arrière-plan.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>WeatherNav peut utiliser votre position pour rafraîchir la météo en arrière-plan.</string>
 </dict>
 </plist>

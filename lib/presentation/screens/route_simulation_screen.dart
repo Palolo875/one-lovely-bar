@@ -7,6 +7,7 @@ import '../../domain/models/user_profile.dart';
 import '../../domain/failures/app_failure.dart';
 import '../../domain/usecases/export_route_to_gpx.dart';
 import '../../domain/models/route_alert.dart';
+import '../providers/trip_history_provider.dart';
 import '../providers/profile_provider.dart';
 import '../providers/route_provider.dart';
 import '../providers/weather_timeline_eta_provider.dart';
@@ -39,6 +40,7 @@ class RouteSimulationScreen extends ConsumerStatefulWidget {
 class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
   // minutes offset from base departure time
   double _departureOffsetMinutes = 0;
+  String? _lastSavedKey;
 
   DateTime _applyOffset(DateTime base) {
     return base.add(Duration(minutes: _departureOffsetMinutes.round()));
@@ -80,6 +82,26 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
         padding: const EdgeInsets.all(24.0),
         child: routeAsync.when(
           data: (route) {
+            final saveKey = '${effectiveRequest.startLat},${effectiveRequest.startLng}|${effectiveRequest.endLat},${effectiveRequest.endLng}|${effectiveRequest.profile}|${departure.millisecondsSinceEpoch}';
+            if (_lastSavedKey != saveKey) {
+              _lastSavedKey = saveKey;
+              final repo = ref.read(tripHistoryRepositoryProvider);
+              final gpx = const ExportRouteToGpx()(route);
+              // Best-effort save (no await to keep UI smooth)
+              repo.addTrip(
+                createdAt: DateTime.now(),
+                departureTime: departure,
+                profile: effectiveRequest.profile,
+                startLat: effectiveRequest.startLat,
+                startLng: effectiveRequest.startLng,
+                endLat: effectiveRequest.endLat,
+                endLng: effectiveRequest.endLng,
+                distanceKm: route.distanceKm,
+                durationMinutes: route.durationMinutes,
+                gpx: gpx,
+              );
+            }
+
             final weatherAsync = ref.watch(
               weatherTimelineEtaProvider(
                 WeatherTimelineEtaRequest(route: route, departureTime: departure),

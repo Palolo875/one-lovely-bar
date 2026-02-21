@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive.dart';
 import '../../domain/models/grid_point_weather.dart';
 import '../../domain/usecases/get_weather_grid.dart';
 import '../../domain/failures/app_failure.dart';
