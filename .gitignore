@@ -1,24 +1,53 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# Flutter-related
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
 
-node_modules
-dist
-dist-ssr
-*.local
+# Android-related
+**/android/**/gradle-wrapper.jar
+**/android/.gradle
+**/android/captures/
+**/android/gradlew
+**/android/gradlew.bat
+**/android/local.properties
+**/android/generated_gradle_build_settings.gradle
+**/android/key.properties
+**/android/app/src/main/res/raw/google_services.json
+**/android/app/src/main/res/values/google-services.xml
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# iOS-related
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Runner/GeneratedPluginRegistrant.[mh]
+**/ios/Runner/config
+**/ios/Runner/Podfile
+**/ios/Runner/Podfile.lock
+**/ios/Runner/Pods
+**/ios/Runner/.root_key
+**/ios/Runner/Pods.debug.xcconfig
+**/ios/Runner/Pods.release.xcconfig
+**/ios/Runner/Pods.profile.xcconfig
+
+# Web-related
+
+# Symbolication logging
+pill-*.part
+
+# Coverage report
+coverage/
+
+# Misc
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+.idea/
+.vscode/
+*.log
+*.pub
+*.lockb
+package-lock.json
+node_modules/

@@ -1,0 +1,47 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'user_profile.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+_$UserProfileImpl _$$UserProfileImplFromJson(Map<String, dynamic> json) =>
+    _$UserProfileImpl(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      type: $enumDecode(_$ProfileTypeEnumMap, json['type']),
+      defaultLayers: (json['defaultLayers'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      alertThresholds: (json['alertThresholds'] as Map<String, dynamic>?)?.map(
+            (k, e) => MapEntry(k, (e as num).toDouble()),
+          ) ??
+          const {},
+      speedUnit: json['speedUnit'] as String? ?? 'km/h',
+      tempUnit: json['tempUnit'] as String? ?? '°C',
+      distanceUnit: json['distanceUnit'] as String? ?? 'km',
+    );
+
+Map<String, dynamic> _$$UserProfileImplToJson(_$UserProfileImpl instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'name': instance.name,
+      'type': _$ProfileTypeEnumMap[instance.type]!,
+      'defaultLayers': instance.defaultLayers,
+      'alertThresholds': instance.alertThresholds,
+      'speedUnit': instance.speedUnit,
+      'tempUnit': instance.tempUnit,
+      'distanceUnit': instance.distanceUnit,
+    };
+
+const _$ProfileTypeEnumMap = {
+  ProfileType.universal: 'universal',
+  ProfileType.cyclist: 'cyclist',
+  ProfileType.hiker: 'hiker',
+  ProfileType.driver: 'driver',
+  ProfileType.nautical: 'nautical',
+  ProfileType.paraglider: 'paraglider',
+  ProfileType.camper: 'camper',
+};

@@ -1,0 +1,37 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'weather_condition.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+_$WeatherConditionImpl _$$WeatherConditionImplFromJson(
+        Map<String, dynamic> json) =>
+    _$WeatherConditionImpl(
+      temperature: (json['temperature'] as num).toDouble(),
+      precipitation: (json['precipitation'] as num).toDouble(),
+      windSpeed: (json['windSpeed'] as num).toDouble(),
+      windDirection: (json['windDirection'] as num).toDouble(),
+      weatherCode: (json['weatherCode'] as num).toInt(),
+      timestamp: DateTime.parse(json['timestamp'] as String),
+      visibility: (json['visibility'] as num?)?.toDouble(),
+      uvIndex: (json['uvIndex'] as num?)?.toDouble(),
+      cloudCover: (json['cloudCover'] as num?)?.toDouble(),
+      airQuality: (json['airQuality'] as num?)?.toDouble(),
+    );
+
+Map<String, dynamic> _$$WeatherConditionImplToJson(
+        _$WeatherConditionImpl instance) =>
+    <String, dynamic>{
+      'temperature': instance.temperature,
+      'precipitation': instance.precipitation,
+      'windSpeed': instance.windSpeed,
+      'windDirection': instance.windDirection,
+      'weatherCode': instance.weatherCode,
+      'timestamp': instance.timestamp.toIso8601String(),
+      'visibility': instance.visibility,
+      'uvIndex': instance.uvIndex,
+      'cloudCover': instance.cloudCover,
+      'airQuality': instance.airQuality,
+    };

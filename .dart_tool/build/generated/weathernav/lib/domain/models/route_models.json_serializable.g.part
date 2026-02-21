@@ -1,0 +1,43 @@
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+_$RoutePointImpl _$$RoutePointImplFromJson(Map<String, dynamic> json) =>
+    _$RoutePointImpl(
+      latitude: (json['latitude'] as num).toDouble(),
+      longitude: (json['longitude'] as num).toDouble(),
+      timestamp: json['timestamp'] == null
+          ? null
+          : DateTime.parse(json['timestamp'] as String),
+      weather: json['weather'] == null
+          ? null
+          : WeatherCondition.fromJson(json['weather'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$$RoutePointImplToJson(_$RoutePointImpl instance) =>
+    <String, dynamic>{
+      'latitude': instance.latitude,
+      'longitude': instance.longitude,
+      'timestamp': instance.timestamp?.toIso8601String(),
+      'weather': instance.weather,
+    };
+
+_$RouteDataImpl _$$RouteDataImplFromJson(Map<String, dynamic> json) =>
+    _$RouteDataImpl(
+      points: (json['points'] as List<dynamic>)
+          .map((e) => RoutePoint.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      distanceKm: (json['distanceKm'] as num).toDouble(),
+      durationMinutes: (json['durationMinutes'] as num).toDouble(),
+      profile: json['profile'] as String,
+      gpxData: json['gpxData'] as String?,
+    );
+
+Map<String, dynamic> _$$RouteDataImplToJson(_$RouteDataImpl instance) =>
+    <String, dynamic>{
+      'points': instance.points,
+      'distanceKm': instance.distanceKm,
+      'durationMinutes': instance.durationMinutes,
+      'profile': instance.profile,
+      'gpxData': instance.gpxData,
+    };
