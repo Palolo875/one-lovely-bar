@@ -5,7 +5,9 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../domain/models/weather_condition.dart';
 import '../../domain/models/user_profile.dart';
+import '../../domain/failures/app_failure.dart';
 import '../providers/profile_provider.dart';
+import '../providers/current_weather_provider.dart';
 import '../widgets/profile_switcher.dart';
 import '../widgets/weather_timeline.dart';
 
@@ -26,6 +28,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final activeProfile = ref.watch(profileNotifierProvider);
+    final parisWeather = ref.watch(
+      currentWeatherProvider(const LatLngRequest(lat: 48.8566, lng: 2.3522)),
+    );
 
     return Scaffold(
       bottomNavigationBar: BottomNavigationBar(
@@ -142,21 +147,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                    const Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Paris', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                              Text('Ensoleillé • 18°C', style: TextStyle(color: Colors.grey)),
-                            ],
-                          ),
-                          Icon(LucideIcons.sun, color: Colors.orange, size: 32),
-                        ],
-                      ),
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: _BottomWeatherIndicator(weather: parisWeather),
                     ),
                   ],
                 ),
@@ -167,6 +160,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
   }
+
+  
 
   Widget _buildFloatingButton(IconData icon, VoidCallback onPressed) {
     return FloatingActionButton.small(
@@ -227,5 +222,85 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ),
     );
+  }
+}
+
+class _BottomWeatherIndicator extends StatelessWidget {
+  final AsyncValue<WeatherCondition> weather;
+
+  const _BottomWeatherIndicator({required this.weather});
+
+  @override
+  Widget build(BuildContext context) {
+    return weather.when(
+      data: (w) {
+        final icon = _iconForCode(w.weatherCode);
+        final subtitle = '${w.temperature.round()}°C • Vent ${w.windSpeed.round()} km/h';
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Paris', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              ],
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  subtitle,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.grey),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+            Icon(icon, color: Colors.orange, size: 32),
+          ],
+        );
+      },
+      loading: () => const Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Paris', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              Text('Chargement…', style: TextStyle(color: Colors.grey)),
+            ],
+          ),
+          SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ],
+      ),
+      error: (err, st) {
+        final msg = err is AppFailure ? err.message : 'Météo indisponible';
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Paris', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                Text(msg, style: const TextStyle(color: Colors.grey)),
+              ],
+            ),
+            const Icon(LucideIcons.alertTriangle, color: Colors.orange, size: 28),
+          ],
+        );
+      },
+    );
+  }
+
+  IconData _iconForCode(int code) {
+    if (code == 0) return LucideIcons.sun;
+    if (code < 3) return LucideIcons.cloudSun;
+    if (code < 50) return LucideIcons.cloud;
+    if (code < 70) return LucideIcons.cloudRain;
+    return LucideIcons.cloudLightning;
   }
 }

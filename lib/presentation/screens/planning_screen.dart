@@ -1,12 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../providers/profile_provider.dart';
+import '../providers/route_provider.dart';
 
-class PlanningScreen extends ConsumerWidget {
+class PlanningScreen extends ConsumerStatefulWidget {
   const PlanningScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PlanningScreen> createState() => _PlanningScreenState();
+}
+
+class _PlanningScreenState extends ConsumerState<PlanningScreen> {
+  final _startLatController = TextEditingController(text: '48.8566');
+  final _startLngController = TextEditingController(text: '2.3522');
+  final _endLatController = TextEditingController(text: '48.8049');
+  final _endLngController = TextEditingController(text: '2.1204');
+
+  String _profileToRoutingProfile(ProfileType type) {
+    switch (type) {
+      case ProfileType.cyclist:
+        return 'cyclist';
+      case ProfileType.hiker:
+        return 'hiker';
+      case ProfileType.driver:
+        return 'driver';
+      default:
+        return 'driver';
+    }
+  }
+
+  @override
+  void dispose() {
+    _startLatController.dispose();
+    _startLngController.dispose();
+    _endLatController.dispose();
+    _endLngController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final profile = ref.watch(profileNotifierProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Planifier une sortie'),
@@ -38,14 +75,46 @@ class PlanningScreen extends ConsumerWidget {
             const SizedBox(height: 32),
             const Text('Itinéraire', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
-            _buildInput(LucideIcons.mapPin, 'Départ (Ma position)'),
+            _buildCoordinateRow(
+              icon: LucideIcons.mapPin,
+              title: 'Départ',
+              latController: _startLatController,
+              lngController: _startLngController,
+            ),
             const SizedBox(height: 12),
-            _buildInput(LucideIcons.navigation, 'Arrivée'),
+            _buildCoordinateRow(
+              icon: LucideIcons.navigation,
+              title: 'Arrivée',
+              latController: _endLatController,
+              lngController: _endLngController,
+            ),
             const Spacer(),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  final startLat = double.tryParse(_startLatController.text.trim());
+                  final startLng = double.tryParse(_startLngController.text.trim());
+                  final endLat = double.tryParse(_endLatController.text.trim());
+                  final endLng = double.tryParse(_endLngController.text.trim());
+
+                  if (startLat == null || startLng == null || endLat == null || endLng == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Veuillez entrer des coordonnées valides.')),
+                    );
+                    return;
+                  }
+
+                  final req = RouteRequest(
+                    startLat: startLat,
+                    startLng: startLng,
+                    endLat: endLat,
+                    endLng: endLng,
+                    profile: _profileToRoutingProfile(profile.type),
+                  );
+
+                  context.push('/simulation', extra: req);
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
@@ -61,7 +130,12 @@ class PlanningScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildInput(IconData icon, String hint) {
+  Widget _buildCoordinateRow({
+    required IconData icon,
+    required String title,
+    required TextEditingController latController,
+    required TextEditingController lngController,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -69,11 +143,44 @@ class PlanningScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey[200]!),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: Colors.blue),
-          const SizedBox(width: 12),
-          Text(hint, style: const TextStyle(color: Colors.grey)),
+          Row(
+            children: [
+              Icon(icon, size: 20, color: Colors.blue),
+              const SizedBox(width: 12),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: latController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Latitude',
+                    isDense: true,
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextField(
+                  controller: lngController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Longitude',
+                    isDense: true,
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

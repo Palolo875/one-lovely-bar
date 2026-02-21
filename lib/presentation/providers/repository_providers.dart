@@ -9,7 +9,16 @@ part 'repository_providers.g.dart';
 
 @riverpod
 Dio dio(DioRef ref) {
-  return Dio();
+  return Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 15),
+      sendTimeout: const Duration(seconds: 10),
+      headers: {
+        'accept': 'application/json',
+      },
+    ),
+  );
 }
 
 @riverpod

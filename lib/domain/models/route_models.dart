@@ -1,5 +1,4 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:latlong2/latlong.dart';
 import 'weather_condition.dart';
 
 part 'route_models.freezed.dart';

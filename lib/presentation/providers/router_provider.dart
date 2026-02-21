@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../screens/home_screen.dart';
 import '../screens/planning_screen.dart';
+import '../screens/route_simulation_screen.dart';
+import 'route_provider.dart';
 
 part 'router_provider.g.dart';
 
@@ -18,6 +20,13 @@ GoRouter router(RouterRef ref) {
       GoRoute(
         path: '/planning',
         builder: (context, state) => const PlanningScreen(),
+      ),
+      GoRoute(
+        path: '/simulation',
+        builder: (context, state) {
+          final request = state.extra is RouteRequest ? state.extra as RouteRequest : null;
+          return RouteSimulationScreen(request: request);
+        },
       ),
     ],
   );
