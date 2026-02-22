@@ -28,10 +28,15 @@ dependencies:
   json_annotation: ^4.11.0
   hive_ce: ^2.19.3
   hive_ce_flutter: ^2.3.4
-  path_provider: ^2.1.2
+  sentry_flutter: ^8.6.0
+  flutter_localizations:
+    sdk: flutter
+  # Structured storage (declared in tech doc). Requires build_runner when used.
   drift: ^2.16.0
-  sqlite3: ^2.4.0
+  drift_flutter: ^0.2.0
   sqlite3_flutter_libs: ^0.5.20
+  sqlite3: ^2.4.0
+  path_provider: ^2.1.2
 
 dev_dependencies:
   flutter_test:
@@ -42,6 +47,9 @@ dev_dependencies:
   json_serializable: ^6.13.0
   riverpod_generator: ^4.0.3
   hive_ce_generator: ^1.11.0
+  very_good_analysis: ^6.0.0
+  integration_test:
+    sdk: flutter
 
 flutter:
   uses-material-design: true
