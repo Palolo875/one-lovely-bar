@@ -8,6 +8,17 @@ class OverpassPoiRepository implements PoiRepository {
 
   OverpassPoiRepository(this._dio);
 
+  Map<String, dynamic>? _asMap(dynamic v) {
+    if (v is Map<String, dynamic>) return v;
+    if (v is Map) return Map<String, dynamic>.from(v);
+    return null;
+  }
+
+  List<dynamic>? _asList(dynamic v) {
+    if (v is List) return v;
+    return null;
+  }
+
   @override
   Future<List<Poi>> searchAround({
     required double lat,
@@ -36,24 +47,25 @@ class OverpassPoiRepository implements PoiRepository {
       throw AppFailure('Erreur inattendue lors du chargement des POIs.', cause: e);
     }
 
-    final data = response.data;
-    if (data is! Map<String, dynamic>) return const <Poi>[];
-    final elements = data['elements'];
-    if (elements is! List) return const <Poi>[];
+    final data = _asMap(response.data);
+    if (data == null) return const <Poi>[];
+    final elements = _asList(data['elements']);
+    if (elements == null) return const <Poi>[];
 
     final pois = <Poi>[];
     for (final el in elements) {
-      if (el is! Map<String, dynamic>) continue;
-      final type = el['type']?.toString();
-      final idRaw = el['id'];
-      final latRaw = el['lat'];
-      final lonRaw = el['lon'];
+      final em = _asMap(el);
+      if (em == null) continue;
+      final type = em['type']?.toString();
+      final idRaw = em['id'];
+      final latRaw = em['lat'];
+      final lonRaw = em['lon'];
       if (type == null || idRaw == null || latRaw is! num || lonRaw is! num) continue;
 
-      final tags = el['tags'];
-      if (tags is! Map) continue;
+      final tags = _asMap(em['tags']);
+      if (tags == null) continue;
 
-      final category = _categoryFromTags(Map<String, dynamic>.from(tags));
+      final category = _categoryFromTags(tags);
       if (category == null || !categories.contains(category)) continue;
 
       final name = (tags['name'] ?? tags['ref'] ?? 'POI')?.toString() ?? 'POI';

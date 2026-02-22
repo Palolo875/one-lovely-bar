@@ -3,6 +3,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter/widgets.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 
+import '../logging/app_logger.dart';
+import '../network/dio_factory.dart';
+
 class WorkmanagerTasks {
   static const weatherRefreshTask = 'weathernav_weather_refresh';
 }
@@ -18,12 +21,7 @@ void callbackDispatcher() {
     final settings = Hive.box('settings');
 
     // Best-effort refresh: we ping RainViewer and Open-Meteo for cached locations.
-    final dio = Dio(
-      BaseOptions(
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 15),
-      ),
-    );
+    final dio = createAppDio(enableLogging: false);
 
     if (task == WorkmanagerTasks.weatherRefreshTask) {
       try {
@@ -47,7 +45,9 @@ void callbackDispatcher() {
             }
           }
         }
-      } catch (_) {}
+      } catch (e, st) {
+        AppLogger.warn('Background refresh: RainViewer ping failed', name: 'background', error: e, stackTrace: st);
+      }
 
       final keys = settings.keys.map((k) => k.toString()).toList();
 
@@ -88,7 +88,9 @@ void callbackDispatcher() {
                 'data': payload,
               });
             }
-          } catch (_) {}
+          } catch (e, st) {
+            AppLogger.warn('Background refresh: Open-Meteo current update failed', name: 'background', error: e, stackTrace: st);
+          }
         }
 
         if (key.startsWith('wx_forecast:')) {
@@ -142,7 +144,9 @@ void callbackDispatcher() {
                 });
               }
             }
-          } catch (_) {}
+          } catch (e, st) {
+            AppLogger.warn('Background refresh: Open-Meteo forecast update failed', name: 'background', error: e, stackTrace: st);
+          }
         }
       }
     }

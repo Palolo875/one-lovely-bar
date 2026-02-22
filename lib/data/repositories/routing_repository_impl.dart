@@ -10,6 +10,22 @@ class ValhallaRoutingRepository implements RoutingRepository {
 
   ValhallaRoutingRepository(this._dio);
 
+  Map<String, dynamic>? _asMap(dynamic v) {
+    if (v is Map<String, dynamic>) return v;
+    if (v is Map) return Map<String, dynamic>.from(v);
+    return null;
+  }
+
+  List<dynamic>? _asList(dynamic v) {
+    if (v is List) return v;
+    return null;
+  }
+
+  double _asDouble(dynamic v, {double fallback = 0.0}) {
+    if (v is num) return v.toDouble();
+    return fallback;
+  }
+
   Map<String, dynamic> _buildRequestJson({
     required double startLat,
     required double startLng,
@@ -67,41 +83,47 @@ class ValhallaRoutingRepository implements RoutingRepository {
       throw AppFailure('Erreur inattendue lors du calcul de l’itinéraire.', cause: e);
     }
 
-    final data = response.data as Map<String, dynamic>;
-    final trip = (data['trip'] ?? const <String, dynamic>{}) as Map<String, dynamic>;
-    final summary = (trip['summary'] ?? const <String, dynamic>{}) as Map<String, dynamic>;
+    final parsed = () {
+      try {
+        final data = _asMap(response.data);
+        if (data == null) {
+          throw const FormatException('Invalid Valhalla response root');
+        }
 
-    final distanceKm = (summary['length'] is num)
-        ? (summary['length'] as num).toDouble()
-        : 0.0;
-    final durationSeconds = (summary['time'] is num)
-        ? (summary['time'] as num).toDouble()
-        : 0.0;
+        final trip = _asMap(data['trip']) ?? const <String, dynamic>{};
+        final summary = _asMap(trip['summary']) ?? const <String, dynamic>{};
 
-    final legs = (trip['legs'] is List) ? (trip['legs'] as List) : const [];
-    final leg0 = legs.isNotEmpty && legs.first is Map<String, dynamic>
-        ? legs.first as Map<String, dynamic>
-        : const <String, dynamic>{};
-    final shape = leg0['shape'] as String?;
+        final distanceKm = _asDouble(summary['length']);
+        final durationSeconds = _asDouble(summary['time']);
 
-    final decoded = shape == null
-        ? <RoutePoint>[
-            RoutePoint(latitude: startLat, longitude: startLng),
-            RoutePoint(latitude: endLat, longitude: endLng),
-          ]
-        : _decodeValhallaPolyline(shape);
+        final legs = _asList(trip['legs']) ?? const <dynamic>[];
+        final leg0 = legs.isNotEmpty ? _asMap(legs.first) : null;
+        final shape = leg0 == null ? null : leg0['shape']?.toString();
 
-    final points = decoded.isEmpty
-        ? <RoutePoint>[
-            RoutePoint(latitude: startLat, longitude: startLng),
-            RoutePoint(latitude: endLat, longitude: endLng),
-          ]
-        : decoded;
+        final decoded = shape == null
+            ? <RoutePoint>[
+                RoutePoint(latitude: startLat, longitude: startLng),
+                RoutePoint(latitude: endLat, longitude: endLng),
+              ]
+            : _decodeValhallaPolyline(shape);
+
+        final points = decoded.isEmpty
+            ? <RoutePoint>[
+                RoutePoint(latitude: startLat, longitude: startLng),
+                RoutePoint(latitude: endLat, longitude: endLng),
+              ]
+            : decoded;
+
+        return (points: points, distanceKm: distanceKm, durationSeconds: durationSeconds);
+      } catch (e) {
+        throw AppFailure('Réponse itinéraire invalide.', cause: e);
+      }
+    }();
 
     return RouteData(
-      points: points,
-      distanceKm: distanceKm,
-      durationMinutes: durationSeconds / 60.0,
+      points: parsed.points,
+      distanceKm: parsed.distanceKm,
+      durationMinutes: parsed.durationSeconds / 60.0,
       profile: profile,
     );
   }
@@ -133,23 +155,28 @@ class ValhallaRoutingRepository implements RoutingRepository {
       throw AppFailure('Erreur inattendue lors de la récupération des instructions.', cause: e);
     }
 
-    final data = response.data as Map<String, dynamic>;
-    final trip = (data['trip'] ?? const <String, dynamic>{}) as Map<String, dynamic>;
-    final legs = (trip['legs'] is List) ? (trip['legs'] as List) : const [];
+    final data = _asMap(response.data);
+    if (data == null) {
+      throw AppFailure('Réponse instructions invalide.', cause: const FormatException('Invalid Valhalla response root'));
+    }
+    final trip = _asMap(data['trip']) ?? const <String, dynamic>{};
+    final legs = _asList(trip['legs']) ?? const <dynamic>[];
 
     final instructions = <RouteInstruction>[];
     for (final leg in legs) {
-      if (leg is! Map<String, dynamic>) continue;
-      final maneuvers = leg['maneuvers'];
-      if (maneuvers is! List) continue;
+      final legMap = _asMap(leg);
+      if (legMap == null) continue;
+      final maneuvers = _asList(legMap['maneuvers']);
+      if (maneuvers == null) continue;
 
       for (final m in maneuvers) {
-        if (m is! Map<String, dynamic>) continue;
-        final instr = m['instruction']?.toString();
+        final mm = _asMap(m);
+        if (mm == null) continue;
+        final instr = mm['instruction']?.toString();
         if (instr == null || instr.trim().isEmpty) continue;
 
-        final len = m['length'];
-        final time = m['time'];
+        final len = mm['length'];
+        final time = mm['time'];
 
         instructions.add(
           RouteInstruction(

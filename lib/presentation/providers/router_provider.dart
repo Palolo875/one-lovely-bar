@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../screens/home_screen.dart';
 import '../screens/itinerary_screen.dart';
@@ -13,17 +12,25 @@ import '../screens/history_screen.dart';
 import '../screens/profile_screen.dart';
 import '../widgets/app_shell.dart';
 import 'route_provider.dart';
+import 'settings_provider.dart';
 
 part 'router_provider.g.dart';
 
 @riverpod
 GoRouter router(RouterRef ref) {
-  final settings = Hive.box('settings');
+  final refresh = ValueNotifier<int>(0);
+  ref.onDispose(refresh.dispose);
+
+  ref.listen<bool>(onboardingCompletedProvider, (prev, next) {
+    if (prev == next) return;
+    refresh.value++;
+  });
 
   return GoRouter(
     initialLocation: '/',
+    refreshListenable: refresh,
     redirect: (context, state) {
-      final completed = settings.get('onboarding_completed', defaultValue: false) == true;
+      final completed = ref.read(onboardingCompletedProvider);
       final isOnboarding = state.matchedLocation == '/onboarding';
 
       if (!completed && !isOnboarding) return '/onboarding';

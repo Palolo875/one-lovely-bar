@@ -1,7 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive_ce/hive.dart';
 import '../../domain/models/user_profile.dart';
+import '../../domain/repositories/settings_repository.dart';
 import 'profile_provider.dart';
+import 'settings_repository_provider.dart';
 
 enum WeatherLayer {
   radar,
@@ -26,7 +27,7 @@ class WeatherLayersState {
 }
 
 class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
-  final Box _settings;
+  final SettingsRepository _settings;
 
   WeatherLayersNotifier(this._settings, Set<WeatherLayer> initial)
       : super(
@@ -134,8 +135,8 @@ class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
     return out;
   }
 
-  static List<WeatherLayer> _loadOrder(Box settings, Set<WeatherLayer> enabled) {
-    final raw = settings.get(_orderKey);
+  static List<WeatherLayer> _loadOrder(SettingsRepository settings, Set<WeatherLayer> enabled) {
+    final raw = settings.get<dynamic>(_orderKey);
     if (raw is List) {
       final out = <WeatherLayer>[];
       for (final v in raw) {
@@ -148,8 +149,8 @@ class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
     return _normalizeOrder(WeatherLayer.values.toList(), enabled);
   }
 
-  static Map<WeatherLayer, double> _loadOpacity(Box settings) {
-    final raw = settings.get(_opacityKey);
+  static Map<WeatherLayer, double> _loadOpacity(SettingsRepository settings) {
+    final raw = settings.get<dynamic>(_opacityKey);
     if (raw is Map) {
       final out = <WeatherLayer, double>{};
       for (final entry in raw.entries) {
@@ -172,8 +173,8 @@ class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
     };
   }
 
-  static Set<WeatherLayer> load(Box settings, UserProfile profile) {
-    final raw = settings.get(_key);
+  static Set<WeatherLayer> load(SettingsRepository settings, UserProfile profile) {
+    final raw = settings.get<dynamic>(_key);
     if (raw is List) {
       final enabled = <WeatherLayer>{};
       for (final v in raw) {
@@ -206,7 +207,7 @@ class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
 }
 
 final weatherLayersProvider = StateNotifierProvider.autoDispose<WeatherLayersNotifier, WeatherLayersState>((ref) {
-  final settings = Hive.box('settings');
+  final settings = ref.watch(settingsRepositoryProvider);
   final profile = ref.watch(profileNotifierProvider);
   final initial = WeatherLayersNotifier.load(settings, profile);
   return WeatherLayersNotifier(settings, initial);

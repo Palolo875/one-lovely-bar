@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive_ce/hive.dart';
+
+import '../../domain/repositories/settings_repository.dart';
+import 'settings_repository_provider.dart';
 
 enum MapStyleSource {
   openFreeMap,
@@ -29,17 +31,17 @@ class MapStyleState {
 }
 
 class MapStyleNotifier extends StateNotifier<MapStyleState> {
-  final Box _box;
+  final SettingsRepository _settings;
 
-  MapStyleNotifier(this._box)
+  MapStyleNotifier(this._settings)
       : super(
-          MapStyleState(source: _read(_box)),
+          MapStyleState(source: _read(_settings)),
         );
 
   static const _key = 'map_style_source';
 
-  static MapStyleSource _read(Box box) {
-    final raw = box.get(_key, defaultValue: 'openfreemap');
+  static MapStyleSource _read(SettingsRepository settings) {
+    final raw = settings.getOrDefault<String>(_key, 'openfreemap');
     if (raw == 'carto') return MapStyleSource.cartoPositron;
     if (raw == 'stamen') return MapStyleSource.stamenToner;
     return MapStyleSource.openFreeMap;
@@ -47,7 +49,7 @@ class MapStyleNotifier extends StateNotifier<MapStyleState> {
 
   void setSource(MapStyleSource src) {
     state = state.copyWith(source: src);
-    _box.put(
+    _settings.put(
       _key,
       switch (src) {
         MapStyleSource.cartoPositron => 'carto',
@@ -59,6 +61,6 @@ class MapStyleNotifier extends StateNotifier<MapStyleState> {
 }
 
 final mapStyleProvider = StateNotifierProvider.autoDispose<MapStyleNotifier, MapStyleState>((ref) {
-  final box = Hive.box('settings');
-  return MapStyleNotifier(box);
+  final settings = ref.watch(settingsRepositoryProvider);
+  return MapStyleNotifier(settings);
 });

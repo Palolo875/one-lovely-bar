@@ -1,10 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive_ce/hive.dart';
 import '../../data/repositories/poi_repository_impl.dart';
 import '../../domain/models/poi.dart';
 import '../../domain/repositories/poi_repository.dart';
 import '../../domain/failures/app_failure.dart';
+import '../../domain/repositories/settings_repository.dart';
 import 'repository_providers.dart';
+import 'settings_repository_provider.dart';
 
 class PoiRequest {
   final double lat;
@@ -55,7 +56,8 @@ final poiRepositoryProvider = Provider.autoDispose<PoiRepository>((ref) {
 final poiSearchProvider = FutureProvider.autoDispose.family<List<Poi>, PoiRequest>((ref, req) async {
   final repo = ref.watch(poiRepositoryProvider);
 
-  final settings = Hive.box('settings');
+  final SettingsRepository settings = ref.watch(settingsRepositoryProvider);
+
   const ttl = Duration(minutes: 10);
 
   String cacheKey() {
@@ -64,7 +66,7 @@ final poiSearchProvider = FutureProvider.autoDispose.family<List<Poi>, PoiReques
   }
 
   List<Poi>? readCache({required bool freshOnly}) {
-    final raw = settings.get(cacheKey());
+    final raw = settings.get<dynamic>(cacheKey());
     if (raw is! Map) return null;
     final ts = raw['ts'];
     final data = raw['data'];

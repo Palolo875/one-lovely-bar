@@ -12,6 +12,17 @@ class RainViewerRepositoryImpl implements RainViewerRepository {
   static const _ttl = Duration(minutes: 5);
   static const _key = 'rainviewer_latest_time';
 
+  Map<String, dynamic>? _asMap(dynamic v) {
+    if (v is Map<String, dynamic>) return v;
+    if (v is Map) return Map<String, dynamic>.from(v);
+    return null;
+  }
+
+  List<dynamic>? _asList(dynamic v) {
+    if (v is List) return v;
+    return null;
+  }
+
   @override
   Future<int?> getLatestRadarTime() async {
     final cached = _readCache(freshOnly: true);
@@ -30,15 +41,15 @@ class RainViewerRepositoryImpl implements RainViewerRepository {
       throw AppFailure('Erreur inattendue lors de la récupération du radar pluie.', cause: e);
     }
 
-    final data = response.data;
-    if (data is! Map<String, dynamic>) return null;
-    final radar = data['radar'];
-    if (radar is! Map<String, dynamic>) return null;
-    final past = radar['past'];
-    if (past is! List || past.isEmpty) return null;
+    final data = _asMap(response.data);
+    if (data == null) return null;
+    final radar = _asMap(data['radar']);
+    if (radar == null) return null;
+    final past = _asList(radar['past']);
+    if (past == null || past.isEmpty) return null;
 
-    final last = past.last;
-    if (last is! Map<String, dynamic>) return null;
+    final last = _asMap(past.last);
+    if (last == null) return null;
     final time = last['time'];
     if (time is! num) return null;
 

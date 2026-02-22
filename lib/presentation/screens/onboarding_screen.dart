@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../domain/models/user_profile.dart';
 import '../providers/profile_provider.dart';
+import '../providers/settings_repository_provider.dart';
+import '../providers/settings_provider.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -20,7 +21,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   ProfileType? _selectedProfile;
   bool _requestingPermissions = false;
 
-  static const _completedKey = 'onboarding_completed';
   static const _profileKey = 'primary_profile_type';
 
   @override
@@ -30,15 +30,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Future<void> _setCompletedAndExit() async {
-    final box = Hive.box('settings');
-    await box.put(_completedKey, true);
+    await ref.read(onboardingCompletedProvider.notifier).setCompleted(true);
     if (!mounted) return;
     context.go('/');
   }
 
   Future<void> _persistProfile(ProfileType type) async {
-    final box = Hive.box('settings');
-    await box.put(_profileKey, type.name);
+    final settings = ref.read(settingsRepositoryProvider);
+    await settings.put(_profileKey, type.name);
   }
 
   Future<void> _next() async {

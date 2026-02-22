@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive_ce/hive.dart';
+
+import '../../domain/repositories/settings_repository.dart';
+import 'settings_repository_provider.dart';
 
 class AlertThresholdsState {
   final Map<String, double> values;
@@ -12,19 +14,19 @@ class AlertThresholdsState {
 }
 
 class AlertThresholdsNotifier extends StateNotifier<AlertThresholdsState> {
-  final Box _box;
+  final SettingsRepository _settings;
 
-  AlertThresholdsNotifier(this._box)
+  AlertThresholdsNotifier(this._settings)
       : super(
           AlertThresholdsState(
-            values: _read(_box),
+            values: _read(_settings),
           ),
         );
 
   static const _key = 'alert_thresholds';
 
-  static Map<String, double> _read(Box box) {
-    final raw = box.get(_key);
+  static Map<String, double> _read(SettingsRepository settings) {
+    final raw = settings.get<dynamic>(_key);
     if (raw is Map) {
       final out = <String, double>{};
       for (final e in raw.entries) {
@@ -49,16 +51,16 @@ class AlertThresholdsNotifier extends StateNotifier<AlertThresholdsState> {
     final next = Map<String, double>.from(state.values);
     next[key] = value;
     state = state.copyWith(values: next);
-    _box.put(_key, next);
+    _settings.put(_key, next);
   }
 
   void resetDefaults() {
-    _box.delete(_key);
-    state = state.copyWith(values: _read(_box));
+    _settings.delete(_key);
+    state = state.copyWith(values: _read(_settings));
   }
 }
 
 final alertThresholdsProvider = StateNotifierProvider.autoDispose<AlertThresholdsNotifier, AlertThresholdsState>((ref) {
-  final box = Hive.box('settings');
-  return AlertThresholdsNotifier(box);
+  final settings = ref.watch(settingsRepositoryProvider);
+  return AlertThresholdsNotifier(settings);
 });

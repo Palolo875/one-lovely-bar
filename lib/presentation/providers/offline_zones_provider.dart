@@ -1,6 +1,8 @@
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive_ce/hive.dart';
+
+import '../../domain/repositories/settings_repository.dart';
+import 'settings_repository_provider.dart';
 
 class OfflineZone {
   final String id;
@@ -54,14 +56,14 @@ class OfflineZone {
 }
 
 class OfflineZonesNotifier extends StateNotifier<List<OfflineZone>> {
-  final Box _box;
+  final SettingsRepository _settings;
 
-  OfflineZonesNotifier(this._box) : super(_read(_box));
+  OfflineZonesNotifier(this._settings) : super(_read(_settings));
 
   static const _key = 'offline_zones';
 
-  static List<OfflineZone> _read(Box box) {
-    final raw = box.get(_key);
+  static List<OfflineZone> _read(SettingsRepository settings) {
+    final raw = settings.get<dynamic>(_key);
     if (raw is List) {
       final out = <OfflineZone>[];
       for (final r in raw) {
@@ -74,7 +76,7 @@ class OfflineZonesNotifier extends StateNotifier<List<OfflineZone>> {
   }
 
   void _persist(List<OfflineZone> list) {
-    _box.put(_key, list.map((z) => z.toMap()).toList());
+    _settings.put(_key, list.map((z) => z.toMap()).toList());
   }
 
   void add({required String name, required double lat, required double lng, required double radiusKm}) {
@@ -102,6 +104,6 @@ class OfflineZonesNotifier extends StateNotifier<List<OfflineZone>> {
 }
 
 final offlineZonesProvider = StateNotifierProvider.autoDispose<OfflineZonesNotifier, List<OfflineZone>>((ref) {
-  final box = Hive.box('settings');
-  return OfflineZonesNotifier(box);
+  final settings = ref.watch(settingsRepositoryProvider);
+  return OfflineZonesNotifier(settings);
 });

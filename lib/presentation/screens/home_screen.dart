@@ -6,7 +6,6 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'dart:async';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:hive_ce/hive.dart';
 import '../../domain/models/weather_condition.dart';
 import '../../domain/models/user_profile.dart';
 import '../../domain/models/poi.dart';
@@ -19,6 +18,7 @@ import '../providers/weather_layers_provider.dart';
 import '../providers/poi_provider.dart';
 import '../providers/weather_grid_provider.dart';
 import '../providers/map_style_provider.dart';
+import '../providers/settings_repository_provider.dart';
 import '../widgets/profile_switcher.dart';
 import '../widgets/weather_timeline.dart';
 
@@ -1031,8 +1031,8 @@ class _PersistentWeatherSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     DateTime? cachedAt;
     try {
-      final box = Hive.box('settings');
-      final raw = box.get('wx_current:48.857,2.352');
+      final settings = ref.read(settingsRepositoryProvider);
+      final raw = settings.get<dynamic>('wx_current:48.857,2.352');
       if (raw is Map && raw['ts'] is int) {
         cachedAt = DateTime.fromMillisecondsSinceEpoch(raw['ts'] as int);
       }

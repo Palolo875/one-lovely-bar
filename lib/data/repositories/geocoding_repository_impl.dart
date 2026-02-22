@@ -8,6 +8,17 @@ class PhotonGeocodingRepository implements GeocodingRepository {
 
   PhotonGeocodingRepository(this._dio);
 
+  Map<String, dynamic>? _asMap(dynamic v) {
+    if (v is Map<String, dynamic>) return v;
+    if (v is Map) return Map<String, dynamic>.from(v);
+    return null;
+  }
+
+  List<dynamic>? _asList(dynamic v) {
+    if (v is List) return v;
+    return null;
+  }
+
   @override
   Future<List<PlaceSuggestion>> search(String query, {int limit = 8}) async {
     if (query.trim().isEmpty) return const <PlaceSuggestion>[];
@@ -27,20 +38,21 @@ class PhotonGeocodingRepository implements GeocodingRepository {
       throw AppFailure('Erreur inattendue lors de la recherche de lieu.', cause: e);
     }
 
-    final data = response.data;
-    if (data is! Map<String, dynamic>) return const <PlaceSuggestion>[];
-    final features = data['features'];
-    if (features is! List) return const <PlaceSuggestion>[];
+    final data = _asMap(response.data);
+    if (data == null) return const <PlaceSuggestion>[];
+    final features = _asList(data['features']);
+    if (features == null) return const <PlaceSuggestion>[];
 
     final results = <PlaceSuggestion>[];
     for (final f in features) {
-      if (f is! Map<String, dynamic>) continue;
-      final geometry = f['geometry'];
-      final properties = f['properties'];
-      if (geometry is! Map<String, dynamic> || properties is! Map<String, dynamic>) continue;
+      final fm = _asMap(f);
+      if (fm == null) continue;
+      final geometry = _asMap(fm['geometry']);
+      final properties = _asMap(fm['properties']);
+      if (geometry == null || properties == null) continue;
 
-      final coords = geometry['coordinates'];
-      if (coords is! List || coords.length < 2) continue;
+      final coords = _asList(geometry['coordinates']);
+      if (coords == null || coords.length < 2) continue;
 
       final lon = coords[0];
       final lat = coords[1];

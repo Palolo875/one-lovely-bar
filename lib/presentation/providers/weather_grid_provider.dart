@@ -1,9 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive_ce/hive.dart';
 import '../../domain/models/grid_point_weather.dart';
 import '../../domain/usecases/get_weather_grid.dart';
 import '../../domain/failures/app_failure.dart';
+import '../../domain/repositories/settings_repository.dart';
 import 'repository_providers.dart';
+import 'settings_repository_provider.dart';
 
 class WeatherGridRequest {
   final double centerLat;
@@ -34,12 +35,13 @@ class WeatherGridRequest {
 final weatherGridProvider = FutureProvider.autoDispose.family<List<GridPointWeather>, WeatherGridRequest>((ref, req) async {
   final repo = ref.watch(weatherRepositoryProvider);
 
-  final settings = Hive.box('settings');
+  final SettingsRepository settings = ref.watch(settingsRepositoryProvider);
+
   const ttl = Duration(minutes: 5);
   final key = 'wx_grid:${req.centerLat.toStringAsFixed(3)},${req.centerLng.toStringAsFixed(3)}:${req.gridSize}:${req.stepDegrees.toStringAsFixed(3)}';
 
   List<GridPointWeather>? readCache({required bool freshOnly}) {
-    final raw = settings.get(key);
+    final raw = settings.get<dynamic>(key);
     if (raw is! Map) return null;
     final ts = raw['ts'];
     final data = raw['data'];
