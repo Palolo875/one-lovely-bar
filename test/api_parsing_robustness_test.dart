@@ -45,8 +45,8 @@ void main() {
 
     final repo = OverpassPoiRepository(dio);
     final result = await repo.searchAround(
-      lat: 48.0,
-      lng: 2.0,
+      lat: 48,
+      lng: 2,
       radiusMeters: 1000,
       categories: {PoiCategory.shelter},
     );
@@ -78,8 +78,8 @@ void main() {
 
     expect(
       () => repo.getRoute(
-        startLat: 48.0,
-        startLng: 2.0,
+        startLat: 48,
+        startLng: 2,
         endLat: 48.1,
         endLng: 2.1,
         profile: 'driver',

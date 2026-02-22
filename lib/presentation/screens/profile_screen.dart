@@ -3,12 +3,12 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:geolocator/geolocator.dart';
-import '../providers/alert_thresholds_provider.dart';
-import '../providers/offline_zones_provider.dart';
-import '../providers/settings_provider.dart';
-import '../providers/weather_layers_provider.dart';
-import '../providers/profile_provider.dart';
-import '../providers/map_style_provider.dart';
+import 'package:weathernav/presentation/providers/alert_thresholds_provider.dart';
+import 'package:weathernav/presentation/providers/offline_zones_provider.dart';
+import 'package:weathernav/presentation/providers/settings_provider.dart';
+import 'package:weathernav/presentation/providers/weather_layers_provider.dart';
+import 'package:weathernav/presentation/providers/profile_provider.dart';
+import 'package:weathernav/presentation/providers/map_style_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -238,10 +238,10 @@ class ProfileScreen extends ConsumerWidget {
                           Expanded(
                             child: Slider(
                               value: (layers.opacity[WeatherLayer.radar] ?? 0.65).clamp(0.0, 1.0),
-                              min: 0.0,
+                              min: 0,
                               max: WeatherLayersNotifier.maxOpacity,
                               divisions: 10,
-                              label: '${(((layers.opacity[WeatherLayer.radar] ?? 0.65) * 100).round())}%',
+                              label: '${((layers.opacity[WeatherLayer.radar] ?? 0.65) * 100).round()}%',
                               onChanged: (v) => layersNotifier.setOpacity(WeatherLayer.radar, v),
                             ),
                           ),
@@ -453,11 +453,6 @@ class _ProfilePickerSheet extends ConsumerWidget {
 }
 
 class _ThresholdSlider extends StatelessWidget {
-  final String title;
-  final double value;
-  final double min;
-  final double max;
-  final ValueChanged<double> onChanged;
 
   const _ThresholdSlider({
     required this.title,
@@ -466,6 +461,11 @@ class _ThresholdSlider extends StatelessWidget {
     required this.max,
     required this.onChanged,
   });
+  final String title;
+  final double value;
+  final double min;
+  final double max;
+  final ValueChanged<double> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -494,18 +494,18 @@ class _ThresholdSlider extends StatelessWidget {
 }
 
 class OfflineZoneCreateRequest {
+
+  const OfflineZoneCreateRequest({required this.name, required this.lat, required this.lng, required this.radiusKm});
   final String name;
   final double lat;
   final double lng;
   final double radiusKm;
-
-  const OfflineZoneCreateRequest({required this.name, required this.lat, required this.lng, required this.radiusKm});
 }
 
 class _InitialPos {
+  const _InitialPos(this.lat, this.lng);
   final double lat;
   final double lng;
-  const _InitialPos(this.lat, this.lng);
 }
 
 Future<_InitialPos?> _bestEffortCurrentPosition() async {
@@ -525,8 +525,8 @@ Future<_InitialPos?> _bestEffortCurrentPosition() async {
 }
 
 class _AddOfflineZoneSheet extends StatefulWidget {
-  final _InitialPos? initial;
   const _AddOfflineZoneSheet({required this.initial});
+  final _InitialPos? initial;
 
   @override
   State<_AddOfflineZoneSheet> createState() => _AddOfflineZoneSheetState();

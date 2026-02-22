@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import '../providers/profile_provider.dart';
-import '../providers/route_provider.dart';
-import '../../domain/models/place_suggestion.dart';
+import 'package:weathernav/presentation/providers/profile_provider.dart';
+import 'package:weathernav/presentation/providers/route_provider.dart';
+import 'package:weathernav/domain/models/place_suggestion.dart';
 
 class PlanningScreen extends ConsumerStatefulWidget {
   const PlanningScreen({super.key});
@@ -53,7 +53,7 @@ class _PlanningScreenState extends ConsumerState<PlanningScreen> {
         elevation: 0,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

@@ -6,21 +6,22 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'dart:async';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
-import '../../domain/models/weather_condition.dart';
-import '../../domain/models/user_profile.dart';
-import '../../domain/models/poi.dart';
-import '../../domain/failures/app_failure.dart';
-import '../providers/profile_provider.dart';
-import '../providers/current_weather_provider.dart';
-import '../providers/forecast_provider.dart';
-import '../providers/rainviewer_provider.dart';
-import '../providers/weather_layers_provider.dart';
-import '../providers/poi_provider.dart';
-import '../providers/weather_grid_provider.dart';
-import '../providers/map_style_provider.dart';
-import '../providers/settings_repository_provider.dart';
-import '../widgets/profile_switcher.dart';
-import '../widgets/weather_timeline.dart';
+import 'package:weathernav/domain/models/weather_condition.dart';
+import 'package:weathernav/domain/models/user_profile.dart';
+import 'package:weathernav/domain/models/poi.dart';
+import 'package:weathernav/domain/failures/app_failure.dart';
+import 'package:weathernav/presentation/providers/profile_provider.dart';
+import 'package:weathernav/presentation/providers/current_weather_provider.dart';
+import 'package:weathernav/presentation/providers/forecast_provider.dart';
+import 'package:weathernav/presentation/providers/rainviewer_provider.dart';
+import 'package:weathernav/presentation/providers/weather_layers_provider.dart';
+import 'package:weathernav/presentation/providers/poi_provider.dart';
+import 'package:weathernav/presentation/providers/weather_grid_provider.dart';
+import 'package:weathernav/presentation/providers/map_style_provider.dart';
+import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
+import 'package:weathernav/presentation/widgets/profile_switcher.dart';
+import 'package:weathernav/presentation/widgets/weather_timeline.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -160,7 +161,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             geometry: LatLng(g.latitude, g.longitude),
             iconImage: showWind ? 'triangle-15' : 'marker-15',
             iconRotate: rotate,
-            iconSize: 1.0,
+            iconSize: 1,
             textField: text.isEmpty ? null : text,
             textSize: 11,
             textOffset: const Offset(0, 1.2),
@@ -260,7 +261,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       currentWeatherProvider(LatLngRequest(lat: center.latitude, lng: center.longitude)),
     );
     final forecastAsync = ref.watch(
-      forecastProvider(ForecastRequest(lat: center.latitude, lng: center.longitude, days: 7)),
+      forecastProvider(ForecastRequest(lat: center.latitude, lng: center.longitude)),
     );
 
     final layers = ref.watch(weatherLayersProvider);
@@ -329,7 +330,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             onCameraIdle: _onCameraIdle,
             initialCameraPosition: const CameraPosition(
               target: LatLng(48.8566, 2.3522), // Paris
-              zoom: 12.0,
+              zoom: 12,
             ),
             styleString: mapStyle.styleUrl,
             myLocationEnabled: true,
@@ -385,10 +386,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       const Icon(LucideIcons.search, color: Colors.grey),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'Où allez-vous ?',
-                          style: TextStyle(color: Colors.grey, fontSize: 16),
+                          AppLocalizations.of(context)!.searchDestination,
+                          style: const TextStyle(color: Colors.grey, fontSize: 16),
                         ),
                       ),
                       GestureDetector(
@@ -496,9 +497,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             WeatherTimeline(
               conditions: List.generate(10, (i) => WeatherCondition(
                 temperature: 18.0 + i,
-                precipitation: 0.0,
+                precipitation: 0,
                 windSpeed: 10.0 + i,
-                windDirection: 0.0,
+                windDirection: 0,
                 weatherCode: i % 3 == 0 ? 0 : (i % 3 == 1 ? 2 : 61),
                 timestamp: DateTime.now().add(Duration(minutes: i * 30)),
               )),
@@ -516,7 +517,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _showLayersSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: false,
       builder: (context) {
         return Consumer(
           builder: (context, ref, _) {
@@ -559,10 +559,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           Expanded(
                             child: Slider(
                               value: (layers.opacity[WeatherLayer.radar] ?? 0.65).clamp(0.0, 1.0),
-                              min: 0.0,
-                              max: 1.0,
+                              min: 0,
                               divisions: 10,
-                              label: '${(((layers.opacity[WeatherLayer.radar] ?? 0.65) * 100).round())}%',
+                              label: '${((layers.opacity[WeatherLayer.radar] ?? 0.65) * 100).round()}%',
                               onChanged: (v) => notifier.setOpacity(WeatherLayer.radar, v),
                             ),
                           ),
@@ -600,7 +599,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _showPoiSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: false,
       builder: (context) {
         return Consumer(
           builder: (context, ref, _) {
@@ -682,10 +680,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 }
 
 class _BottomWeatherIndicator extends StatelessWidget {
-  final AsyncValue<WeatherCondition> weather;
-  final DateTime? cachedAt;
 
   const _BottomWeatherIndicator({required this.weather, required this.cachedAt});
+  final AsyncValue<WeatherCondition> weather;
+  final DateTime? cachedAt;
 
   @override
   Widget build(BuildContext context) {
@@ -702,7 +700,7 @@ class _BottomWeatherIndicator extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Paris', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                const Text('Paris', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                 if (cacheText != null) Text(cacheText, style: const TextStyle(color: Colors.grey, fontSize: 12)),
               ],
             ),
@@ -775,10 +773,10 @@ class _BottomWeatherIndicator extends StatelessWidget {
 }
 
 class _ActiveLayerChips extends StatelessWidget {
-  final WeatherLayersState layers;
-  final void Function(WeatherLayer layer) onToggle;
 
   const _ActiveLayerChips({required this.layers, required this.onToggle});
+  final WeatherLayersState layers;
+  final void Function(WeatherLayer layer) onToggle;
 
   String _label(WeatherLayer l) {
     switch (l) {
@@ -830,23 +828,23 @@ class _ActiveLayerChips extends StatelessWidget {
 }
 
 class _WeatherMetricsRow extends StatelessWidget {
-  final AsyncValue<WeatherCondition> currentWeather;
-  final AsyncValue<List<WeatherCondition>> forecast;
-  final Widget Function(BuildContext context, String label, String value) metricTile;
 
   const _WeatherMetricsRow({
     required this.currentWeather,
     required this.forecast,
     required this.metricTile,
   });
+  final AsyncValue<WeatherCondition> currentWeather;
+  final AsyncValue<List<WeatherCondition>> forecast;
+  final Widget Function(BuildContext context, String label, String value) metricTile;
 
   WeatherCondition? _nearestForecast(List<WeatherCondition> list) {
     if (list.isEmpty) return null;
     final now = DateTime.now();
-    WeatherCondition best = list.first;
-    int bestDelta = (best.timestamp.difference(now).inMinutes).abs();
+    var best = list.first;
+    var bestDelta = best.timestamp.difference(now).inMinutes.abs();
     for (final e in list) {
-      final d = (e.timestamp.difference(now).inMinutes).abs();
+      final d = e.timestamp.difference(now).inMinutes.abs();
       if (d < bestDelta) {
         best = e;
         bestDelta = d;
@@ -947,15 +945,15 @@ class _WeatherMetricsRow extends StatelessWidget {
 }
 
 class _PersistentWeatherSheet extends StatelessWidget {
-  final AsyncValue<WeatherCondition> currentWeather;
-  final AsyncValue<List<WeatherCondition>> forecast;
-  final UserProfile profile;
 
   const _PersistentWeatherSheet({
     required this.currentWeather,
     required this.forecast,
     required this.profile,
   });
+  final AsyncValue<WeatherCondition> currentWeather;
+  final AsyncValue<List<WeatherCondition>> forecast;
+  final UserProfile profile;
 
   String _hhmm(DateTime dt) {
     final h = dt.hour.toString().padLeft(2, '0');
@@ -1105,7 +1103,7 @@ class _PersistentWeatherSheet extends StatelessWidget {
                         Padding(
                           padding: const EdgeInsets.only(left: 10, top: 2),
                           child: Text(
-                            'Cache: ${_hhmm(cachedAt!)}',
+                            'Cache: ${_hhmm(cachedAt)}',
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
                           ),
                         ),

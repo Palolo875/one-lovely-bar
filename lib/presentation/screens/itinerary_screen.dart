@@ -5,18 +5,18 @@ import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import '../../domain/failures/app_failure.dart';
-import '../../domain/models/place_suggestion.dart';
-import '../../domain/models/route_models.dart';
-import '../../domain/models/user_profile.dart';
-import '../../domain/usecases/export_route_to_gpx.dart';
-import '../providers/profile_provider.dart';
-import '../providers/route_provider.dart';
-import '../providers/route_alerts_provider.dart';
-import '../providers/trip_history_provider.dart';
-import '../providers/weather_timeline_eta_provider.dart';
-import '../providers/map_style_provider.dart';
-import '../widgets/weather_timeline.dart';
+import 'package:weathernav/domain/failures/app_failure.dart';
+import 'package:weathernav/domain/models/place_suggestion.dart';
+import 'package:weathernav/domain/models/route_models.dart';
+import 'package:weathernav/domain/models/user_profile.dart';
+import 'package:weathernav/domain/usecases/export_route_to_gpx.dart';
+import 'package:weathernav/presentation/providers/profile_provider.dart';
+import 'package:weathernav/presentation/providers/route_provider.dart';
+import 'package:weathernav/presentation/providers/route_alerts_provider.dart';
+import 'package:weathernav/presentation/providers/trip_history_provider.dart';
+import 'package:weathernav/presentation/providers/weather_timeline_eta_provider.dart';
+import 'package:weathernav/presentation/providers/map_style_provider.dart';
+import 'package:weathernav/presentation/widgets/weather_timeline.dart';
 
 class ItineraryScreen extends ConsumerStatefulWidget {
   const ItineraryScreen({super.key});
@@ -131,7 +131,7 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
           LineOptions(
             geometry: route.points.map((p) => LatLng(p.latitude, p.longitude)).toList(),
             lineColor: '#2563EB',
-            lineWidth: 5.0,
+            lineWidth: 5,
             lineOpacity: 0.85,
           ),
         );
@@ -162,16 +162,16 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
 
     final routeReq = canCompute
         ? RouteRequest(
-            startLat: startLat!,
-            startLng: startLng!,
-            endLat: endLat!,
-            endLng: endLng!,
+            startLat: startLat,
+            startLng: startLng,
+            endLat: endLat,
+            endLng: endLng,
             profile: _profileToRoutingProfile(profile.type),
             departureTime: _effectiveDeparture(),
           )
         : null;
 
-    final AsyncValue<RouteData>? routeAsync = routeReq == null ? null : ref.watch(routeProvider(routeReq));
+    final routeAsync = routeReq == null ? null : ref.watch(routeProvider(routeReq));
 
     return Scaffold(
       appBar: AppBar(
@@ -195,18 +195,13 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
                 initialCameraPosition: const CameraPosition(target: LatLng(48.8566, 2.3522), zoom: 10.5),
                 styleString: mapStyle.styleUrl,
                 myLocationEnabled: true,
-                trackCameraPosition: false,
                 rotateGesturesEnabled: false,
                 tiltGesturesEnabled: false,
-                zoomGesturesEnabled: true,
-                scrollGesturesEnabled: true,
               ),
             ),
           ),
           const SizedBox(height: 12),
-          routeReq == null || routeAsync == null
-              ? const Text('Renseignez un départ et une arrivée pour calculer un itinéraire.')
-              : routeAsync.when(
+          if (routeReq == null || routeAsync == null) const Text('Renseignez un départ et une arrivée pour calculer un itinéraire.') else routeAsync.when(
                   data: (route) {
                     _drawRoute(route);
 

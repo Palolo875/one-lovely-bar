@@ -1,11 +1,11 @@
-import '../models/route_models.dart';
-import '../models/weather_condition.dart';
-import '../repositories/weather_repository.dart';
+import 'package:weathernav/domain/models/route_models.dart';
+import 'package:weathernav/domain/models/weather_condition.dart';
+import 'package:weathernav/domain/repositories/weather_repository.dart';
 
 class GetWeatherTimelineForRouteEta {
-  final WeatherRepository _repository;
 
   const GetWeatherTimelineForRouteEta(this._repository);
+  final WeatherRepository _repository;
 
   Future<List<WeatherCondition>> call({
     required RouteData route,
@@ -19,7 +19,7 @@ class GetWeatherTimelineForRouteEta {
     );
 
     final futures = <Future<WeatherCondition>>[];
-    for (int i = 0; i < sampled.length; i++) {
+    for (var i = 0; i < sampled.length; i++) {
       final fraction = sampled.length == 1 ? 0.0 : (i / (sampled.length - 1));
       final eta = departureTime.add(Duration(seconds: (duration.inSeconds * fraction).round()));
       futures.add(_getNearestHourly(sampled[i], eta));
@@ -36,11 +36,11 @@ class GetWeatherTimelineForRouteEta {
       return _repository.getCurrentWeather(point.latitude, point.longitude);
     }
 
-    WeatherCondition best = forecast.first;
-    var bestDiff = (best.timestamp.difference(target)).abs();
+    var best = forecast.first;
+    var bestDiff = best.timestamp.difference(target).abs();
 
     for (final c in forecast) {
-      final diff = (c.timestamp.difference(target)).abs();
+      final diff = c.timestamp.difference(target).abs();
       if (diff < bestDiff) {
         best = c;
         bestDiff = diff;
@@ -55,7 +55,7 @@ class GetWeatherTimelineForRouteEta {
     if (points.length <= 5) return List<RoutePoint>.from(points);
 
     final sampled = <RoutePoint>[];
-    for (int i = 0; i < 5; i++) {
+    for (var i = 0; i < 5; i++) {
       final index = (i * (points.length - 1) / 4).floor();
       sampled.add(points[index]);
     }

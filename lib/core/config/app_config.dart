@@ -23,7 +23,7 @@ class AppConfig {
 
   static bool get isProd => currentEnvironment == Environment.prod;
   
-  static const String sentryDsn = String.fromEnvironment('SENTRY_DSN', defaultValue: '');
+  static const String sentryDsn = String.fromEnvironment('SENTRY_DSN');
 
   static const String openMeteoBaseUrl = String.fromEnvironment(
     'OPEN_METEO_BASE_URL',

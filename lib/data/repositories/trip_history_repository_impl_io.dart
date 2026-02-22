@@ -1,7 +1,7 @@
-import '../../core/storage/local_database.dart';
-import '../../domain/failures/app_failure.dart';
-import '../../domain/models/trip_history_item.dart';
-import '../../domain/repositories/trip_history_repository.dart';
+import 'package:weathernav/core/storage/local_database.dart';
+import 'package:weathernav/domain/failures/app_failure.dart';
+import 'package:weathernav/domain/models/trip_history_item.dart';
+import 'package:weathernav/domain/repositories/trip_history_repository.dart';
 
 TripHistoryRepository createTripHistoryRepository() => TripHistoryRepositoryImplIo();
 
@@ -9,14 +9,7 @@ class TripHistoryRepositoryImplIo implements TripHistoryRepository {
   @override
   Future<void> addTrip({
     required DateTime createdAt,
-    DateTime? departureTime,
-    required String profile,
-    required double startLat,
-    required double startLng,
-    required double endLat,
-    required double endLng,
-    required double distanceKm,
-    required double durationMinutes,
+    required String profile, required double startLat, required double startLng, required double endLat, required double endLng, required double distanceKm, required double durationMinutes, DateTime? departureTime,
     String? gpx,
   }) async {
     try {
@@ -37,7 +30,7 @@ class TripHistoryRepositoryImplIo implements TripHistoryRepository {
         ],
       );
     } catch (e) {
-      throw AppFailure('Impossible d\'enregistrer le trajet.', cause: e);
+      throw AppFailure("Impossible d'enregistrer le trajet.", cause: e);
     }
   }
 
@@ -60,7 +53,7 @@ class TripHistoryRepositoryImplIo implements TripHistoryRepository {
       final rs = db.select('SELECT * FROM trips ORDER BY created_at_ms DESC LIMIT ?', [limit]);
       return rs.map(_mapRow).toList();
     } catch (e) {
-      throw AppFailure('Impossible de charger l\'historique.', cause: e);
+      throw AppFailure("Impossible de charger l'historique.", cause: e);
     }
   }
 

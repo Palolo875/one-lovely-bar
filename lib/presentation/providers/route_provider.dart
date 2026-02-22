@@ -1,16 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/models/route_models.dart';
-import '../../domain/usecases/get_route.dart';
-import 'repository_providers.dart';
+import 'package:weathernav/domain/models/route_models.dart';
+import 'package:weathernav/domain/usecases/get_route.dart';
+import 'package:weathernav/presentation/providers/repository_providers.dart';
 
 class RouteRequest {
-  final double startLat;
-  final double startLng;
-  final double endLat;
-  final double endLng;
-  final String profile;
-  final DateTime? departureTime;
-  final List<RoutePoint>? waypoints;
 
   const RouteRequest({
     required this.startLat,
@@ -21,6 +14,13 @@ class RouteRequest {
     this.departureTime,
     this.waypoints,
   });
+  final double startLat;
+  final double startLng;
+  final double endLat;
+  final double endLng;
+  final String profile;
+  final DateTime? departureTime;
+  final List<RoutePoint>? waypoints;
 
   @override
   bool operator ==(Object other) {
@@ -42,7 +42,7 @@ bool _listEquals(List<RoutePoint>? a, List<RoutePoint>? b) {
   if (identical(a, b)) return true;
   if (a == null || b == null) return a == b;
   if (a.length != b.length) return false;
-  for (int i = 0; i < a.length; i++) {
+  for (var i = 0; i < a.length; i++) {
     if (a[i] != b[i]) return false;
   }
   return true;
@@ -50,7 +50,7 @@ bool _listEquals(List<RoutePoint>? a, List<RoutePoint>? b) {
 
 int _listHash(List<RoutePoint>? a) {
   if (a == null) return 0;
-  int h = 0;
+  var h = 0;
   for (final p in a) {
     h = 0x1fffffff & (h + p.hashCode);
   }

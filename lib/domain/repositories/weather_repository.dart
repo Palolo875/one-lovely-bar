@@ -1,5 +1,5 @@
-import '../models/weather_condition.dart';
-import '../models/route_models.dart';
+import 'package:weathernav/domain/models/weather_condition.dart';
+import 'package:weathernav/domain/models/route_models.dart';
 
 abstract class WeatherRepository {
   Future<WeatherCondition> getCurrentWeather(double lat, double lng);

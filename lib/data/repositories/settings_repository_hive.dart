@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:hive_ce/hive.dart';
 
-import '../../domain/repositories/settings_repository.dart';
+import 'package:weathernav/domain/repositories/settings_repository.dart';
 
 class HiveSettingsRepository implements SettingsRepository {
   static const String boxName = 'settings';

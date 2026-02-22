@@ -1,13 +1,13 @@
 import 'package:dio/dio.dart';
 import 'package:hive_ce/hive.dart';
-import '../../domain/failures/app_failure.dart';
-import '../../domain/repositories/rainviewer_repository.dart';
+import 'package:weathernav/domain/failures/app_failure.dart';
+import 'package:weathernav/domain/repositories/rainviewer_repository.dart';
 
 class RainViewerRepositoryImpl implements RainViewerRepository {
-  final Dio _dio;
-  final Box _settings;
 
   RainViewerRepositoryImpl(this._dio) : _settings = Hive.box('settings');
+  final Dio _dio;
+  final Box _settings;
 
   static const _ttl = Duration(minutes: 5);
   static const _key = 'rainviewer_latest_time';

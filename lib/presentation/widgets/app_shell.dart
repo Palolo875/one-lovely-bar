@@ -3,9 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 class AppShell extends StatelessWidget {
-  final StatefulNavigationShell navigationShell;
 
   const AppShell({super.key, required this.navigationShell});
+  final StatefulNavigationShell navigationShell;
 
   void _onTap(BuildContext context, int index) {
     navigationShell.goBranch(

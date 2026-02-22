@@ -2,14 +2,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import '../../domain/failures/app_failure.dart';
-import '../../domain/models/place_suggestion.dart';
-import '../providers/place_search_provider.dart';
+import 'package:weathernav/domain/failures/app_failure.dart';
+import 'package:weathernav/domain/models/place_suggestion.dart';
+import 'package:weathernav/presentation/providers/place_search_provider.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
-  final String title;
 
   const SearchScreen({super.key, required this.title});
+  final String title;
 
   @override
   ConsumerState<SearchScreen> createState() => _SearchScreenState();
@@ -75,7 +75,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     itemCount: items.length,
                     separatorBuilder: (_, __) => const Divider(height: 1),
                     itemBuilder: (context, i) {
-                      final PlaceSuggestion s = items[i];
+                      final s = items[i];
                       final subtitleParts = <String>[];
                       if (s.city != null && s.city!.isNotEmpty) subtitleParts.add(s.city!);
                       if (s.state != null && s.state!.isNotEmpty) subtitleParts.add(s.state!);

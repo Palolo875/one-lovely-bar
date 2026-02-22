@@ -6,11 +6,6 @@ enum PoiCategory {
 }
 
 class Poi {
-  final String id;
-  final String name;
-  final double latitude;
-  final double longitude;
-  final PoiCategory category;
 
   const Poi({
     required this.id,
@@ -19,4 +14,9 @@ class Poi {
     required this.longitude,
     required this.category,
   });
+  final String id;
+  final String name;
+  final double latitude;
+  final double longitude;
+  final PoiCategory category;
 }

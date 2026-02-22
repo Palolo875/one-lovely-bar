@@ -1,16 +1,10 @@
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../domain/repositories/settings_repository.dart';
-import 'settings_repository_provider.dart';
+import 'package:weathernav/domain/repositories/settings_repository.dart';
+import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
 
 class OfflineZone {
-  final String id;
-  final String name;
-  final double lat;
-  final double lng;
-  final double radiusKm;
-  final DateTime createdAt;
 
   const OfflineZone({
     required this.id,
@@ -20,6 +14,12 @@ class OfflineZone {
     required this.radiusKm,
     required this.createdAt,
   });
+  final String id;
+  final String name;
+  final double lat;
+  final double lng;
+  final double radiusKm;
+  final DateTime createdAt;
 
   Map<String, dynamic> toMap() {
     return {
@@ -56,9 +56,9 @@ class OfflineZone {
 }
 
 class OfflineZonesNotifier extends StateNotifier<List<OfflineZone>> {
-  final SettingsRepository _settings;
 
   OfflineZonesNotifier(this._settings) : super(_read(_settings));
+  final SettingsRepository _settings;
 
   static const _key = 'offline_zones';
 

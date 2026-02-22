@@ -1,8 +1,8 @@
 class AppFailure implements Exception {
-  final String message;
-  final Object? cause;
 
   const AppFailure(this.message, {this.cause});
+  final String message;
+  final Object? cause;
 
   @override
   String toString() => message;

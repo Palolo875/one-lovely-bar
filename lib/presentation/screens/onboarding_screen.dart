@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../../domain/models/user_profile.dart';
-import '../providers/profile_provider.dart';
-import '../providers/settings_repository_provider.dart';
-import '../providers/settings_provider.dart';
+import 'package:weathernav/domain/models/user_profile.dart';
+import 'package:weathernav/presentation/providers/profile_provider.dart';
+import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
+import 'package:weathernav/presentation/providers/settings_provider.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -115,7 +115,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 children: [
                   _Slide(
                     title: 'Votre météo, sur votre chemin',
-                    subtitle: "Découvrez la météo exactement là où vous serez, au bon moment.",
+                    subtitle: 'Découvrez la météo exactement là où vous serez, au bon moment.',
                     icon: LucideIcons.mapPinned,
                   ),
                   _ProfileSlide(
@@ -151,11 +151,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 }
 
 class _Slide extends StatelessWidget {
+
+  const _Slide({required this.title, required this.subtitle, required this.icon});
   final String title;
   final String subtitle;
   final IconData icon;
-
-  const _Slide({required this.title, required this.subtitle, required this.icon});
 
   @override
   Widget build(BuildContext context) {
@@ -196,11 +196,11 @@ class _Slide extends StatelessWidget {
 }
 
 class _ProfileSlide extends StatelessWidget {
+
+  const _ProfileSlide({required this.profiles, required this.selected, required this.onSelect});
   final List<ProfileType> profiles;
   final ProfileType? selected;
   final ValueChanged<ProfileType> onSelect;
-
-  const _ProfileSlide({required this.profiles, required this.selected, required this.onSelect});
 
   String _label(ProfileType t) {
     switch (t) {
@@ -254,7 +254,7 @@ class _ProfileSlide extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            "On adapte les couches météo et les alertes à votre usage.",
+            'On adapte les couches météo et les alertes à votre usage.',
             style: Theme.of(context).textTheme.bodyLarge,
           ),
           const SizedBox(height: 24),
@@ -307,10 +307,10 @@ class _ProfileSlide extends StatelessWidget {
 }
 
 class _PermissionsSlide extends StatelessWidget {
-  final bool requesting;
-  final VoidCallback onRequest;
 
   const _PermissionsSlide({required this.requesting, required this.onRequest});
+  final bool requesting;
+  final VoidCallback onRequest;
 
   @override
   Widget build(BuildContext context) {

@@ -8,7 +8,7 @@ class _InMemorySettingsRepository implements SettingsRepository {
   final Map<String, StreamController<void>> _controllers = {};
 
   StreamController<void> _controllerFor(String key) {
-    return _controllers.putIfAbsent(key, () => StreamController<void>.broadcast());
+    return _controllers.putIfAbsent(key, StreamController<void>.broadcast);
   }
 
   void _emit(String key) {

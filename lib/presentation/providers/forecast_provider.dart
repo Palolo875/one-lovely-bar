@@ -1,13 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/models/weather_condition.dart';
-import '../../domain/usecases/get_forecast.dart';
-import 'current_weather_provider.dart';
-import 'repository_providers.dart';
+import 'package:weathernav/domain/models/weather_condition.dart';
+import 'package:weathernav/domain/usecases/get_forecast.dart';
+import 'package:weathernav/presentation/providers/current_weather_provider.dart';
+import 'package:weathernav/presentation/providers/repository_providers.dart';
 
 class ForecastRequest extends LatLngRequest {
-  final int days;
 
   const ForecastRequest({required super.lat, required super.lng, this.days = 7});
+  final int days;
 
   @override
   bool operator ==(Object other) {

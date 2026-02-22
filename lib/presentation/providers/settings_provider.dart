@@ -3,14 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../domain/repositories/settings_repository.dart';
-import 'settings_repository_provider.dart';
+import 'package:weathernav/domain/repositories/settings_repository.dart';
+import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
 
 class AppSettingsState {
-  final ThemeMode themeMode;
-  final String speedUnit;
-  final String tempUnit;
-  final String distanceUnit;
 
   const AppSettingsState({
     required this.themeMode,
@@ -18,6 +14,10 @@ class AppSettingsState {
     required this.tempUnit,
     required this.distanceUnit,
   });
+  final ThemeMode themeMode;
+  final String speedUnit;
+  final String tempUnit;
+  final String distanceUnit;
 
   AppSettingsState copyWith({
     ThemeMode? themeMode,
@@ -35,8 +35,6 @@ class AppSettingsState {
 }
 
 class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
-  final SettingsRepository _settings;
-  final List<StreamSubscription> _subs = [];
 
   AppSettingsNotifier(this._settings)
       : super(
@@ -68,6 +66,8 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
       );
     }
   }
+  final SettingsRepository _settings;
+  final List<StreamSubscription> _subs = [];
 
   static ThemeMode _readThemeMode(SettingsRepository settings) {
     final raw = settings.getOrDefault<String>('theme_mode', 'system');
@@ -118,10 +118,6 @@ final appSettingsProvider = StateNotifierProvider.autoDispose<AppSettingsNotifie
 });
 
 class OnboardingStatusNotifier extends StateNotifier<bool> {
-  static const _key = 'onboarding_completed';
-
-  final SettingsRepository _settings;
-  StreamSubscription? _sub;
 
   OnboardingStatusNotifier(this._settings)
       : super(_settings.getOrDefault<bool>(_key, false) == true) {
@@ -130,6 +126,10 @@ class OnboardingStatusNotifier extends StateNotifier<bool> {
       if (next != state) state = next;
     });
   }
+  static const _key = 'onboarding_completed';
+
+  final SettingsRepository _settings;
+  StreamSubscription? _sub;
 
   Future<void> setCompleted(bool value) async {
     if (value == state) return;

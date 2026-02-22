@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/repositories/trip_history_repository_impl.dart';
-import '../../domain/models/trip_history_item.dart';
-import '../../domain/repositories/trip_history_repository.dart';
+import 'package:weathernav/data/repositories/trip_history_repository_impl.dart';
+import 'package:weathernav/domain/models/trip_history_item.dart';
+import 'package:weathernav/domain/repositories/trip_history_repository.dart';
 
 final tripHistoryRepositoryProvider = Provider.autoDispose<TripHistoryRepository>((ref) {
   return createTripHistoryRepository();

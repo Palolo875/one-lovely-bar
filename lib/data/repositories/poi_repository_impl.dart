@@ -1,12 +1,12 @@
 import 'package:dio/dio.dart';
-import '../../domain/failures/app_failure.dart';
-import '../../domain/models/poi.dart';
-import '../../domain/repositories/poi_repository.dart';
+import 'package:weathernav/domain/failures/app_failure.dart';
+import 'package:weathernav/domain/models/poi.dart';
+import 'package:weathernav/domain/repositories/poi_repository.dart';
 
 class OverpassPoiRepository implements PoiRepository {
-  final Dio _dio;
 
   OverpassPoiRepository(this._dio);
+  final Dio _dio;
 
   Map<String, dynamic>? _asMap(dynamic v) {
     if (v is Map<String, dynamic>) return v;

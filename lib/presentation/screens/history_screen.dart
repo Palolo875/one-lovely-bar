@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../../domain/failures/app_failure.dart';
-import '../providers/trip_history_provider.dart';
+import 'package:weathernav/domain/failures/app_failure.dart';
+import 'package:weathernav/presentation/providers/trip_history_provider.dart';
 
 class HistoryScreen extends ConsumerWidget {
   const HistoryScreen({super.key});

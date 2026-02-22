@@ -1,15 +1,15 @@
 import 'package:dio/dio.dart';
 import 'package:hive_ce/hive.dart';
-import '../../domain/failures/app_failure.dart';
-import '../../domain/models/route_models.dart';
-import '../../domain/models/weather_condition.dart';
-import '../../domain/repositories/weather_repository.dart';
+import 'package:weathernav/domain/failures/app_failure.dart';
+import 'package:weathernav/domain/models/route_models.dart';
+import 'package:weathernav/domain/models/weather_condition.dart';
+import 'package:weathernav/domain/repositories/weather_repository.dart';
 
 class OpenMeteoRepository implements WeatherRepository {
-  final Dio _dio;
-  final Box _settings;
 
   OpenMeteoRepository(this._dio) : _settings = Hive.box('settings');
+  final Dio _dio;
+  final Box _settings;
 
   static const _currentTtl = Duration(minutes: 10);
   static const _forecastTtl = Duration(hours: 1);
@@ -149,7 +149,7 @@ class OpenMeteoRepository implements WeatherRepository {
 
         return WeatherCondition(
           temperature: _asDouble(current['temperature']),
-          precipitation: 0.0,
+          precipitation: 0,
           windSpeed: _asDouble(current['windspeed']),
           windDirection: _asDouble(current['winddirection']),
           weatherCode: _asInt(current['weathercode']),
@@ -222,7 +222,7 @@ class OpenMeteoRepository implements WeatherRepository {
         }
 
         final out = <WeatherCondition>[];
-        for (int i = 0; i < len; i++) {
+        for (var i = 0; i < len; i++) {
           out.add(
             WeatherCondition(
               temperature: _asDouble(temp[i]),
@@ -294,7 +294,7 @@ class OpenMeteoRepository implements WeatherRepository {
           temperature: _asDouble((_asList(hourly['temperature_2m']) ?? const [0])[0]),
           precipitation: _asDouble((_asList(hourly['precipitation']) ?? const [0])[0]),
           windSpeed: _asDouble((_asList(hourly['windspeed_10m']) ?? const [0])[0]),
-          windDirection: 0.0,
+          windDirection: 0,
           weatherCode: _asInt((_asList(hourly['weathercode']) ?? const [0])[0]),
           timestamp: _asDateTime(times[0]),
         ));
@@ -316,7 +316,7 @@ class OpenMeteoRepository implements WeatherRepository {
               temperature: _asDouble((_asList(hourly['temperature_2m']) ?? const [0])[0]),
               precipitation: _asDouble((_asList(hourly['precipitation']) ?? const [0])[0]),
               windSpeed: _asDouble((_asList(hourly['windspeed_10m']) ?? const [0])[0]),
-              windDirection: 0.0,
+              windDirection: 0,
               weatherCode: _asInt((_asList(hourly['weathercode']) ?? const [0])[0]),
               timestamp: _asDateTime(times[0]),
             )
@@ -343,7 +343,7 @@ class OpenMeteoRepository implements WeatherRepository {
     if (max == 1) return [points.first];
 
     final out = <RoutePoint>[];
-    for (int i = 0; i < max; i++) {
+    for (var i = 0; i < max; i++) {
       final index = (i * (points.length - 1) / (max - 1)).round();
       out.add(points[index.clamp(0, points.length - 1)]);
     }

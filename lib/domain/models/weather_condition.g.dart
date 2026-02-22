@@ -6,9 +6,8 @@ part of 'weather_condition.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$WeatherConditionImpl _$$WeatherConditionImplFromJson(
-        Map<String, dynamic> json) =>
-    _$WeatherConditionImpl(
+_WeatherCondition _$WeatherConditionFromJson(Map<String, dynamic> json) =>
+    _WeatherCondition(
       temperature: (json['temperature'] as num).toDouble(),
       precipitation: (json['precipitation'] as num).toDouble(),
       windSpeed: (json['windSpeed'] as num).toDouble(),
@@ -21,8 +20,7 @@ _$WeatherConditionImpl _$$WeatherConditionImplFromJson(
       airQuality: (json['airQuality'] as num?)?.toDouble(),
     );
 
-Map<String, dynamic> _$$WeatherConditionImplToJson(
-        _$WeatherConditionImpl instance) =>
+Map<String, dynamic> _$WeatherConditionToJson(_WeatherCondition instance) =>
     <String, dynamic>{
       'temperature': instance.temperature,
       'precipitation': instance.precipitation,

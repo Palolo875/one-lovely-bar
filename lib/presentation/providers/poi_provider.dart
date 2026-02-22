@@ -1,17 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/repositories/poi_repository_impl.dart';
-import '../../domain/models/poi.dart';
-import '../../domain/repositories/poi_repository.dart';
-import '../../domain/failures/app_failure.dart';
-import '../../domain/repositories/settings_repository.dart';
-import 'repository_providers.dart';
-import 'settings_repository_provider.dart';
+import 'package:weathernav/data/repositories/poi_repository_impl.dart';
+import 'package:weathernav/domain/models/poi.dart';
+import 'package:weathernav/domain/repositories/poi_repository.dart';
+import 'package:weathernav/domain/failures/app_failure.dart';
+import 'package:weathernav/domain/repositories/settings_repository.dart';
+import 'package:weathernav/presentation/providers/repository_providers.dart';
+import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
 
 class PoiRequest {
-  final double lat;
-  final double lng;
-  final int radiusMeters;
-  final Set<PoiCategory> categories;
 
   const PoiRequest({
     required this.lat,
@@ -19,6 +15,10 @@ class PoiRequest {
     required this.radiusMeters,
     required this.categories,
   });
+  final double lat;
+  final double lng;
+  final int radiusMeters;
+  final Set<PoiCategory> categories;
 
   @override
   bool operator ==(Object other) {
@@ -42,7 +42,7 @@ bool _setEquals(Set<PoiCategory> a, Set<PoiCategory> b) {
 }
 
 int _setHash(Set<PoiCategory> s) {
-  int h = 0;
+  var h = 0;
   for (final x in s) {
     h = 0x1fffffff & (h + x.hashCode);
   }
@@ -56,7 +56,7 @@ final poiRepositoryProvider = Provider.autoDispose<PoiRepository>((ref) {
 final poiSearchProvider = FutureProvider.autoDispose.family<List<Poi>, PoiRequest>((ref, req) async {
   final repo = ref.watch(poiRepositoryProvider);
 
-  final SettingsRepository settings = ref.watch(settingsRepositoryProvider);
+  final settings = ref.watch(settingsRepositoryProvider);
 
   const ttl = Duration(minutes: 10);
 
@@ -142,15 +142,15 @@ final poiSearchProvider = FutureProvider.autoDispose.family<List<Poi>, PoiReques
 });
 
 class PoiFilterState {
-  final bool enabled;
-  final Set<PoiCategory> categories;
-  final int radiusMeters;
 
   const PoiFilterState({
     required this.enabled,
     required this.categories,
     required this.radiusMeters,
   });
+  final bool enabled;
+  final Set<PoiCategory> categories;
+  final int radiusMeters;
 
   PoiFilterState copyWith({bool? enabled, Set<PoiCategory>? categories, int? radiusMeters}) {
     return PoiFilterState(

@@ -1,4 +1,4 @@
-import '../models/poi.dart';
+import 'package:weathernav/domain/models/poi.dart';
 
 abstract class PoiRepository {
   Future<List<Poi>> searchAround({

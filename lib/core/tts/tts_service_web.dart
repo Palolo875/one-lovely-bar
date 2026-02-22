@@ -1,4 +1,4 @@
-import 'tts_service.dart';
+import 'package:weathernav/core/tts/tts_service.dart';
 
 class TtsServiceImpl implements TtsService {
   @override

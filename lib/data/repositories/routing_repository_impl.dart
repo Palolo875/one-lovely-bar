@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import '../../domain/failures/app_failure.dart';
-import '../../domain/models/route_instruction.dart';
-import '../../domain/models/route_models.dart';
-import '../../domain/repositories/routing_repository.dart';
+import 'package:weathernav/domain/failures/app_failure.dart';
+import 'package:weathernav/domain/models/route_instruction.dart';
+import 'package:weathernav/domain/models/route_models.dart';
+import 'package:weathernav/domain/repositories/routing_repository.dart';
 
 class ValhallaRoutingRepository implements RoutingRepository {
-  final Dio _dio;
 
   ValhallaRoutingRepository(this._dio);
+  final Dio _dio;
 
   Map<String, dynamic>? _asMap(dynamic v) {
     if (v is Map<String, dynamic>) return v;
@@ -157,7 +157,7 @@ class ValhallaRoutingRepository implements RoutingRepository {
 
     final data = _asMap(response.data);
     if (data == null) {
-      throw AppFailure('Réponse instructions invalide.', cause: const FormatException('Invalid Valhalla response root'));
+      throw const AppFailure('Réponse instructions invalide.', cause: FormatException('Invalid Valhalla response root'));
     }
     final trip = _asMap(data['trip']) ?? const <String, dynamic>{};
     final legs = _asList(trip['legs']) ?? const <dynamic>[];
@@ -205,9 +205,9 @@ class ValhallaRoutingRepository implements RoutingRepository {
 
   List<RoutePoint> _decodePolyline(String encoded, {required int precision}) {
     final factor = 1 / (pow10(precision));
-    int index = 0;
-    int lat = 0;
-    int lng = 0;
+    var index = 0;
+    var lat = 0;
+    var lng = 0;
     final coordinates = <RoutePoint>[];
 
     try {
@@ -235,9 +235,9 @@ class ValhallaRoutingRepository implements RoutingRepository {
   }
 
   _PolylineDelta _decodePolylineValue(String encoded, int startIndex) {
-    int index = startIndex;
-    int result = 0;
-    int shift = 0;
+    var index = startIndex;
+    var result = 0;
+    var shift = 0;
     int b;
     do {
       if (index >= encoded.length) {
@@ -271,8 +271,8 @@ class ValhallaRoutingRepository implements RoutingRepository {
 }
 
 class _PolylineDelta {
-  final int delta;
-  final int nextIndex;
 
   const _PolylineDelta({required this.delta, required this.nextIndex});
+  final int delta;
+  final int nextIndex;
 }

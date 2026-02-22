@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import '../../domain/models/user_profile.dart';
-import '../providers/profile_provider.dart';
+import 'package:weathernav/domain/models/user_profile.dart';
+import 'package:weathernav/presentation/providers/profile_provider.dart';
 
 class ProfileSwitcher extends ConsumerWidget {
   const ProfileSwitcher({super.key});

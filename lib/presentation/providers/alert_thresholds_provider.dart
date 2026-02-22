@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../domain/repositories/settings_repository.dart';
-import 'settings_repository_provider.dart';
+import 'package:weathernav/domain/repositories/settings_repository.dart';
+import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
 
 class AlertThresholdsState {
-  final Map<String, double> values;
 
   const AlertThresholdsState({required this.values});
+  final Map<String, double> values;
 
   AlertThresholdsState copyWith({Map<String, double>? values}) {
     return AlertThresholdsState(values: values ?? this.values);
@@ -14,7 +14,6 @@ class AlertThresholdsState {
 }
 
 class AlertThresholdsNotifier extends StateNotifier<AlertThresholdsState> {
-  final SettingsRepository _settings;
 
   AlertThresholdsNotifier(this._settings)
       : super(
@@ -22,6 +21,7 @@ class AlertThresholdsNotifier extends StateNotifier<AlertThresholdsState> {
             values: _read(_settings),
           ),
         );
+  final SettingsRepository _settings;
 
   static const _key = 'alert_thresholds';
 

@@ -226,6 +226,19 @@
       ]
     },
     {
+      "name": "drift_flutter",
+      "version": "0.2.8",
+      "dependencies": [
+        "drift",
+        "flutter",
+        "meta",
+        "path",
+        "path_provider",
+        "sqlite3",
+        "sqlite3_flutter_libs"
+      ]
+    },
+    {
       "name": "drift",
       "version": "2.31.0",
       "dependencies": [
@@ -247,6 +260,20 @@
         "flutter",
         "intl",
         "path"
+      ]
+    },
+    {
+      "name": "sentry_flutter",
+      "version": "8.14.2",
+      "dependencies": [
+        "collection",
+        "ffi",
+        "file",
+        "flutter",
+        "flutter_web_plugins",
+        "meta",
+        "package_info_plus",
+        "sentry"
       ]
     },
     {
@@ -942,6 +969,48 @@
       "dependencies": []
     },
     {
+      "name": "file",
+      "version": "7.0.1",
+      "dependencies": [
+        "meta",
+        "path"
+      ]
+    },
+    {
+      "name": "package_info_plus",
+      "version": "9.0.0",
+      "dependencies": [
+        "clock",
+        "ffi",
+        "flutter",
+        "flutter_web_plugins",
+        "http",
+        "meta",
+        "package_info_plus_platform_interface",
+        "path",
+        "web",
+        "win32"
+      ]
+    },
+    {
+      "name": "sentry",
+      "version": "8.14.2",
+      "dependencies": [
+        "collection",
+        "http",
+        "meta",
+        "stack_trace",
+        "uuid"
+      ]
+    },
+    {
+      "name": "flutter_web_plugins",
+      "version": "0.0.0",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
       "name": "isolate_channel",
       "version": "0.6.1",
       "dependencies": [
@@ -974,22 +1043,6 @@
       ]
     },
     {
-      "name": "package_info_plus",
-      "version": "9.0.0",
-      "dependencies": [
-        "clock",
-        "ffi",
-        "flutter",
-        "flutter_web_plugins",
-        "http",
-        "meta",
-        "package_info_plus_platform_interface",
-        "path",
-        "web",
-        "win32"
-      ]
-    },
-    {
       "name": "dbus",
       "version": "0.7.12",
       "dependencies": [
@@ -1013,13 +1066,6 @@
         "flutter",
         "meta",
         "plugin_platform_interface"
-      ]
-    },
-    {
-      "name": "flutter_web_plugins",
-      "version": "0.0.0",
-      "dependencies": [
-        "flutter"
       ]
     },
     {
@@ -1210,20 +1256,22 @@
       "dependencies": []
     },
     {
+      "name": "webdriver",
+      "version": "3.1.0",
+      "dependencies": [
+        "matcher",
+        "path",
+        "stack_trace",
+        "sync_http"
+      ]
+    },
+    {
       "name": "fuchsia_remote_debug_protocol",
       "version": "0.0.0",
       "dependencies": [
         "meta",
         "process",
         "vm_service"
-      ]
-    },
-    {
-      "name": "file",
-      "version": "7.0.1",
-      "dependencies": [
-        "meta",
-        "path"
       ]
     },
     {
@@ -1346,6 +1394,14 @@
       ]
     },
     {
+      "name": "uuid",
+      "version": "4.5.3",
+      "dependencies": [
+        "crypto",
+        "fixnum"
+      ]
+    },
+    {
       "name": "xml",
       "version": "6.6.1",
       "dependencies": [
@@ -1368,14 +1424,6 @@
       "dependencies": [
         "dbus",
         "meta"
-      ]
-    },
-    {
-      "name": "uuid",
-      "version": "4.5.3",
-      "dependencies": [
-        "crypto",
-        "fixnum"
       ]
     },
     {
@@ -1416,6 +1464,20 @@
         "web_socket_channel",
         "webkit_inspection_protocol",
         "yaml"
+      ]
+    },
+    {
+      "name": "sync_http",
+      "version": "0.3.1",
+      "dependencies": []
+    },
+    {
+      "name": "process",
+      "version": "5.0.5",
+      "dependencies": [
+        "file",
+        "path",
+        "platform"
       ]
     },
     {
@@ -1582,68 +1644,6 @@
         "args",
         "yaml"
       ]
-    },
-    {
-      "name": "drift_flutter",
-      "version": "0.2.8",
-      "dependencies": [
-        "drift",
-        "flutter",
-        "meta",
-        "path",
-        "path_provider",
-        "sqlite3",
-        "sqlite3_flutter_libs"
-      ]
-    },
-    {
-      "name": "sentry_flutter",
-      "version": "8.14.2",
-      "dependencies": [
-        "collection",
-        "ffi",
-        "file",
-        "flutter",
-        "flutter_web_plugins",
-        "meta",
-        "package_info_plus",
-        "sentry"
-      ]
-    },
-    {
-      "name": "sentry",
-      "version": "8.14.2",
-      "dependencies": [
-        "collection",
-        "http",
-        "meta",
-        "stack_trace",
-        "uuid"
-      ]
-    },
-    {
-      "name": "process",
-      "version": "5.0.5",
-      "dependencies": [
-        "file",
-        "path",
-        "platform"
-      ]
-    },
-    {
-      "name": "webdriver",
-      "version": "3.1.0",
-      "dependencies": [
-        "matcher",
-        "path",
-        "stack_trace",
-        "sync_http"
-      ]
-    },
-    {
-      "name": "sync_http",
-      "version": "0.3.1",
-      "dependencies": []
     }
   ],
   "configVersion": 1

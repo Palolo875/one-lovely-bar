@@ -1,19 +1,19 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../core/network/dio_factory.dart';
-import '../../data/repositories/geocoding_repository_impl.dart';
-import '../../data/repositories/weather_repository_impl.dart';
-import '../../data/repositories/routing_repository_impl.dart';
-import '../../domain/repositories/geocoding_repository.dart';
-import '../../domain/repositories/weather_repository.dart';
-import '../../domain/repositories/routing_repository.dart';
+import 'package:weathernav/core/network/dio_factory.dart';
+import 'package:weathernav/data/repositories/geocoding_repository_impl.dart';
+import 'package:weathernav/data/repositories/weather_repository_impl.dart';
+import 'package:weathernav/data/repositories/routing_repository_impl.dart';
+import 'package:weathernav/domain/repositories/geocoding_repository.dart';
+import 'package:weathernav/domain/repositories/weather_repository.dart';
+import 'package:weathernav/domain/repositories/routing_repository.dart';
 
 part 'repository_providers.g.dart';
 
 @riverpod
 Dio dio(DioRef ref) {
-  return createAppDio(enableLogging: false);
+  return createAppDio();
 }
 
 @riverpod

@@ -1,8 +1,8 @@
 import 'package:hive_ce_flutter/hive_flutter.dart';
 
-import '../../domain/failures/app_failure.dart';
-import '../../domain/models/trip_history_item.dart';
-import '../../domain/repositories/trip_history_repository.dart';
+import 'package:weathernav/domain/failures/app_failure.dart';
+import 'package:weathernav/domain/models/trip_history_item.dart';
+import 'package:weathernav/domain/repositories/trip_history_repository.dart';
 
 TripHistoryRepository createTripHistoryRepository() => TripHistoryRepositoryImplWeb();
 
@@ -17,7 +17,7 @@ class TripHistoryRepositoryImplWeb implements TripHistoryRepository {
   }
 
   int _nextId() {
-    int maxId = 0;
+    var maxId = 0;
     for (final k in _box.keys) {
       if (k is int && k > maxId) maxId = k;
     }
@@ -27,14 +27,7 @@ class TripHistoryRepositoryImplWeb implements TripHistoryRepository {
   @override
   Future<void> addTrip({
     required DateTime createdAt,
-    DateTime? departureTime,
-    required String profile,
-    required double startLat,
-    required double startLng,
-    required double endLat,
-    required double endLng,
-    required double distanceKm,
-    required double durationMinutes,
+    required String profile, required double startLat, required double startLng, required double endLat, required double endLng, required double distanceKm, required double durationMinutes, DateTime? departureTime,
     String? gpx,
   }) async {
     try {
@@ -53,7 +46,7 @@ class TripHistoryRepositoryImplWeb implements TripHistoryRepository {
         'gpx': gpx,
       });
     } catch (e) {
-      throw AppFailure('Impossible d\'enregistrer le trajet.', cause: e);
+      throw AppFailure("Impossible d'enregistrer le trajet.", cause: e);
     }
   }
 
@@ -82,7 +75,7 @@ class TripHistoryRepositoryImplWeb implements TripHistoryRepository {
       if (out.length > limit) return out.sublist(0, limit);
       return out;
     } catch (e) {
-      throw AppFailure('Impossible de charger l\'historique.', cause: e);
+      throw AppFailure("Impossible de charger l'historique.", cause: e);
     }
   }
 

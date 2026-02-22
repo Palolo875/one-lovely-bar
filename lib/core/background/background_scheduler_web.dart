@@ -1,4 +1,4 @@
-import 'background_scheduler.dart';
+import 'package:weathernav/core/background/background_scheduler.dart';
 
 class BackgroundSchedulerImpl implements BackgroundScheduler {
   @override

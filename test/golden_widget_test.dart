@@ -9,7 +9,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: Container(
+          body: ColoredBox(
             key: key,
             color: Colors.blue,
             child: const Center(

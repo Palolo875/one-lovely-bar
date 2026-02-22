@@ -2,22 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
-import '../../domain/models/route_models.dart';
-import '../../domain/models/user_profile.dart';
-import '../../domain/failures/app_failure.dart';
-import '../../domain/usecases/export_route_to_gpx.dart';
-import '../../domain/models/route_alert.dart';
-import '../providers/trip_history_provider.dart';
-import '../providers/profile_provider.dart';
-import '../providers/route_provider.dart';
-import '../providers/weather_timeline_eta_provider.dart';
-import '../providers/route_alerts_provider.dart';
-import '../widgets/weather_timeline.dart';
+import 'package:weathernav/domain/models/route_models.dart';
+import 'package:weathernav/domain/models/user_profile.dart';
+import 'package:weathernav/domain/failures/app_failure.dart';
+import 'package:weathernav/domain/usecases/export_route_to_gpx.dart';
+import 'package:weathernav/domain/models/route_alert.dart';
+import 'package:weathernav/presentation/providers/trip_history_provider.dart';
+import 'package:weathernav/presentation/providers/profile_provider.dart';
+import 'package:weathernav/presentation/providers/route_provider.dart';
+import 'package:weathernav/presentation/providers/weather_timeline_eta_provider.dart';
+import 'package:weathernav/presentation/providers/route_alerts_provider.dart';
+import 'package:weathernav/presentation/widgets/weather_timeline.dart';
 
 class RouteSimulationScreen extends ConsumerStatefulWidget {
-  final RouteRequest? request;
 
   const RouteSimulationScreen({super.key, this.request});
+  final RouteRequest? request;
 
   @override
   ConsumerState<RouteSimulationScreen> createState() => _RouteSimulationScreenState();
@@ -79,7 +79,7 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24),
         child: routeAsync.when(
           data: (route) {
             final saveKey = '${effectiveRequest.startLat},${effectiveRequest.startLng}|${effectiveRequest.endLat},${effectiveRequest.endLng}|${effectiveRequest.profile}|${departure.millisecondsSinceEpoch}';
@@ -322,15 +322,15 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
     final visible = <_PointRow>[];
 
     if (showAll) {
-      for (int i = 0; i < points.length; i++) {
+      for (var i = 0; i < points.length; i++) {
         visible.add(_PointRow(index: i, point: points[i]));
       }
     } else {
-      for (int i = 0; i < headCount; i++) {
+      for (var i = 0; i < headCount; i++) {
         visible.add(_PointRow(index: i, point: points[i]));
       }
       visible.add(_PointRow.skipped(points.length - headCount - tailCount));
-      for (int i = points.length - tailCount; i < points.length; i++) {
+      for (var i = points.length - tailCount; i < points.length; i++) {
         visible.add(_PointRow(index: i, point: points[i]));
       }
     }
@@ -355,15 +355,15 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
 }
 
 class _PointRow {
-  final int? index;
-  final RoutePoint? point;
-  final int? skippedCount;
 
   const _PointRow({required this.index, required this.point}) : skippedCount = null;
 
   const _PointRow.skipped(this.skippedCount)
       : index = null,
         point = null;
+  final int? index;
+  final RoutePoint? point;
+  final int? skippedCount;
 
   bool get isSkipped => skippedCount != null;
 }

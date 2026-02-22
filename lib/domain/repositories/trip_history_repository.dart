@@ -1,16 +1,9 @@
-import '../models/trip_history_item.dart';
+import 'package:weathernav/domain/models/trip_history_item.dart';
 
 abstract class TripHistoryRepository {
   Future<void> addTrip({
     required DateTime createdAt,
-    DateTime? departureTime,
-    required String profile,
-    required double startLat,
-    required double startLng,
-    required double endLat,
-    required double endLng,
-    required double distanceKm,
-    required double durationMinutes,
+    required String profile, required double startLat, required double startLng, required double endLat, required double endLng, required double distanceKm, required double durationMinutes, DateTime? departureTime,
     String? gpx,
   });
 

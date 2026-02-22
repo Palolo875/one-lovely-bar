@@ -1,11 +1,11 @@
-import '../models/route_models.dart';
-import '../models/weather_condition.dart';
-import '../repositories/weather_repository.dart';
+import 'package:weathernav/domain/models/route_models.dart';
+import 'package:weathernav/domain/models/weather_condition.dart';
+import 'package:weathernav/domain/repositories/weather_repository.dart';
 
 class GetWeatherTimelineForRoute {
-  final WeatherRepository _repository;
 
   const GetWeatherTimelineForRoute(this._repository);
+  final WeatherRepository _repository;
 
   Future<List<WeatherCondition>> call(RouteData route) {
     if (route.points.isEmpty) return Future.value(const <WeatherCondition>[]);
@@ -16,7 +16,7 @@ class GetWeatherTimelineForRoute {
     if (points.length <= 5) return List<RoutePoint>.from(points);
 
     final sampled = <RoutePoint>[];
-    for (int i = 0; i < 5; i++) {
+    for (var i = 0; i < 5; i++) {
       final index = (i * (points.length - 1) / 4).floor();
       sampled.add(points[index]);
     }

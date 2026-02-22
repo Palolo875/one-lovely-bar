@@ -1,10 +1,10 @@
-import '../models/route_models.dart';
-import '../repositories/routing_repository.dart';
+import 'package:weathernav/domain/models/route_models.dart';
+import 'package:weathernav/domain/repositories/routing_repository.dart';
 
 class GetRoute {
-  final RoutingRepository _repository;
 
   const GetRoute(this._repository);
+  final RoutingRepository _repository;
 
   Future<RouteData> call({
     required double startLat,

@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../domain/repositories/settings_repository.dart';
-import 'settings_repository_provider.dart';
+import 'package:weathernav/domain/repositories/settings_repository.dart';
+import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
 
 enum MapStyleSource {
   openFreeMap,
@@ -10,9 +10,9 @@ enum MapStyleSource {
 }
 
 class MapStyleState {
-  final MapStyleSource source;
 
   const MapStyleState({required this.source});
+  final MapStyleSource source;
 
   String get styleUrl {
     switch (source) {
@@ -31,12 +31,12 @@ class MapStyleState {
 }
 
 class MapStyleNotifier extends StateNotifier<MapStyleState> {
-  final SettingsRepository _settings;
 
   MapStyleNotifier(this._settings)
       : super(
           MapStyleState(source: _read(_settings)),
         );
+  final SettingsRepository _settings;
 
   static const _key = 'map_style_source';
 

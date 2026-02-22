@@ -6,23 +6,23 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-import '../../core/tts/tts_service.dart';
-import '../../core/tts/tts_service_factory_impl.dart';
-import '../../domain/failures/app_failure.dart';
-import '../../domain/models/poi.dart';
-import '../../domain/models/route_alert.dart';
-import '../../domain/models/route_models.dart';
-import '../providers/route_instructions_provider.dart';
-import '../providers/route_provider.dart';
-import '../providers/poi_provider.dart';
-import '../providers/route_alerts_provider.dart';
-import '../providers/weather_timeline_eta_provider.dart';
-import '../providers/map_style_provider.dart';
+import 'package:weathernav/core/tts/tts_service.dart';
+import 'package:weathernav/core/tts/tts_service_factory_impl.dart';
+import 'package:weathernav/domain/failures/app_failure.dart';
+import 'package:weathernav/domain/models/poi.dart';
+import 'package:weathernav/domain/models/route_alert.dart';
+import 'package:weathernav/domain/models/route_models.dart';
+import 'package:weathernav/presentation/providers/route_instructions_provider.dart';
+import 'package:weathernav/presentation/providers/route_provider.dart';
+import 'package:weathernav/presentation/providers/poi_provider.dart';
+import 'package:weathernav/presentation/providers/route_alerts_provider.dart';
+import 'package:weathernav/presentation/providers/weather_timeline_eta_provider.dart';
+import 'package:weathernav/presentation/providers/map_style_provider.dart';
 
 class GuidanceScreen extends ConsumerStatefulWidget {
-  final RouteRequest request;
 
   const GuidanceScreen({super.key, required this.request});
+  final RouteRequest request;
 
   @override
   ConsumerState<GuidanceScreen> createState() => _GuidanceScreenState();
@@ -104,12 +104,12 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
     if (!routeAsync.hasValue) return;
     final route = routeAsync.value!;
 
-    int bestIdx = _nearestPointIndex;
-    double best = double.infinity;
+    var bestIdx = _nearestPointIndex;
+    var best = double.infinity;
 
     final start = (_nearestPointIndex - 50).clamp(0, route.points.length - 1);
     final end = (_nearestPointIndex + 200).clamp(0, route.points.length - 1);
-    for (int i = start; i <= end; i++) {
+    for (var i = start; i <= end; i++) {
       final p = route.points[i];
       final d = Geolocator.distanceBetween(user.latitude, user.longitude, p.latitude, p.longitude);
       if (d < best) {
@@ -123,6 +123,7 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
     }
   }
 
+  @override
   void dispose() {
     _tts.dispose();
     _posSub?.cancel();
@@ -194,7 +195,7 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
 
     final cum = <double>[0];
     double sum = 0;
-    for (int i = 1; i < route.points.length; i++) {
+    for (var i = 1; i < route.points.length; i++) {
       final a = route.points[i - 1];
       final b = route.points[i];
       sum += Geolocator.distanceBetween(a.latitude, a.longitude, b.latitude, b.longitude);
@@ -214,7 +215,7 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
         LineOptions(
           geometry: route.points.map((p) => LatLng(p.latitude, p.longitude)).toList(),
           lineColor: '#2563EB',
-          lineWidth: 6.0,
+          lineWidth: 6,
           lineOpacity: 0.9,
         ),
       );
@@ -223,7 +224,7 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
 
   String _formatDuration(Duration d) {
     final totalMin = d.inMinutes;
-    if (totalMin < 60) return '${totalMin} min';
+    if (totalMin < 60) return '$totalMin min';
     final h = totalMin ~/ 60;
     final m = totalMin % 60;
     return '${h}h${m.toString().padLeft(2, '0')}';
@@ -391,7 +392,7 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
     final alertsAsync = routeAsync.when(
       data: (route) => ref.watch(routeAlertsProvider(WeatherTimelineEtaRequest(route: route, departureTime: departure))),
       loading: () => const AsyncValue<List<RouteAlert>>.loading(),
-      error: (e, st) => AsyncValue<List<RouteAlert>>.error(e, st),
+      error: AsyncValue<List<RouteAlert>>.error,
     );
 
     return Scaffold(
@@ -411,12 +412,11 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
             },
             initialCameraPosition: const CameraPosition(
               target: LatLng(48.8566, 2.3522),
-              zoom: 12.0,
-              tilt: 60.0,
+              zoom: 12,
+              tilt: 60,
             ),
             styleString: mapStyle.styleUrl,
             myLocationEnabled: true,
-            trackCameraPosition: false,
           ),
 
           routeAsync.when(
@@ -466,7 +466,7 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
                           subtitle: 'Aucune instruction disponible.',
                         );
                       }
-                      int idx = 0;
+                      var idx = 0;
                       final totalM = _totalMeters;
                       final cum = _cumMeters;
                       if (totalM != null && totalM > 0 && cum != null && _nearestPointIndex < cum.length) {
@@ -474,7 +474,7 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
                         final progressedKm = progressedM / 1000.0;
 
                         double accKm = 0;
-                        for (int i = 0; i < items.length; i++) {
+                        for (var i = 0; i < items.length; i++) {
                           final d = items[i].distanceKm;
                           if (d == null) {
                             idx = (progressedM / totalM * items.length).floor().clamp(0, items.length - 1);
@@ -584,11 +584,11 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
 }
 
 class _InfoBanner extends StatelessWidget {
+
+  const _InfoBanner({required this.icon, required this.title, required this.subtitle});
   final IconData icon;
   final String title;
   final String? subtitle;
-
-  const _InfoBanner({required this.icon, required this.title, required this.subtitle});
 
   @override
   Widget build(BuildContext context) {
@@ -621,8 +621,8 @@ class _InfoBanner extends StatelessWidget {
 }
 
 class _AlertBanner extends StatelessWidget {
-  final String text;
   const _AlertBanner({required this.text});
+  final String text;
 
   @override
   Widget build(BuildContext context) {
@@ -652,11 +652,11 @@ class _AlertBanner extends StatelessWidget {
 }
 
 class _BottomStatsBar extends StatelessWidget {
+
+  const _BottomStatsBar({required this.left, required this.center, required this.right});
   final String left;
   final String center;
   final String right;
-
-  const _BottomStatsBar({required this.left, required this.center, required this.right});
 
   @override
   Widget build(BuildContext context) {

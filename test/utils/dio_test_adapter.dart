@@ -4,9 +4,9 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 
 class TestDioAdapter implements HttpClientAdapter {
-  final FutureOr<ResponseBody> Function(RequestOptions options) handler;
 
   TestDioAdapter({required this.handler});
+  final FutureOr<ResponseBody> Function(RequestOptions options) handler;
 
   @override
   void close({bool force = false}) {}

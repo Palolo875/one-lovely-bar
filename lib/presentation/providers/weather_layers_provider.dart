@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/models/user_profile.dart';
-import '../../domain/repositories/settings_repository.dart';
-import 'profile_provider.dart';
-import 'settings_repository_provider.dart';
+import 'package:weathernav/domain/models/user_profile.dart';
+import 'package:weathernav/domain/repositories/settings_repository.dart';
+import 'package:weathernav/presentation/providers/profile_provider.dart';
+import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
 
 enum WeatherLayer {
   radar,
@@ -11,11 +11,11 @@ enum WeatherLayer {
 }
 
 class WeatherLayersState {
+
+  const WeatherLayersState({required this.enabled, required this.order, required this.opacity});
   final Set<WeatherLayer> enabled;
   final List<WeatherLayer> order;
   final Map<WeatherLayer, double> opacity;
-
-  const WeatherLayersState({required this.enabled, required this.order, required this.opacity});
 
   WeatherLayersState copyWith({Set<WeatherLayer>? enabled, List<WeatherLayer>? order, Map<WeatherLayer, double>? opacity}) {
     return WeatherLayersState(
@@ -27,7 +27,6 @@ class WeatherLayersState {
 }
 
 class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
-  final SettingsRepository _settings;
 
   WeatherLayersNotifier(this._settings, Set<WeatherLayer> initial)
       : super(
@@ -37,6 +36,7 @@ class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
             opacity: _loadOpacity(_settings),
           ),
         );
+  final SettingsRepository _settings;
 
   static const _key = 'enabled_weather_layers';
   static const _opacityKey = 'weather_layer_opacity';
@@ -95,13 +95,10 @@ class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
       switch (l) {
         case 'precipitation':
           defaults.add(WeatherLayer.radar);
-          break;
         case 'wind':
           defaults.add(WeatherLayer.wind);
-          break;
         case 'temp':
           defaults.add(WeatherLayer.temperature);
-          break;
         default:
           break;
       }
@@ -191,13 +188,10 @@ class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
       switch (l) {
         case 'precipitation':
           defaults.add(WeatherLayer.radar);
-          break;
         case 'wind':
           defaults.add(WeatherLayer.wind);
-          break;
         case 'temp':
           defaults.add(WeatherLayer.temperature);
-          break;
         default:
           break;
       }

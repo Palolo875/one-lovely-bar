@@ -1,5 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'weather_condition.dart';
+import 'package:weathernav/domain/models/weather_condition.dart';
 
 part 'route_models.freezed.dart';
 part 'route_models.g.dart';

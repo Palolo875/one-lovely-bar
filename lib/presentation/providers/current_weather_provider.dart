@@ -1,13 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/models/weather_condition.dart';
-import '../../domain/usecases/get_current_weather.dart';
-import 'repository_providers.dart';
+import 'package:weathernav/domain/models/weather_condition.dart';
+import 'package:weathernav/domain/usecases/get_current_weather.dart';
+import 'package:weathernav/presentation/providers/repository_providers.dart';
 
 class LatLngRequest {
-  final double lat;
-  final double lng;
 
   const LatLngRequest({required this.lat, required this.lng});
+  final double lat;
+  final double lng;
 
   @override
   bool operator ==(Object other) {

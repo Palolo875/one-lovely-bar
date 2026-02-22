@@ -1,12 +1,12 @@
 import 'package:dio/dio.dart';
-import '../../domain/failures/app_failure.dart';
-import '../../domain/models/place_suggestion.dart';
-import '../../domain/repositories/geocoding_repository.dart';
+import 'package:weathernav/domain/failures/app_failure.dart';
+import 'package:weathernav/domain/models/place_suggestion.dart';
+import 'package:weathernav/domain/repositories/geocoding_repository.dart';
 
 class PhotonGeocodingRepository implements GeocodingRepository {
-  final Dio _dio;
 
   PhotonGeocodingRepository(this._dio);
+  final Dio _dio;
 
   Map<String, dynamic>? _asMap(dynamic v) {
     if (v is Map<String, dynamic>) return v;

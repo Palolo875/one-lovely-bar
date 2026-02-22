@@ -15,7 +15,6 @@ Dio createAppDio({bool enableLogging = false}) {
   if (enableLogging) {
     dio.interceptors.add(
       LogInterceptor(
-        requestBody: false,
         responseBody: false,
         requestHeader: false,
         responseHeader: false,
@@ -28,8 +27,8 @@ Dio createAppDio({bool enableLogging = false}) {
 }
 
 class _RetryInterceptor extends Interceptor {
-  final Dio _dio;
   _RetryInterceptor(this._dio);
+  final Dio _dio;
 
   @override
   Future<void> onError(DioException err, ErrorInterceptorHandler handler) async {

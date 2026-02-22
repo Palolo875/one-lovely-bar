@@ -1,5 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../domain/models/user_profile.dart';
+import 'package:weathernav/domain/models/user_profile.dart';
 
 part 'profile_provider.g.dart';
 
@@ -27,9 +27,7 @@ class ProfileNotifier extends _$ProfileNotifier {
           name: 'Cycliste',
           type: ProfileType.cyclist,
           defaultLayers: ['precipitation', 'wind', 'air_quality'],
-          speedUnit: 'km/h',
         );
-        break;
       case ProfileType.hiker:
         state = const UserProfile(
           id: 'hiker',
@@ -37,7 +35,6 @@ class ProfileNotifier extends _$ProfileNotifier {
           type: ProfileType.hiker,
           defaultLayers: ['precipitation', 'cloud_cover', 'uv'],
         );
-        break;
       // Add other profiles as needed
       default:
         state = const UserProfile(

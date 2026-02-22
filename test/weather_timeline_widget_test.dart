@@ -12,7 +12,7 @@ void main() {
         windSpeed: 5,
         windDirection: 0,
         weatherCode: 0,
-        timestamp: DateTime(2026, 1, 1, 10, 0),
+        timestamp: DateTime(2026, 1, 1, 10),
       ),
       WeatherCondition(
         temperature: 12,
@@ -20,7 +20,7 @@ void main() {
         windSpeed: 6,
         windDirection: 0,
         weatherCode: 2,
-        timestamp: DateTime(2026, 1, 1, 11, 0),
+        timestamp: DateTime(2026, 1, 1, 11),
       ),
     ];
 

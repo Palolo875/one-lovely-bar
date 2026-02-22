@@ -1,6 +1,6 @@
 import 'dart:developer' as developer;
 import 'package:sentry_flutter/sentry_flutter.dart';
-import '../config/app_config.dart';
+import 'package:weathernav/core/config/app_config.dart';
 
 class AppLogger {
   static void info(String message, {String name = 'app', Object? error, StackTrace? stackTrace}) {

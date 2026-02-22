@@ -83,7 +83,7 @@ void main() {
       ProviderScope(
         overrides: [
           onboardingCompletedProvider.overrideWith((ref) => _FakeOnboardingNotifier(false)),
-          routerProvider.overrideWith((ref) => _createTestRouter(ref)),
+          routerProvider.overrideWith(_createTestRouter),
         ],
         child: const _TestApp(),
       ),
@@ -100,7 +100,7 @@ void main() {
       ProviderScope(
         overrides: [
           onboardingCompletedProvider.overrideWith((ref) => _FakeOnboardingNotifier(true)),
-          routerProvider.overrideWith((ref) => _createTestRouter(ref)),
+          routerProvider.overrideWith(_createTestRouter),
         ],
         child: const _TestApp(),
       ),

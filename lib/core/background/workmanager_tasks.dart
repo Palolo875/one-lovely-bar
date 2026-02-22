@@ -3,8 +3,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/widgets.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 
-import '../logging/app_logger.dart';
-import '../network/dio_factory.dart';
+import 'package:weathernav/core/logging/app_logger.dart';
+import 'package:weathernav/core/network/dio_factory.dart';
 
 class WorkmanagerTasks {
   static const weatherRefreshTask = 'weathernav_weather_refresh';
@@ -21,7 +21,7 @@ void callbackDispatcher() {
     final settings = Hive.box('settings');
 
     // Best-effort refresh: we ping RainViewer and Open-Meteo for cached locations.
-    final dio = createAppDio(enableLogging: false);
+    final dio = createAppDio();
 
     if (task == WorkmanagerTasks.weatherRefreshTask) {
       try {
@@ -124,7 +124,7 @@ void callbackDispatcher() {
               final times = hourly['time'];
               if (times is List) {
                 final out = <Map<String, dynamic>>[];
-                for (int i = 0; i < times.length; i++) {
+                for (var i = 0; i < times.length; i++) {
                   out.add({
                     'temperature': (hourly['temperature_2m'][i] as num).toDouble(),
                     'precipitation': (hourly['precipitation'][i] as num).toDouble(),

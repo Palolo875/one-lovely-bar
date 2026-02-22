@@ -1,6 +1,6 @@
-import '../models/route_alert.dart';
-import '../models/user_profile.dart';
-import '../models/weather_condition.dart';
+import 'package:weathernav/domain/models/route_alert.dart';
+import 'package:weathernav/domain/models/user_profile.dart';
+import 'package:weathernav/domain/models/weather_condition.dart';
 
 class EvaluateRouteAlerts {
   const EvaluateRouteAlerts();

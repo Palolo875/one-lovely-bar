@@ -8,7 +8,7 @@ void main() {
   test('EvaluateRouteAlerts returns precip alert when threshold is exceeded', () {
     const usecase = EvaluateRouteAlerts();
 
-    final profile = const UserProfile(
+    const profile = UserProfile(
       id: 't',
       name: 'Test',
       type: ProfileType.universal,
@@ -18,7 +18,7 @@ void main() {
     final timeline = [
       WeatherCondition(
         temperature: 10,
-        precipitation: 2.0,
+        precipitation: 2,
         windSpeed: 5,
         windDirection: 0,
         weatherCode: 61,
@@ -33,7 +33,7 @@ void main() {
   test('EvaluateRouteAlerts returns no alert when thresholds are not exceeded', () {
     const usecase = EvaluateRouteAlerts();
 
-    final profile = const UserProfile(
+    const profile = UserProfile(
       id: 't',
       name: 'Test',
       type: ProfileType.universal,
@@ -56,7 +56,7 @@ void main() {
       ),
       WeatherCondition(
         temperature: 16,
-        precipitation: 0.0,
+        precipitation: 0,
         windSpeed: 12,
         windDirection: 0,
         weatherCode: 2,

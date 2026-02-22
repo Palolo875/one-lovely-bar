@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import '../../domain/models/weather_condition.dart';
+import 'package:weathernav/domain/models/weather_condition.dart';
 
 class WeatherTimeline extends StatelessWidget {
-  final List<WeatherCondition> conditions;
 
   const WeatherTimeline({super.key, required this.conditions});
+  final List<WeatherCondition> conditions;
 
   @override
   Widget build(BuildContext context) {

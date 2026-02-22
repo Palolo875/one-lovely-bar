@@ -1,16 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/models/grid_point_weather.dart';
-import '../../domain/usecases/get_weather_grid.dart';
-import '../../domain/failures/app_failure.dart';
-import '../../domain/repositories/settings_repository.dart';
-import 'repository_providers.dart';
-import 'settings_repository_provider.dart';
+import 'package:weathernav/domain/models/grid_point_weather.dart';
+import 'package:weathernav/domain/usecases/get_weather_grid.dart';
+import 'package:weathernav/domain/failures/app_failure.dart';
+import 'package:weathernav/domain/repositories/settings_repository.dart';
+import 'package:weathernav/presentation/providers/repository_providers.dart';
+import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
 
 class WeatherGridRequest {
-  final double centerLat;
-  final double centerLng;
-  final int gridSize;
-  final double stepDegrees;
 
   const WeatherGridRequest({
     required this.centerLat,
@@ -18,6 +14,10 @@ class WeatherGridRequest {
     this.gridSize = 3,
     this.stepDegrees = 0.03,
   });
+  final double centerLat;
+  final double centerLng;
+  final int gridSize;
+  final double stepDegrees;
 
   @override
   bool operator ==(Object other) {
@@ -35,7 +35,7 @@ class WeatherGridRequest {
 final weatherGridProvider = FutureProvider.autoDispose.family<List<GridPointWeather>, WeatherGridRequest>((ref, req) async {
   final repo = ref.watch(weatherRepositoryProvider);
 
-  final SettingsRepository settings = ref.watch(settingsRepositoryProvider);
+  final settings = ref.watch(settingsRepositoryProvider);
 
   const ttl = Duration(minutes: 5);
   final key = 'wx_grid:${req.centerLat.toStringAsFixed(3)},${req.centerLng.toStringAsFixed(3)}:${req.gridSize}:${req.stepDegrees.toStringAsFixed(3)}';
