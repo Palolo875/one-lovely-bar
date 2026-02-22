@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:weathernav/core/network/dio_factory.dart';
 import 'package:weathernav/data/repositories/geocoding_repository_impl.dart';
@@ -8,6 +7,7 @@ import 'package:weathernav/data/repositories/routing_repository_impl.dart';
 import 'package:weathernav/domain/repositories/geocoding_repository.dart';
 import 'package:weathernav/domain/repositories/weather_repository.dart';
 import 'package:weathernav/domain/repositories/routing_repository.dart';
+import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
 
 part 'repository_providers.g.dart';
 
@@ -18,7 +18,7 @@ Dio dio(DioRef ref) {
 
 @riverpod
 WeatherRepository weatherRepository(WeatherRepositoryRef ref) {
-  return OpenMeteoRepository(ref.watch(dioProvider));
+  return OpenMeteoRepository(ref.watch(dioProvider), ref.watch(settingsRepositoryProvider));
 }
 
 @riverpod
@@ -26,6 +26,7 @@ RoutingRepository routingRepository(RoutingRepositoryRef ref) {
   return ValhallaRoutingRepository(ref.watch(dioProvider));
 }
 
-final geocodingRepositoryProvider = Provider.autoDispose<GeocodingRepository>((ref) {
+@riverpod
+GeocodingRepository geocodingRepository(GeocodingRepositoryRef ref) {
   return PhotonGeocodingRepository(ref.watch(dioProvider));
-});
+}

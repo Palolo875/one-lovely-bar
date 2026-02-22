@@ -2,6 +2,7 @@ import 'package:weathernav/core/storage/local_database.dart';
 import 'package:weathernav/domain/failures/app_failure.dart';
 import 'package:weathernav/domain/models/trip_history_item.dart';
 import 'package:weathernav/domain/repositories/trip_history_repository.dart';
+import 'package:sqlite3/sqlite3.dart' show Row;
 
 TripHistoryRepository createTripHistoryRepository() => TripHistoryRepositoryImplIo();
 
@@ -14,23 +15,30 @@ class TripHistoryRepositoryImplIo implements TripHistoryRepository {
   }) async {
     try {
       final db = await LocalDatabase.instance.open();
-      db.execute(
-        'INSERT INTO trips (created_at_ms, departure_time_ms, profile, start_lat, start_lng, end_lat, end_lng, distance_km, duration_minutes, gpx) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [
-          createdAt.millisecondsSinceEpoch,
-          departureTime?.millisecondsSinceEpoch,
-          profile,
-          startLat,
-          startLng,
-          endLat,
-          endLng,
-          distanceKm,
-          durationMinutes,
-          gpx,
-        ],
-      );
-    } catch (e) {
-      throw AppFailure("Impossible d'enregistrer le trajet.", cause: e);
+      db.execute('BEGIN IMMEDIATE;');
+      try {
+        db.execute(
+          'INSERT INTO trips (created_at_ms, departure_time_ms, profile, start_lat, start_lng, end_lat, end_lng, distance_km, duration_minutes, gpx) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [
+            createdAt.millisecondsSinceEpoch,
+            departureTime?.millisecondsSinceEpoch,
+            profile,
+            startLat,
+            startLng,
+            endLat,
+            endLng,
+            distanceKm,
+            durationMinutes,
+            gpx,
+          ],
+        );
+        db.execute('COMMIT;');
+      } catch (_) {
+        db.execute('ROLLBACK;');
+        rethrow;
+      }
+    } catch (e, st) {
+      throw AppFailure("Impossible d'enregistrer le trajet.", cause: e, stackTrace: st);
     }
   }
 
@@ -41,8 +49,8 @@ class TripHistoryRepositoryImplIo implements TripHistoryRepository {
       final rs = db.select('SELECT * FROM trips WHERE id = ? LIMIT 1', [id]);
       if (rs.isEmpty) return null;
       return _mapRow(rs.first);
-    } catch (e) {
-      throw AppFailure('Impossible de charger le trajet.', cause: e);
+    } catch (e, st) {
+      throw AppFailure('Impossible de charger le trajet.', cause: e, stackTrace: st);
     }
   }
 
@@ -50,14 +58,15 @@ class TripHistoryRepositoryImplIo implements TripHistoryRepository {
   Future<List<TripHistoryItem>> listTrips({int limit = 50}) async {
     try {
       final db = await LocalDatabase.instance.open();
-      final rs = db.select('SELECT * FROM trips ORDER BY created_at_ms DESC LIMIT ?', [limit]);
+      final safeLimit = limit.clamp(1, 500);
+      final rs = db.select('SELECT * FROM trips ORDER BY created_at_ms DESC LIMIT ?', [safeLimit]);
       return rs.map(_mapRow).toList();
-    } catch (e) {
-      throw AppFailure("Impossible de charger l'historique.", cause: e);
+    } catch (e, st) {
+      throw AppFailure("Impossible de charger l'historique.", cause: e, stackTrace: st);
     }
   }
 
-  TripHistoryItem _mapRow(dynamic row) {
+  TripHistoryItem _mapRow(Row row) {
     final createdAt = DateTime.fromMillisecondsSinceEpoch(row['created_at_ms'] as int);
     final departureMs = row['departure_time_ms'] as int?;
 

@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 
+import 'package:weathernav/core/logging/app_logger.dart';
+
 Dio createAppDio({bool enableLogging = false}) {
   final dio = Dio(
     BaseOptions(
@@ -30,23 +32,33 @@ class _RetryInterceptor extends Interceptor {
   _RetryInterceptor(this._dio);
   final Dio _dio;
 
+  static const int _maxRetries = 1;
+
   @override
   Future<void> onError(DioException err, ErrorInterceptorHandler handler) async {
     final req = err.requestOptions;
 
-    final isGet = req.method.toUpperCase() == 'GET';
-    final alreadyRetried = (req.extra['retried'] == true);
+    final method = req.method.toUpperCase();
+    final isIdempotent = method == 'GET' || method == 'HEAD';
+    final retryCount = (req.extra['retryCount'] is int) ? (req.extra['retryCount'] as int) : 0;
     final isNetwork = err.type == DioExceptionType.connectionError ||
         err.type == DioExceptionType.connectionTimeout ||
         err.type == DioExceptionType.receiveTimeout;
 
-    if (isGet && isNetwork && !alreadyRetried) {
+    if (isIdempotent && isNetwork && retryCount < _maxRetries) {
       try {
-        req.extra['retried'] = true;
-        await Future.delayed(const Duration(milliseconds: 350));
+        req.extra['retryCount'] = retryCount + 1;
+        await Future.delayed(Duration(milliseconds: 250 * (retryCount + 1)));
         final response = await _dio.fetch(req);
         return handler.resolve(response);
-      } catch (_) {}
+      } catch (e, st) {
+        AppLogger.warn(
+          'Network retry failed',
+          name: 'network',
+          error: e,
+          stackTrace: st,
+        );
+      }
     }
 
     return handler.next(err);

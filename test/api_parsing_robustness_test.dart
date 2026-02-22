@@ -6,6 +6,7 @@ import 'package:weathernav/data/repositories/geocoding_repository_impl.dart';
 import 'package:weathernav/data/repositories/poi_repository_impl.dart';
 import 'package:weathernav/data/repositories/rainviewer_repository_impl.dart';
 import 'package:weathernav/data/repositories/routing_repository_impl.dart';
+import 'package:weathernav/data/repositories/settings_repository_hive.dart';
 import 'package:weathernav/domain/failures/app_failure.dart';
 import 'package:weathernav/domain/models/poi.dart';
 
@@ -61,7 +62,7 @@ void main() {
       },
     );
 
-    final repo = RainViewerRepositoryImpl(dio);
+    final repo = RainViewerRepositoryImpl(dio, HiveSettingsRepository());
     final t = await repo.getLatestRadarTime();
     expect(t, isNull);
   });

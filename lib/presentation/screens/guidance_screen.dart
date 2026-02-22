@@ -6,12 +6,15 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:weathernav/core/logging/app_logger.dart';
 import 'package:weathernav/core/tts/tts_service.dart';
 import 'package:weathernav/core/tts/tts_service_factory_impl.dart';
 import 'package:weathernav/domain/failures/app_failure.dart';
 import 'package:weathernav/domain/models/poi.dart';
 import 'package:weathernav/domain/models/route_alert.dart';
 import 'package:weathernav/domain/models/route_models.dart';
+import 'package:weathernav/presentation/map/maplibre_camera_utils.dart';
+import 'package:weathernav/presentation/screens/guidance/guidance_progress_controller.dart';
 import 'package:weathernav/presentation/providers/route_instructions_provider.dart';
 import 'package:weathernav/presentation/providers/route_provider.dart';
 import 'package:weathernav/presentation/providers/poi_provider.dart';
@@ -32,15 +35,15 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
   late final TtsService _tts;
   bool _speaking = false;
 
+  final GuidanceProgressController _progress = GuidanceProgressController();
+
   MapLibreMapController? _map;
   Line? _routeLine;
   bool _centering = false;
 
   StreamSubscription<Position>? _posSub;
   LatLng? _user;
-  int _nearestPointIndex = 0;
-  List<double>? _cumMeters;
-  double? _totalMeters;
+  DateTime? _lastUserUiUpdate;
   String? _routeKey;
 
   bool _followUser = true;
@@ -76,50 +79,46 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
       ).listen((pos) {
         if (!mounted) return;
         final next = LatLng(pos.latitude, pos.longitude);
-        setState(() => _user = next);
+
+        final lastUi = _lastUserUiUpdate;
+        final now = DateTime.now();
+        final shouldUpdateUi = lastUi == null || now.difference(lastUi).inMilliseconds >= 650;
+        if (shouldUpdateUi) {
+          _lastUserUiUpdate = now;
+          setState(() => _user = next);
+        } else {
+          _user = next;
+        }
 
         if (_followUser && _map != null) {
-          final sinceManual = _lastManualMove == null ? null : DateTime.now().difference(_lastManualMove!);
+          final lastManualMove = _lastManualMove;
+          final sinceManual = lastManualMove == null ? null : DateTime.now().difference(lastManualMove);
           if (sinceManual == null || sinceManual.inSeconds > 8) {
             try {
-              final dyn = _map as dynamic;
-              dyn.animateCamera(CameraUpdate.newLatLng(next));
-            } catch (_) {}
+              final controller = _map;
+              if (controller != null) {
+                await MapLibreCameraUtils.animateCameraCompat(
+                  controller,
+                  CameraUpdate.newLatLng(next),
+                );
+              }
+            } catch (e, st) {
+              AppLogger.warn('Guidance: animateCamera failed', name: 'guidance', error: e, stackTrace: st);
+            }
           }
         }
 
-        final cum = _cumMeters;
-        final total = _totalMeters;
-        if (cum != null && total != null && total > 0) {
-          _updateNearestPointIndex(user: _user!);
+        if (shouldUpdateUi) {
+          final changed = _progress.updateUserPosition(next);
+          if (changed && mounted) {
+            setState(() {});
+          }
         }
+      }, onError: (Object e, StackTrace st) {
+        AppLogger.warn('Guidance: position stream error', name: 'guidance', error: e, stackTrace: st);
       });
-    } catch (_) {}
-  }
-
-  void _updateNearestPointIndex({required LatLng user}) {
-    final cum = _cumMeters;
-    if (cum == null) return;
-    final routeAsync = ref.read(routeProvider(widget.request));
-    if (!routeAsync.hasValue) return;
-    final route = routeAsync.value!;
-
-    var bestIdx = _nearestPointIndex;
-    var best = double.infinity;
-
-    final start = (_nearestPointIndex - 50).clamp(0, route.points.length - 1);
-    final end = (_nearestPointIndex + 200).clamp(0, route.points.length - 1);
-    for (var i = start; i <= end; i++) {
-      final p = route.points[i];
-      final d = Geolocator.distanceBetween(user.latitude, user.longitude, p.latitude, p.longitude);
-      if (d < best) {
-        best = d;
-        bestIdx = i;
-      }
-    }
-
-    if (bestIdx != _nearestPointIndex) {
-      setState(() => _nearestPointIndex = bestIdx);
+    } catch (e, st) {
+      AppLogger.warn('Guidance: startLocationStream failed', name: 'guidance', error: e, stackTrace: st);
     }
   }
 
@@ -135,8 +134,8 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
     setState(() => _speaking = true);
     try {
       await _tts.speakLines(lines);
-    } catch (_) {
-      // ignore
+    } catch (e, st) {
+      AppLogger.warn('Guidance: TTS speak failed', name: 'guidance', error: e, stackTrace: st);
     }
     if (mounted) setState(() => _speaking = false);
   }
@@ -145,7 +144,9 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
     setState(() => _speaking = false);
     try {
       await _tts.stop();
-    } catch (_) {}
+    } catch (e, st) {
+      AppLogger.warn('Guidance: TTS stop failed', name: 'guidance', error: e, stackTrace: st);
+    }
   }
 
   Future<LatLng?> _getUserLatLng() async {
@@ -163,7 +164,8 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
 
       final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
       return LatLng(pos.latitude, pos.longitude);
-    } catch (_) {
+    } catch (e, st) {
+      AppLogger.warn('Guidance: getUserLatLng failed', name: 'guidance', error: e, stackTrace: st);
       return null;
     }
   }
@@ -176,12 +178,18 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
       final controller = _map;
       if (user != null && controller != null) {
         setState(() => _followUser = true);
-        final dyn = controller as dynamic;
         try {
-          await dyn.animateCamera(CameraUpdate.newLatLng(user));
-        } catch (_) {}
+          await MapLibreCameraUtils.animateCameraCompat(
+            controller,
+            CameraUpdate.newLatLng(user),
+          );
+        } catch (e, st) {
+          AppLogger.warn('Guidance: animateCamera failed', name: 'guidance', error: e, stackTrace: st);
+        }
       }
-    } catch (_) {}
+    } catch (e, st) {
+      AppLogger.warn('Guidance: centerOnUser failed', name: 'guidance', error: e, stackTrace: st);
+    }
     if (mounted) setState(() => _centering = false);
   }
 
@@ -193,22 +201,20 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
     if (_routeKey == key && _routeLine != null) return;
     _routeKey = key;
 
-    final cum = <double>[0];
-    double sum = 0;
-    for (var i = 1; i < route.points.length; i++) {
-      final a = route.points[i - 1];
-      final b = route.points[i];
-      sum += Geolocator.distanceBetween(a.latitude, a.longitude, b.latitude, b.longitude);
-      cum.add(sum);
-    }
-    _cumMeters = cum;
-    _totalMeters = sum;
+    _progress.setRoutePoints(
+      route.points.map((p) => LatLng(p.latitude, p.longitude)).toList(),
+    );
 
     try {
       if (_routeLine != null) {
-        await controller.removeLine(_routeLine!);
+        final line = _routeLine;
+        if (line != null) {
+          await controller.removeLine(line);
+        }
       }
-    } catch (_) {}
+    } catch (e, st) {
+      AppLogger.warn('Guidance: removeLine failed', name: 'guidance', error: e, stackTrace: st);
+    }
 
     try {
       _routeLine = await controller.addLine(
@@ -219,7 +225,9 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
           lineOpacity: 0.9,
         ),
       );
-    } catch (_) {}
+    } catch (e, st) {
+      AppLogger.warn('Guidance: addLine failed', name: 'guidance', error: e, stackTrace: st);
+    }
   }
 
   String _formatDuration(Duration d) {
@@ -283,12 +291,14 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
                           try {
                             final controller = _map;
                             if (controller != null) {
-                              final dyn = controller as dynamic;
-                              await dyn.animateCamera(
+                              await MapLibreCameraUtils.animateCameraCompat(
+                                controller,
                                 CameraUpdate.newLatLngZoom(LatLng(p.latitude, p.longitude), 15),
                               );
                             }
-                          } catch (_) {}
+                          } catch (e, st) {
+                            AppLogger.warn('Guidance: animateCamera to shelter failed', name: 'guidance', error: e, stackTrace: st);
+                          }
 
                           if (!mounted) return;
                           showModalBottomSheet(
@@ -467,10 +477,11 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
                         );
                       }
                       var idx = 0;
-                      final totalM = _totalMeters;
-                      final cum = _cumMeters;
-                      if (totalM != null && totalM > 0 && cum != null && _nearestPointIndex < cum.length) {
-                        final progressedM = cum[_nearestPointIndex];
+                      final totalM = _progress.totalMeters;
+                      final cum = _progress.cumMeters;
+                      final nearestIdx = _progress.nearestIndex;
+                      if (totalM > 0 && nearestIdx < cum.length) {
+                        final progressedM = cum[nearestIdx];
                         final progressedKm = progressedM / 1000.0;
 
                         double accKm = 0;
@@ -528,9 +539,10 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
 
                   routeAsync.when(
                     data: (route) {
-                      final totalM = _totalMeters ?? (route.distanceKm * 1000);
-                      final cum = _cumMeters;
-                      final progressedM = (cum != null && _nearestPointIndex < cum.length) ? cum[_nearestPointIndex] : 0.0;
+                      final totalM = _progress.totalMeters > 0
+                          ? _progress.totalMeters
+                          : (route.distanceKm * 1000);
+                      final progressedM = _progress.progressedMeters;
                       final remainingM = (totalM - progressedM).clamp(0.0, totalM);
                       final remainingRatio = totalM > 0 ? (remainingM / totalM) : 1.0;
 
@@ -609,8 +621,9 @@ class _InfoBanner extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(title, style: Theme.of(context).textTheme.titleMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
-                if (subtitle != null)
-                  Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
+                if (subtitle != null) ...[
+                  Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+                ],
               ],
             ),
           ),

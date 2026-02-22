@@ -26,15 +26,14 @@ class AlertThresholdsNotifier extends StateNotifier<AlertThresholdsState> {
   static const _key = 'alert_thresholds';
 
   static Map<String, double> _read(SettingsRepository settings) {
-    final raw = settings.get<dynamic>(_key);
+    final raw = settings.get<Object?>(_key);
     if (raw is Map) {
       final out = <String, double>{};
       for (final e in raw.entries) {
-        final k = e.key;
+        final k = e.key?.toString();
         final v = e.value;
-        if (k is String && v is num) {
-          out[k] = v.toDouble();
-        }
+        if (k == null || v is! num) continue;
+        out[k] = v.toDouble();
       }
       if (out.isNotEmpty) return out;
     }

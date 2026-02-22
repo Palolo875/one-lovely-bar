@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:weathernav/core/config/app_config.dart';
 import 'package:weathernav/domain/failures/app_failure.dart';
 import 'package:weathernav/domain/models/poi.dart';
 import 'package:weathernav/domain/repositories/poi_repository.dart';
@@ -34,17 +35,17 @@ class OverpassPoiRepository implements PoiRepository {
     late final Response response;
     try {
       response = await _dio.post(
-        'https://overpass-api.de/api/interpreter',
+        '${AppConfig.overpassBaseUrl}/api/interpreter',
         data: query,
         options: Options(
           contentType: Headers.textPlainContentType,
           responseType: ResponseType.json,
         ),
       );
-    } on DioException catch (e) {
-      throw AppFailure('Impossible de charger les POIs.', cause: e);
-    } catch (e) {
-      throw AppFailure('Erreur inattendue lors du chargement des POIs.', cause: e);
+    } on DioException catch (e, st) {
+      throw AppFailure('Impossible de charger les POIs.', cause: e, stackTrace: st);
+    } catch (e, st) {
+      throw AppFailure('Erreur inattendue lors du chargement des POIs.', cause: e, stackTrace: st);
     }
 
     final data = _asMap(response.data);

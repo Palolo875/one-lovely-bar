@@ -1,13 +1,14 @@
 import 'package:dio/dio.dart';
-import 'package:hive_ce/hive.dart';
+import 'package:weathernav/core/config/app_config.dart';
 import 'package:weathernav/domain/failures/app_failure.dart';
 import 'package:weathernav/domain/repositories/rainviewer_repository.dart';
+import 'package:weathernav/domain/repositories/settings_repository.dart';
 
 class RainViewerRepositoryImpl implements RainViewerRepository {
 
-  RainViewerRepositoryImpl(this._dio) : _settings = Hive.box('settings');
+  RainViewerRepositoryImpl(this._dio, this._settings);
   final Dio _dio;
-  final Box _settings;
+  final SettingsRepository _settings;
 
   static const _ttl = Duration(minutes: 5);
   static const _key = 'rainviewer_latest_time';
@@ -30,15 +31,15 @@ class RainViewerRepositoryImpl implements RainViewerRepository {
 
     late final Response response;
     try {
-      response = await _dio.get('https://api.rainviewer.com/public/weather-maps.json');
-    } on DioException catch (e) {
+      response = await _dio.get('${AppConfig.rainviewerApiBaseUrl}/public/weather-maps.json');
+    } on DioException catch (e, st) {
       final stale = _readCache(freshOnly: false);
       if (stale != null) return stale;
-      throw AppFailure('Impossible de récupérer le radar pluie.', cause: e);
-    } catch (e) {
+      throw AppFailure('Impossible de récupérer le radar pluie.', cause: e, stackTrace: st);
+    } catch (e, st) {
       final stale = _readCache(freshOnly: false);
       if (stale != null) return stale;
-      throw AppFailure('Erreur inattendue lors de la récupération du radar pluie.', cause: e);
+      throw AppFailure('Erreur inattendue lors de la récupération du radar pluie.', cause: e, stackTrace: st);
     }
 
     final data = _asMap(response.data);
@@ -54,7 +55,7 @@ class RainViewerRepositoryImpl implements RainViewerRepository {
     if (time is! num) return null;
 
     final v = time.toInt();
-    _settings.put(_key, {
+    await _settings.put(_key, {
       'ts': DateTime.now().millisecondsSinceEpoch,
       'time': v,
     });
@@ -62,7 +63,7 @@ class RainViewerRepositoryImpl implements RainViewerRepository {
   }
 
   int? _readCache({required bool freshOnly}) {
-    final raw = _settings.get(_key);
+    final raw = _settings.get<Map>(_key);
     if (raw is! Map) return null;
     final ts = raw['ts'];
     final time = raw['time'];

@@ -41,7 +41,7 @@ final weatherGridProvider = FutureProvider.autoDispose.family<List<GridPointWeat
   final key = 'wx_grid:${req.centerLat.toStringAsFixed(3)},${req.centerLng.toStringAsFixed(3)}:${req.gridSize}:${req.stepDegrees.toStringAsFixed(3)}';
 
   List<GridPointWeather>? readCache({required bool freshOnly}) {
-    final raw = settings.get<dynamic>(key);
+    final raw = settings.get<Object?>(key);
     if (raw is! Map) return null;
     final ts = raw['ts'];
     final data = raw['data'];
@@ -54,7 +54,7 @@ final weatherGridProvider = FutureProvider.autoDispose.family<List<GridPointWeat
     final out = <GridPointWeather>[];
     for (final m in data) {
       if (m is! Map) continue;
-      final mm = Map<String, dynamic>.from(m);
+      final mm = Map<String, Object?>.from(m as Map);
       final lat = mm['lat'];
       final lng = mm['lng'];
       final condition = mm['condition'];
@@ -63,7 +63,7 @@ final weatherGridProvider = FutureProvider.autoDispose.family<List<GridPointWeat
         GridPointWeather(
           latitude: lat.toDouble(),
           longitude: lng.toDouble(),
-          condition: WeatherCondition.fromJson(Map<String, dynamic>.from(condition)),
+          condition: WeatherCondition.fromJson(Map<String, dynamic>.from(condition as Map)),
         ),
       );
     }
@@ -101,9 +101,9 @@ final weatherGridProvider = FutureProvider.autoDispose.family<List<GridPointWeat
     final stale = readCache(freshOnly: false);
     if (stale != null) return stale;
     rethrow;
-  } catch (e) {
+  } catch (e, st) {
     final stale = readCache(freshOnly: false);
     if (stale != null) return stale;
-    throw AppFailure('Impossible de récupérer la grille météo.', cause: e);
+    throw AppFailure('Impossible de récupérer la grille météo.', cause: e, stackTrace: st);
   }
 });

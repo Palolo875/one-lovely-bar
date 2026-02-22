@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:weathernav/core/config/app_config.dart';
 import 'package:weathernav/domain/repositories/settings_repository.dart';
 import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
 
@@ -17,11 +18,11 @@ class MapStyleState {
   String get styleUrl {
     switch (source) {
       case MapStyleSource.openFreeMap:
-        return 'https://tiles.openfreemap.org/styles/positron';
+        return AppConfig.openFreeMapStyleUrl;
       case MapStyleSource.cartoPositron:
-        return 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
+        return AppConfig.cartoPositronStyleUrl;
       case MapStyleSource.stamenToner:
-        return 'https://tiles.stadiamaps.com/styles/stamen_toner.json';
+        return AppConfig.stamenTonerStyleUrl;
     }
   }
 

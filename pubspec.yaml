@@ -31,9 +31,6 @@ dependencies:
   sentry_flutter: ^8.6.0
   flutter_localizations:
     sdk: flutter
-  # Structured storage (declared in tech doc). Requires build_runner when used.
-  drift: ^2.16.0
-  drift_flutter: ^0.2.0
   sqlite3_flutter_libs: ^0.5.20
   sqlite3: ^2.4.0
   path_provider: ^2.1.2

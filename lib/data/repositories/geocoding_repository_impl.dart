@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:weathernav/core/config/app_config.dart';
 import 'package:weathernav/domain/failures/app_failure.dart';
 import 'package:weathernav/domain/models/place_suggestion.dart';
 import 'package:weathernav/domain/repositories/geocoding_repository.dart';
@@ -26,16 +27,16 @@ class PhotonGeocodingRepository implements GeocodingRepository {
     late final Response response;
     try {
       response = await _dio.get(
-        'https://photon.komoot.io/api/',
+        '${AppConfig.photonBaseUrl}/api/',
         queryParameters: {
           'q': query,
           'limit': limit,
         },
       );
-    } on DioException catch (e) {
-      throw AppFailure('Impossible de rechercher ce lieu.', cause: e);
-    } catch (e) {
-      throw AppFailure('Erreur inattendue lors de la recherche de lieu.', cause: e);
+    } on DioException catch (e, st) {
+      throw AppFailure('Impossible de rechercher ce lieu.', cause: e, stackTrace: st);
+    } catch (e, st) {
+      throw AppFailure('Erreur inattendue lors de la recherche de lieu.', cause: e, stackTrace: st);
     }
 
     final data = _asMap(response.data);

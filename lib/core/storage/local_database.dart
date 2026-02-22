@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
+import 'package:weathernav/core/logging/app_logger.dart';
 
 class LocalDatabase {
   LocalDatabase._();
@@ -20,12 +21,36 @@ class LocalDatabase {
     final db = sqlite3.open(file.path);
     _db = db;
 
+    _configure(db);
     _migrate(db);
     return db;
   }
 
+  Future<void> close() async {
+    final db = _db;
+    if (db == null) return;
+    _db = null;
+    db.dispose();
+  }
+
+  void _configure(Database db) {
+    db.execute('PRAGMA foreign_keys = ON;');
+    db.execute('PRAGMA journal_mode = WAL;');
+    db.execute('PRAGMA synchronous = NORMAL;');
+    db.execute('PRAGMA temp_store = MEMORY;');
+    db.execute('PRAGMA busy_timeout = 5000;');
+  }
+
   void _migrate(Database db) {
-    db.execute('''
+    try {
+      db.execute('BEGIN;');
+
+      final rs = db.select('PRAGMA user_version;');
+      final current = rs.isNotEmpty ? (rs.first['user_version'] as int? ?? 0) : 0;
+      var v = current;
+
+      if (v < 1) {
+        db.execute('''
 CREATE TABLE IF NOT EXISTS trips (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   created_at_ms INTEGER NOT NULL,
@@ -41,6 +66,23 @@ CREATE TABLE IF NOT EXISTS trips (
 );
 ''');
 
-    db.execute('CREATE INDEX IF NOT EXISTS idx_trips_created_at ON trips(created_at_ms DESC);');
+        db.execute('CREATE INDEX IF NOT EXISTS idx_trips_created_at ON trips(created_at_ms DESC);');
+        v = 1;
+      }
+
+      if (v != current) {
+        db.execute('PRAGMA user_version = $v;');
+      }
+
+      db.execute('COMMIT;');
+    } catch (e, st) {
+      try {
+        db.execute('ROLLBACK;');
+      } catch (_) {
+        // best-effort
+      }
+      AppLogger.error('SQLite migration failed', name: 'db', error: e, stackTrace: st);
+      rethrow;
+    }
   }
 }

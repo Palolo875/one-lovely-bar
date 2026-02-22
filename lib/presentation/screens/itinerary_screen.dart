@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:weathernav/core/logging/app_logger.dart';
+import 'package:weathernav/presentation/map/maplibre_camera_utils.dart';
 import 'package:weathernav/domain/failures/app_failure.dart';
 import 'package:weathernav/domain/models/place_suggestion.dart';
 import 'package:weathernav/domain/models/route_models.dart';
@@ -105,7 +107,9 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
       _startLatController.text = pos.latitude.toStringAsFixed(6);
       _startLngController.text = pos.longitude.toStringAsFixed(6);
       if (mounted) setState(() {});
-    } catch (_) {}
+    } catch (e, st) {
+      AppLogger.warn('Itinerary: getCurrentPosition failed', name: 'itinerary', error: e, stackTrace: st);
+    }
   }
 
   Future<void> _drawRoute(RouteData route) async {
@@ -122,9 +126,14 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
 
       try {
         if (_routeLine != null) {
-          await controller.removeLine(_routeLine!);
+          final line = _routeLine;
+          if (line != null) {
+            await controller.removeLine(line);
+          }
         }
-      } catch (_) {}
+      } catch (e, st) {
+        AppLogger.warn('Itinerary: removeLine failed', name: 'itinerary', error: e, stackTrace: st);
+      }
 
       try {
         _routeLine = await controller.addLine(
@@ -135,17 +144,22 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
             lineOpacity: 0.85,
           ),
         );
-      } catch (_) {}
+      } catch (e, st) {
+        AppLogger.warn('Itinerary: addLine failed', name: 'itinerary', error: e, stackTrace: st);
+      }
 
       try {
         final pts = route.points;
         if (pts.isNotEmpty) {
           final start = pts.first;
-          await (controller as dynamic).animateCamera(
+          await MapLibreCameraUtils.animateCameraCompat(
+            controller,
             CameraUpdate.newLatLngZoom(LatLng(start.latitude, start.longitude), 11.5),
           );
         }
-      } catch (_) {}
+      } catch (e, st) {
+        AppLogger.warn('Itinerary: animateCamera failed', name: 'itinerary', error: e, stackTrace: st);
+      }
     });
   }
 

@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/widgets.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 
+import 'package:weathernav/core/config/app_config.dart';
 import 'package:weathernav/core/logging/app_logger.dart';
 import 'package:weathernav/core/network/dio_factory.dart';
 
@@ -25,7 +26,7 @@ void callbackDispatcher() {
 
     if (task == WorkmanagerTasks.weatherRefreshTask) {
       try {
-        final resp = await dio.get('https://api.rainviewer.com/public/weather-maps.json');
+        final resp = await dio.get('${AppConfig.rainviewerApiBaseUrl}/public/weather-maps.json');
         final data = resp.data;
         if (data is Map<String, dynamic>) {
           final radar = data['radar'];
@@ -62,7 +63,7 @@ void callbackDispatcher() {
 
           try {
             final resp = await dio.get(
-              'https://api.open-meteo.com/v1/forecast',
+              '${AppConfig.openMeteoBaseUrl}/forecast',
               queryParameters: {
                 'latitude': lat,
                 'longitude': lng,
@@ -109,7 +110,7 @@ void callbackDispatcher() {
 
           try {
             final resp = await dio.get(
-              'https://api.open-meteo.com/v1/forecast',
+              '${AppConfig.openMeteoBaseUrl}/forecast',
               queryParameters: {
                 'latitude': lat,
                 'longitude': lng,

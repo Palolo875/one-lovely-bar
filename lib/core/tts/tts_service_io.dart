@@ -1,5 +1,6 @@
 import 'package:flutter_tts/flutter_tts.dart';
 
+import 'package:weathernav/core/logging/app_logger.dart';
 import 'package:weathernav/core/tts/tts_service.dart';
 
 class TtsServiceImpl implements TtsService {
@@ -18,8 +19,8 @@ class TtsServiceImpl implements TtsService {
         await _tts.speak(l);
         await _tts.awaitSpeakCompletion(true);
       }
-    } catch (_) {
-      // ignore
+    } catch (e, st) {
+      AppLogger.warn('TTS speak failed', name: 'tts', error: e, stackTrace: st);
     }
   }
 
@@ -28,8 +29,8 @@ class TtsServiceImpl implements TtsService {
     _speaking = false;
     try {
       await _tts.stop();
-    } catch (_) {
-      // ignore
+    } catch (e, st) {
+      AppLogger.warn('TTS stop failed', name: 'tts', error: e, stackTrace: st);
     }
   }
 

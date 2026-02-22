@@ -15,7 +15,10 @@ class ExportRouteToGpx {
     for (final p in route.points) {
       sb.write('<trkpt lat="${p.latitude}" lon="${p.longitude}">');
       if (p.timestamp != null) {
-        sb.write('<time>${p.timestamp!.toUtc().toIso8601String()}</time>');
+        final ts = p.timestamp;
+        if (ts != null) {
+          sb.write('<time>${ts.toUtc().toIso8601String()}</time>');
+        }
       }
       sb.writeln('</trkpt>');
     }

@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:weathernav/domain/models/user_profile.dart';
+import 'package:weathernav/core/logging/app_logger.dart';
+import 'package:weathernav/presentation/providers/settings_provider.dart';
 import 'package:weathernav/presentation/providers/profile_provider.dart';
 import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
-import 'package:weathernav/presentation/providers/settings_provider.dart';
+import 'package:weathernav/domain/models/user_profile.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -66,8 +67,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     try {
       await Permission.locationWhenInUse.request();
       await Permission.notification.request();
-    } catch (_) {
-      // ignore
+    } catch (e, st) {
+      AppLogger.warn('Onboarding: permission request failed', name: 'onboarding', error: e, stackTrace: st);
     }
     if (mounted) setState(() => _requestingPermissions = false);
   }

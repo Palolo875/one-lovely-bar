@@ -29,7 +29,8 @@ class HistoryScreen extends ConsumerWidget {
             itemBuilder: (context, i) {
               final t = items[i];
               final when = DateFormat('dd/MM HH:mm').format(t.createdAt);
-              final dep = t.departureTime == null ? null : DateFormat('dd/MM HH:mm').format(t.departureTime!);
+              final depTime = t.departureTime;
+              final dep = depTime == null ? null : DateFormat('dd/MM HH:mm').format(depTime);
 
               return ListTile(
                 title: Text('${t.distanceKm.toStringAsFixed(1)} km • ${t.durationMinutes.toStringAsFixed(0)} min'),

@@ -66,7 +66,7 @@ final poiSearchProvider = FutureProvider.autoDispose.family<List<Poi>, PoiReques
   }
 
   List<Poi>? readCache({required bool freshOnly}) {
-    final raw = settings.get<dynamic>(cacheKey());
+    final raw = settings.get<Object?>(cacheKey());
     if (raw is! Map) return null;
     final ts = raw['ts'];
     final data = raw['data'];
@@ -79,7 +79,7 @@ final poiSearchProvider = FutureProvider.autoDispose.family<List<Poi>, PoiReques
     final out = <Poi>[];
     for (final m in data) {
       if (m is! Map) continue;
-      final mm = Map<String, dynamic>.from(m);
+      final mm = Map<String, Object?>.from(m as Map);
       final id = mm['id']?.toString();
       final name = mm['name']?.toString();
       final lat = mm['lat'];
@@ -134,10 +134,10 @@ final poiSearchProvider = FutureProvider.autoDispose.family<List<Poi>, PoiReques
     final stale = readCache(freshOnly: false);
     if (stale != null) return stale;
     rethrow;
-  } catch (e) {
+  } catch (e, st) {
     final stale = readCache(freshOnly: false);
     if (stale != null) return stale;
-    throw AppFailure('Impossible de charger les POIs.', cause: e);
+    throw AppFailure('Impossible de charger les POIs.', cause: e, stackTrace: st);
   }
 });
 

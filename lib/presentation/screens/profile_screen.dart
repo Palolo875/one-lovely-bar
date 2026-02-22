@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:weathernav/core/logging/app_logger.dart';
 import 'package:weathernav/presentation/providers/alert_thresholds_provider.dart';
 import 'package:weathernav/presentation/providers/offline_zones_provider.dart';
 import 'package:weathernav/presentation/providers/settings_provider.dart';
@@ -519,7 +520,8 @@ Future<_InitialPos?> _bestEffortCurrentPosition() async {
     if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) return null;
     final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
     return _InitialPos(pos.latitude, pos.longitude);
-  } catch (_) {
+  } catch (e, st) {
+    AppLogger.warn('Profile: bestEffortCurrentPosition failed', name: 'profile', error: e, stackTrace: st);
     return null;
   }
 }

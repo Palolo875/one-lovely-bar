@@ -34,4 +34,39 @@ class AppConfig {
     'VALHALLA_BASE_URL',
     defaultValue: 'https://valhalla.openstreetmap.de',
   );
+
+  static const String photonBaseUrl = String.fromEnvironment(
+    'PHOTON_BASE_URL',
+    defaultValue: 'https://photon.komoot.io',
+  );
+
+  static const String overpassBaseUrl = String.fromEnvironment(
+    'OVERPASS_BASE_URL',
+    defaultValue: 'https://overpass-api.de',
+  );
+
+  static const String rainviewerApiBaseUrl = String.fromEnvironment(
+    'RAINVIEWER_API_BASE_URL',
+    defaultValue: 'https://api.rainviewer.com',
+  );
+
+  static const String rainviewerTileBaseUrl = String.fromEnvironment(
+    'RAINVIEWER_TILE_BASE_URL',
+    defaultValue: 'https://tilecache.rainviewer.com',
+  );
+
+  static const String openFreeMapStyleUrl = String.fromEnvironment(
+    'OPENFREEMAP_STYLE_URL',
+    defaultValue: 'https://tiles.openfreemap.org/styles/positron',
+  );
+
+  static const String cartoPositronStyleUrl = String.fromEnvironment(
+    'CARTO_POSITRON_STYLE_URL',
+    defaultValue: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+  );
+
+  static const String stamenTonerStyleUrl = String.fromEnvironment(
+    'STAMEN_TONER_STYLE_URL',
+    defaultValue: 'https://tiles.stadiamaps.com/styles/stamen_toner.json',
+  );
 }

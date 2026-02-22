@@ -342,13 +342,20 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
                   dense: true,
                   title: Text('${r.skippedCount} points masqués'),
                 )
-              : ListTile(
-                  dense: true,
-                  title: Text('Point ${r.index! + 1}'),
-                  subtitle: Text(
-                    '${r.point!.latitude.toStringAsFixed(5)}, ${r.point!.longitude.toStringAsFixed(5)}',
-                  ),
-                ),
+              : () {
+                  final idx = r.index;
+                  final p = r.point;
+                  if (idx == null || p == null) {
+                    return const SizedBox.shrink();
+                  }
+                  return ListTile(
+                    dense: true,
+                    title: Text('Point ${idx + 1}'),
+                    subtitle: Text(
+                      '${p.latitude.toStringAsFixed(5)}, ${p.longitude.toStringAsFixed(5)}',
+                    ),
+                  );
+                }(),
         )
         .toList();
   }

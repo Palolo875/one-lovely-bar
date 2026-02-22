@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -21,27 +22,27 @@ class OfflineZone {
   final double radiusKm;
   final DateTime createdAt;
 
-  Map<String, dynamic> toMap() {
+  Map<String, Object?> toMap() {
     return {
       'id': id,
       'name': name,
       'lat': lat,
       'lng': lng,
       'radiusKm': radiusKm,
-      'createdAt': createdAt.millisecondsSinceEpoch,
+      'createdAtMs': createdAt.millisecondsSinceEpoch,
     };
   }
 
-  static OfflineZone? fromMap(dynamic raw) {
+  static OfflineZone? fromMap(Object? raw) {
     if (raw is! Map) return null;
-    final m = Map<String, dynamic>.from(raw);
+    final m = Map<String, Object?>.from(raw as Map);
     final id = m['id']?.toString();
     final name = m['name']?.toString();
     final lat = m['lat'];
     final lng = m['lng'];
-    final radiusKm = m['radiusKm'];
-    final createdAt = m['createdAt'];
-    if (id == null || name == null || lat is! num || lng is! num || radiusKm is! num || createdAt is! int) {
+    final radius = m['radiusKm'];
+    final createdMs = m['createdAtMs'];
+    if (id == null || name == null || lat is! num || lng is! num || radius is! num || createdMs is! int) {
       return null;
     }
     return OfflineZone(
@@ -49,8 +50,8 @@ class OfflineZone {
       name: name,
       lat: lat.toDouble(),
       lng: lng.toDouble(),
-      radiusKm: radiusKm.toDouble(),
-      createdAt: DateTime.fromMillisecondsSinceEpoch(createdAt),
+      radiusKm: radius.toDouble(),
+      createdAt: DateTime.fromMillisecondsSinceEpoch(createdMs),
     );
   }
 }
@@ -63,7 +64,7 @@ class OfflineZonesNotifier extends StateNotifier<List<OfflineZone>> {
   static const _key = 'offline_zones';
 
   static List<OfflineZone> _read(SettingsRepository settings) {
-    final raw = settings.get<dynamic>(_key);
+    final raw = settings.get<Object?>(_key);
     if (raw is List) {
       final out = <OfflineZone>[];
       for (final r in raw) {
@@ -75,8 +76,8 @@ class OfflineZonesNotifier extends StateNotifier<List<OfflineZone>> {
     return const <OfflineZone>[];
   }
 
-  void _persist(List<OfflineZone> list) {
-    _settings.put(_key, list.map((z) => z.toMap()).toList());
+  Future<void> _persist(List<OfflineZone> list) async {
+    await _settings.put(_key, list.map((z) => z.toMap()).toList());
   }
 
   void add({required String name, required double lat, required double lng, required double radiusKm}) {
@@ -93,13 +94,13 @@ class OfflineZonesNotifier extends StateNotifier<List<OfflineZone>> {
       ...state,
     ];
     state = next;
-    _persist(next);
+    unawaited(_persist(next));
   }
 
   void remove(String id) {
     final next = state.where((z) => z.id != id).toList();
     state = next;
-    _persist(next);
+    unawaited(_persist(next));
   }
 }
 

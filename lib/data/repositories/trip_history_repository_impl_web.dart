@@ -45,8 +45,8 @@ class TripHistoryRepositoryImplWeb implements TripHistoryRepository {
         'duration_minutes': durationMinutes,
         'gpx': gpx,
       });
-    } catch (e) {
-      throw AppFailure("Impossible d'enregistrer le trajet.", cause: e);
+    } catch (e, st) {
+      throw AppFailure("Impossible d'enregistrer le trajet.", cause: e, stackTrace: st);
     }
   }
 
@@ -56,8 +56,8 @@ class TripHistoryRepositoryImplWeb implements TripHistoryRepository {
       final raw = _box.get(id);
       if (raw is! Map) return null;
       return _mapMap(raw);
-    } catch (e) {
-      throw AppFailure('Impossible de charger le trajet.', cause: e);
+    } catch (e, st) {
+      throw AppFailure('Impossible de charger le trajet.', cause: e, stackTrace: st);
     }
   }
 
@@ -74,8 +74,8 @@ class TripHistoryRepositoryImplWeb implements TripHistoryRepository {
       out.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       if (out.length > limit) return out.sublist(0, limit);
       return out;
-    } catch (e) {
-      throw AppFailure("Impossible de charger l'historique.", cause: e);
+    } catch (e, st) {
+      throw AppFailure("Impossible de charger l'historique.", cause: e, stackTrace: st);
     }
   }
 

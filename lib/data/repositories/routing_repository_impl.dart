@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:weathernav/core/config/app_config.dart';
+import 'package:weathernav/core/logging/app_logger.dart';
 import 'package:weathernav/domain/failures/app_failure.dart';
 import 'package:weathernav/domain/models/route_instruction.dart';
 import 'package:weathernav/domain/models/route_models.dart';
@@ -49,7 +51,7 @@ class ValhallaRoutingRepository implements RoutingRepository {
 
   Future<Response> _callValhalla(Map<String, dynamic> requestJson) async {
     return _dio.get(
-      'https://valhalla.openstreetmap.de/route',
+      '${AppConfig.valhallaBaseUrl}/route',
       queryParameters: {
         'json': jsonEncode(requestJson),
       },
@@ -77,10 +79,10 @@ class ValhallaRoutingRepository implements RoutingRepository {
           waypoints: waypoints,
         ),
       );
-    } on DioException catch (e) {
-      throw AppFailure('Impossible de calculer l’itinéraire.', cause: e);
-    } catch (e) {
-      throw AppFailure('Erreur inattendue lors du calcul de l’itinéraire.', cause: e);
+    } on DioException catch (e, st) {
+      throw AppFailure('Impossible de calculer l’itinéraire.', cause: e, stackTrace: st);
+    } catch (e, st) {
+      throw AppFailure('Erreur inattendue lors du calcul de l’itinéraire.', cause: e, stackTrace: st);
     }
 
     final parsed = () {
@@ -115,8 +117,8 @@ class ValhallaRoutingRepository implements RoutingRepository {
             : decoded;
 
         return (points: points, distanceKm: distanceKm, durationSeconds: durationSeconds);
-      } catch (e) {
-        throw AppFailure('Réponse itinéraire invalide.', cause: e);
+      } catch (e, st) {
+        throw AppFailure('Réponse itinéraire invalide.', cause: e, stackTrace: st);
       }
     }();
 
@@ -149,10 +151,10 @@ class ValhallaRoutingRepository implements RoutingRepository {
           waypoints: waypoints,
         ),
       );
-    } on DioException catch (e) {
-      throw AppFailure('Impossible de récupérer les instructions.', cause: e);
-    } catch (e) {
-      throw AppFailure('Erreur inattendue lors de la récupération des instructions.', cause: e);
+    } on DioException catch (e, st) {
+      throw AppFailure('Impossible de récupérer les instructions.', cause: e, stackTrace: st);
+    } catch (e, st) {
+      throw AppFailure('Erreur inattendue lors de la récupération des instructions.', cause: e, stackTrace: st);
     }
 
     final data = _asMap(response.data);
@@ -227,7 +229,8 @@ class ValhallaRoutingRepository implements RoutingRepository {
           longitude: lng * factor,
         ));
       }
-    } catch (_) {
+    } catch (e, st) {
+      AppLogger.warn('Valhalla polyline decode failed', name: 'routing', error: e, stackTrace: st);
       return const <RoutePoint>[];
     }
 

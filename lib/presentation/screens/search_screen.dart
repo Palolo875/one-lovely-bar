@@ -77,9 +77,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     itemBuilder: (context, i) {
                       final s = items[i];
                       final subtitleParts = <String>[];
-                      if (s.city != null && s.city!.isNotEmpty) subtitleParts.add(s.city!);
-                      if (s.state != null && s.state!.isNotEmpty) subtitleParts.add(s.state!);
-                      if (s.country != null && s.country!.isNotEmpty) subtitleParts.add(s.country!);
+                      final city = s.city;
+                      if (city != null && city.isNotEmpty) subtitleParts.add(city);
+                      final state = s.state;
+                      if (state != null && state.isNotEmpty) subtitleParts.add(state);
+                      final country = s.country;
+                      if (country != null && country.isNotEmpty) subtitleParts.add(country);
 
                       return ListTile(
                         title: Text(s.name),

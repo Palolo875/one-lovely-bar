@@ -133,13 +133,15 @@ class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
   }
 
   static List<WeatherLayer> _loadOrder(SettingsRepository settings, Set<WeatherLayer> enabled) {
-    final raw = settings.get<dynamic>(_orderKey);
+    final raw = settings.get<Object?>(_orderKey);
     if (raw is List) {
       final out = <WeatherLayer>[];
       for (final v in raw) {
-        if (v is! String) continue;
-        final match = WeatherLayer.values.where((e) => e.name == v).toList();
-        if (match.isNotEmpty) out.add(match.first);
+        final name = v?.toString();
+        if (name == null) continue;
+        final match = WeatherLayer.values.where((e) => e.name == name);
+        if (match.isEmpty) continue;
+        out.add(match.first);
       }
       return _normalizeOrder(out, enabled);
     }
@@ -147,18 +149,17 @@ class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
   }
 
   static Map<WeatherLayer, double> _loadOpacity(SettingsRepository settings) {
-    final raw = settings.get<dynamic>(_opacityKey);
+    final raw = settings.get<Object?>(_opacityKey);
     if (raw is Map) {
       final out = <WeatherLayer, double>{};
       for (final entry in raw.entries) {
         final key = entry.key;
         final value = entry.value;
-        if (key is! String) continue;
-        final match = WeatherLayer.values.where((e) => e.name == key).toList();
+        final name = key?.toString();
+        if (name == null || value is! num) continue;
+        final match = WeatherLayer.values.where((e) => e.name == name);
         if (match.isEmpty) continue;
-        if (value is num) {
-          out[match.first] = value.toDouble().clamp(0.0, maxOpacity);
-        }
+        out[match.first] = value.toDouble().clamp(0.0, maxOpacity);
       }
       return out;
     }
@@ -171,13 +172,15 @@ class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
   }
 
   static Set<WeatherLayer> load(SettingsRepository settings, UserProfile profile) {
-    final raw = settings.get<dynamic>(_key);
+    final raw = settings.get<Object?>(_key);
     if (raw is List) {
       final enabled = <WeatherLayer>{};
       for (final v in raw) {
-        if (v is! String) continue;
-        final match = WeatherLayer.values.where((e) => e.name == v).toList();
-        if (match.isNotEmpty) enabled.add(match.first);
+        final name = v?.toString();
+        if (name == null) continue;
+        final match = WeatherLayer.values.where((e) => e.name == name);
+        if (match.isEmpty) continue;
+        enabled.add(match.first);
       }
       return enabled.length <= maxEnabled ? enabled : enabled.take(maxEnabled).toSet();
     }
