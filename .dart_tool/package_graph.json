@@ -9,7 +9,9 @@
       "dependencies": [
         "dio",
         "drift",
+        "drift_flutter",
         "flutter",
+        "flutter_localizations",
         "flutter_riverpod",
         "flutter_tts",
         "freezed_annotation",
@@ -26,6 +28,7 @@
         "path_provider",
         "permission_handler",
         "riverpod_annotation",
+        "sentry_flutter",
         "sqlite3",
         "sqlite3_flutter_libs",
         "wakelock_plus",
@@ -37,9 +40,27 @@
         "flutter_test",
         "freezed",
         "hive_ce_generator",
+        "integration_test",
         "json_serializable",
-        "riverpod_generator"
+        "riverpod_generator",
+        "very_good_analysis"
       ]
+    },
+    {
+      "name": "integration_test",
+      "version": "0.0.0",
+      "dependencies": [
+        "flutter",
+        "flutter_driver",
+        "flutter_test",
+        "path",
+        "vm_service"
+      ]
+    },
+    {
+      "name": "very_good_analysis",
+      "version": "6.0.0",
+      "dependencies": []
     },
     {
       "name": "hive_ce_generator",
@@ -174,10 +195,15 @@
       ]
     },
     {
-      "name": "sqlite3_flutter_libs",
-      "version": "0.5.41",
+      "name": "path_provider",
+      "version": "2.1.5",
       "dependencies": [
-        "flutter"
+        "flutter",
+        "path_provider_android",
+        "path_provider_foundation",
+        "path_provider_linux",
+        "path_provider_platform_interface",
+        "path_provider_windows"
       ]
     },
     {
@@ -190,6 +216,13 @@
         "path",
         "typed_data",
         "web"
+      ]
+    },
+    {
+      "name": "sqlite3_flutter_libs",
+      "version": "0.5.41",
+      "dependencies": [
+        "flutter"
       ]
     },
     {
@@ -208,15 +241,12 @@
       ]
     },
     {
-      "name": "path_provider",
-      "version": "2.1.5",
+      "name": "flutter_localizations",
+      "version": "0.0.0",
       "dependencies": [
         "flutter",
-        "path_provider_android",
-        "path_provider_foundation",
-        "path_provider_linux",
-        "path_provider_platform_interface",
-        "path_provider_windows"
+        "intl",
+        "path"
       ]
     },
     {
@@ -413,6 +443,31 @@
       ]
     },
     {
+      "name": "vm_service",
+      "version": "15.0.2",
+      "dependencies": []
+    },
+    {
+      "name": "path",
+      "version": "1.9.1",
+      "dependencies": []
+    },
+    {
+      "name": "flutter_driver",
+      "version": "0.0.0",
+      "dependencies": [
+        "file",
+        "flutter",
+        "flutter_test",
+        "fuchsia_remote_debug_protocol",
+        "matcher",
+        "meta",
+        "path",
+        "vm_service",
+        "webdriver"
+      ]
+    },
+    {
       "name": "meta",
       "version": "1.17.0",
       "dependencies": []
@@ -435,11 +490,6 @@
         "source_span",
         "string_scanner"
       ]
-    },
-    {
-      "name": "path",
-      "version": "1.9.1",
-      "dependencies": []
     },
     {
       "name": "glob",
@@ -827,23 +877,6 @@
       ]
     },
     {
-      "name": "typed_data",
-      "version": "1.4.0",
-      "dependencies": [
-        "collection"
-      ]
-    },
-    {
-      "name": "web",
-      "version": "1.1.1",
-      "dependencies": []
-    },
-    {
-      "name": "ffi",
-      "version": "2.2.0",
-      "dependencies": []
-    },
-    {
       "name": "path_provider_windows",
       "version": "2.3.0",
       "dependencies": [
@@ -890,6 +923,23 @@
         "flutter",
         "path_provider_platform_interface"
       ]
+    },
+    {
+      "name": "typed_data",
+      "version": "1.4.0",
+      "dependencies": [
+        "collection"
+      ]
+    },
+    {
+      "name": "web",
+      "version": "1.1.1",
+      "dependencies": []
+    },
+    {
+      "name": "ffi",
+      "version": "2.2.0",
+      "dependencies": []
     },
     {
       "name": "isolate_channel",
@@ -1160,6 +1210,23 @@
       "dependencies": []
     },
     {
+      "name": "fuchsia_remote_debug_protocol",
+      "version": "0.0.0",
+      "dependencies": [
+        "meta",
+        "process",
+        "vm_service"
+      ]
+    },
+    {
+      "name": "file",
+      "version": "7.0.1",
+      "dependencies": [
+        "meta",
+        "path"
+      ]
+    },
+    {
       "name": "string_scanner",
       "version": "1.4.1",
       "dependencies": [
@@ -1173,14 +1240,6 @@
         "collection",
         "path",
         "term_glyph"
-      ]
-    },
-    {
-      "name": "file",
-      "version": "7.0.1",
-      "dependencies": [
-        "meta",
-        "path"
       ]
     },
     {
@@ -1360,11 +1419,6 @@
       ]
     },
     {
-      "name": "vm_service",
-      "version": "15.0.2",
-      "dependencies": []
-    },
-    {
       "name": "native_toolchain_c",
       "version": "0.17.4",
       "dependencies": [
@@ -1528,6 +1582,68 @@
         "args",
         "yaml"
       ]
+    },
+    {
+      "name": "drift_flutter",
+      "version": "0.2.8",
+      "dependencies": [
+        "drift",
+        "flutter",
+        "meta",
+        "path",
+        "path_provider",
+        "sqlite3",
+        "sqlite3_flutter_libs"
+      ]
+    },
+    {
+      "name": "sentry_flutter",
+      "version": "8.14.2",
+      "dependencies": [
+        "collection",
+        "ffi",
+        "file",
+        "flutter",
+        "flutter_web_plugins",
+        "meta",
+        "package_info_plus",
+        "sentry"
+      ]
+    },
+    {
+      "name": "sentry",
+      "version": "8.14.2",
+      "dependencies": [
+        "collection",
+        "http",
+        "meta",
+        "stack_trace",
+        "uuid"
+      ]
+    },
+    {
+      "name": "process",
+      "version": "5.0.5",
+      "dependencies": [
+        "file",
+        "path",
+        "platform"
+      ]
+    },
+    {
+      "name": "webdriver",
+      "version": "3.1.0",
+      "dependencies": [
+        "matcher",
+        "path",
+        "stack_trace",
+        "sync_http"
+      ]
+    },
+    {
+      "name": "sync_http",
+      "version": "0.3.1",
+      "dependencies": []
     }
   ],
   "configVersion": 1
