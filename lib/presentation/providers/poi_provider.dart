@@ -3,8 +3,8 @@ import 'package:weathernav/data/repositories/poi_repository_impl.dart';
 import 'package:weathernav/domain/models/poi.dart';
 import 'package:weathernav/domain/repositories/poi_repository.dart';
 import 'package:weathernav/domain/failures/app_failure.dart';
-import 'package:weathernav/domain/repositories/settings_repository.dart';
 import 'package:weathernav/presentation/providers/repository_providers.dart';
+import 'package:weathernav/presentation/providers/cache_repository_provider.dart';
 import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
 
 class PoiRequest {
@@ -49,14 +49,15 @@ int _setHash(Set<PoiCategory> s) {
   return h;
 }
 
-final poiRepositoryProvider = Provider.autoDispose<PoiRepository>((ref) {
+final poiRepositoryProvider = Provider<PoiRepository>((ref) {
   return OverpassPoiRepository(ref.watch(dioProvider));
 });
 
 final poiSearchProvider = FutureProvider.autoDispose.family<List<Poi>, PoiRequest>((ref, req) async {
   final repo = ref.watch(poiRepositoryProvider);
 
-  final settings = ref.watch(settingsRepositoryProvider);
+  final cache = ref.watch(cacheRepositoryProvider);
+  final legacy = ref.watch(settingsRepositoryProvider);
 
   const ttl = Duration(minutes: 10);
 
@@ -66,7 +67,8 @@ final poiSearchProvider = FutureProvider.autoDispose.family<List<Poi>, PoiReques
   }
 
   List<Poi>? readCache({required bool freshOnly}) {
-    final raw = settings.get<Object?>(cacheKey());
+    final key = cacheKey();
+    final raw = cache.get<Object?>(key) ?? legacy.get<Object?>(key);
     if (raw is! Map) return null;
     final ts = raw['ts'];
     final data = raw['data'];
@@ -102,7 +104,7 @@ final poiSearchProvider = FutureProvider.autoDispose.family<List<Poi>, PoiReques
   }
 
   void writeCache(List<Poi> list) {
-    settings.put(cacheKey(), {
+    cache.put(cacheKey(), {
       'ts': DateTime.now().millisecondsSinceEpoch,
       'data': list
           .map(
@@ -186,6 +188,6 @@ class PoiFilterNotifier extends StateNotifier<PoiFilterState> {
   void setRadius(int meters) => state = state.copyWith(radiusMeters: meters);
 }
 
-final poiFilterProvider = StateNotifierProvider.autoDispose<PoiFilterNotifier, PoiFilterState>((ref) {
+final poiFilterProvider = StateNotifierProvider<PoiFilterNotifier, PoiFilterState>((ref) {
   return PoiFilterNotifier();
 });

@@ -1,9 +1,9 @@
 import 'package:hive_ce/hive.dart';
 
-import 'package:weathernav/domain/repositories/settings_repository.dart';
+import 'package:weathernav/domain/repositories/cache_repository.dart';
 
-class HiveSettingsRepository implements SettingsRepository {
-  static const String boxName = 'settings';
+class HiveCacheRepository implements CacheRepository {
+  static const String boxName = 'cache';
 
   Box get _box {
     if (!Hive.isBoxOpen(boxName)) {
@@ -20,17 +20,15 @@ class HiveSettingsRepository implements SettingsRepository {
   }
 
   @override
-  T getOrDefault<T>(String key, T defaultValue) {
-    final v = _box.get(key, defaultValue: defaultValue);
-    if (v is T) return v;
-    return defaultValue;
-  }
-
-  @override
   Future<void> put(String key, Object? value) => _box.put(key, value);
 
   @override
   Future<void> delete(String key) => _box.delete(key);
+
+  @override
+  Iterable<String> keys() {
+    return _box.keys.map((k) => k.toString());
+  }
 
   @override
   Stream<void> watch(String key) {

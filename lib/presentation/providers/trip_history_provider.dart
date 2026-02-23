@@ -3,7 +3,7 @@ import 'package:weathernav/data/repositories/trip_history_repository_impl.dart';
 import 'package:weathernav/domain/models/trip_history_item.dart';
 import 'package:weathernav/domain/repositories/trip_history_repository.dart';
 
-final tripHistoryRepositoryProvider = Provider.autoDispose<TripHistoryRepository>((ref) {
+final tripHistoryRepositoryProvider = Provider<TripHistoryRepository>((ref) {
   return createTripHistoryRepository();
 });
 

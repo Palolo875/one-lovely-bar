@@ -2,8 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:weathernav/domain/models/grid_point_weather.dart';
 import 'package:weathernav/domain/usecases/get_weather_grid.dart';
 import 'package:weathernav/domain/failures/app_failure.dart';
-import 'package:weathernav/domain/repositories/settings_repository.dart';
 import 'package:weathernav/presentation/providers/repository_providers.dart';
+import 'package:weathernav/presentation/providers/cache_repository_provider.dart';
 import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
 
 class WeatherGridRequest {
@@ -35,13 +35,14 @@ class WeatherGridRequest {
 final weatherGridProvider = FutureProvider.autoDispose.family<List<GridPointWeather>, WeatherGridRequest>((ref, req) async {
   final repo = ref.watch(weatherRepositoryProvider);
 
-  final settings = ref.watch(settingsRepositoryProvider);
+  final cache = ref.watch(cacheRepositoryProvider);
+  final legacy = ref.watch(settingsRepositoryProvider);
 
   const ttl = Duration(minutes: 5);
   final key = 'wx_grid:${req.centerLat.toStringAsFixed(3)},${req.centerLng.toStringAsFixed(3)}:${req.gridSize}:${req.stepDegrees.toStringAsFixed(3)}';
 
   List<GridPointWeather>? readCache({required bool freshOnly}) {
-    final raw = settings.get<Object?>(key);
+    final raw = cache.get<Object?>(key) ?? legacy.get<Object?>(key);
     if (raw is! Map) return null;
     final ts = raw['ts'];
     final data = raw['data'];
@@ -71,7 +72,7 @@ final weatherGridProvider = FutureProvider.autoDispose.family<List<GridPointWeat
   }
 
   void writeCache(List<GridPointWeather> list) {
-    settings.put(key, {
+    cache.put(key, {
       'ts': DateTime.now().millisecondsSinceEpoch,
       'data': list
           .map(

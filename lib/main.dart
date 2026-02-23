@@ -4,6 +4,7 @@ import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:weathernav/core/config/app_config.dart';
+import 'package:weathernav/core/storage/cache_maintenance.dart';
 import 'package:weathernav/core/theme/app_theme.dart';
 import 'package:weathernav/core/background/background_scheduler_factory.dart';
 import 'package:weathernav/presentation/providers/router_provider.dart';
@@ -16,6 +17,9 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
   await Hive.openBox('settings');
+
+  await Hive.openBox('cache');
+  await purgeCacheBox(Hive.box('cache'));
 
   await Hive.openBox('trips');
 

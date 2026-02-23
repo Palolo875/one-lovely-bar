@@ -1,4 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:weathernav/core/logging/app_logger.dart';
+import 'package:weathernav/core/storage/settings_keys.dart';
 import 'package:weathernav/domain/models/user_profile.dart';
 import 'package:weathernav/domain/repositories/settings_repository.dart';
 import 'package:weathernav/presentation/providers/profile_provider.dart';
@@ -11,7 +15,6 @@ enum WeatherLayer {
 }
 
 class WeatherLayersState {
-
   const WeatherLayersState({required this.enabled, required this.order, required this.opacity});
   final Set<WeatherLayer> enabled;
   final List<WeatherLayer> order;
@@ -27,20 +30,51 @@ class WeatherLayersState {
 }
 
 class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
-
-  WeatherLayersNotifier(this._settings, Set<WeatherLayer> initial)
+  WeatherLayersNotifier(this._settings, Set<WeatherLayer> initial, {required bool hasExplicitSelection})
       : super(
           WeatherLayersState(
             enabled: initial,
             order: _loadOrder(_settings, initial),
             opacity: _loadOpacity(_settings),
           ),
-        );
+        ),
+        _hasExplicitSelection = hasExplicitSelection {
+    var syncScheduled = false;
+    void sync() {
+      final enabled = _loadEnabled(_settings);
+      final next = WeatherLayersState(
+        enabled: enabled.isNotEmpty ? enabled : state.enabled,
+        order: _loadOrder(_settings, enabled.isNotEmpty ? enabled : state.enabled),
+        opacity: _loadOpacity(_settings),
+      );
+      if (!_same(next, state)) state = next;
+    }
+
+    void scheduleSync() {
+      if (syncScheduled) return;
+      syncScheduled = true;
+      scheduleMicrotask(() {
+        syncScheduled = false;
+        sync();
+      });
+    }
+
+    for (final key in const [
+      SettingsKeys.enabledWeatherLayers,
+      SettingsKeys.weatherLayerOpacity,
+      SettingsKeys.weatherLayerOrder,
+    ]) {
+      _subs.add(_settings.watch(key).listen((_) => scheduleSync()));
+    }
+  }
   final SettingsRepository _settings;
 
-  static const _key = 'enabled_weather_layers';
-  static const _opacityKey = 'weather_layer_opacity';
-  static const _orderKey = 'weather_layer_order';
+  final bool _hasExplicitSelection;
+
+  final List<StreamSubscription> _subs = [];
+  Timer? _persistDebounce;
+  WeatherLayersState? _pendingPersist;
+
   static const int maxEnabled = 3;
   static const double maxOpacity = 0.70;
 
@@ -56,16 +90,14 @@ class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
     }
     final nextOrder = _normalizeOrder(state.order, next);
     state = state.copyWith(enabled: next, order: nextOrder);
-    _persist(next);
-    _persistOrder(nextOrder);
+    _schedulePersist(state);
   }
 
   void setEnabled(Set<WeatherLayer> enabled) {
     final next = enabled.length <= maxEnabled ? enabled : enabled.take(maxEnabled).toSet();
     final nextOrder = _normalizeOrder(state.order, next);
     state = state.copyWith(enabled: next, order: nextOrder);
-    _persist(next);
-    _persistOrder(nextOrder);
+    _schedulePersist(state);
   }
 
   void moveLayer(WeatherLayer layer, int newIndex) {
@@ -79,46 +111,75 @@ class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
     final idx = newIndex.clamp(0, next.length);
     next.insert(idx, layer);
     state = state.copyWith(order: next);
-    _persistOrder(next);
+    _schedulePersist(state);
   }
 
   void setOpacity(WeatherLayer layer, double value) {
     final next = Map<WeatherLayer, double>.from(state.opacity);
     next[layer] = value.clamp(0.0, maxOpacity);
     state = state.copyWith(opacity: next);
-    _persistOpacity(next);
+    _schedulePersist(state);
   }
 
   void resetToProfile(UserProfile profile) {
-    final defaults = <WeatherLayer>{};
-    for (final l in profile.defaultLayers) {
-      switch (l) {
-        case 'precipitation':
-          defaults.add(WeatherLayer.radar);
-        case 'wind':
-          defaults.add(WeatherLayer.wind);
-        case 'temp':
-          defaults.add(WeatherLayer.temperature);
-        default:
-          break;
-      }
+    setEnabled(_layersFromProfile(profile));
+  }
+
+  void applyProfileDefaultsIfUnset(UserProfile profile) {
+    if (_hasExplicitSelection) return;
+    final nextEnabled = _layersFromProfile(profile);
+    final nextOrder = _normalizeOrder(state.order, nextEnabled);
+    state = state.copyWith(enabled: nextEnabled, order: nextOrder);
+    _schedulePersist(state);
+  }
+
+  void _schedulePersist(WeatherLayersState snapshot) {
+    _pendingPersist = snapshot;
+    _persistDebounce?.cancel();
+    _persistDebounce = Timer(const Duration(milliseconds: 250), () {
+      final toPersist = _pendingPersist;
+      if (toPersist == null) return;
+      _pendingPersist = null;
+      unawaited(_persistNow(toPersist));
+    });
+  }
+
+  Future<void> _persistNow(WeatherLayersState snapshot) async {
+    try {
+      await _settings.put(SettingsKeys.enabledWeatherLayers, snapshot.enabled.map((e) => e.name).toList());
+      await _settings.put(SettingsKeys.weatherLayerOrder, snapshot.order.map((e) => e.name).toList());
+      await _settings.put(
+        SettingsKeys.weatherLayerOpacity,
+        snapshot.opacity.map((k, v) => MapEntry(k.name, v)),
+      );
+    } catch (e, st) {
+      AppLogger.error('Failed to persist weather layers settings', name: 'settings', error: e, stackTrace: st);
+      final enabled = _loadEnabled(_settings);
+      final recovered = WeatherLayersState(
+        enabled: enabled.isNotEmpty ? enabled : state.enabled,
+        order: _loadOrder(_settings, enabled.isNotEmpty ? enabled : state.enabled),
+        opacity: _loadOpacity(_settings),
+      );
+      if (!_same(recovered, state)) state = recovered;
     }
-    setEnabled(defaults);
   }
 
-  void _persist(Set<WeatherLayer> enabled) {
-    _settings.put(_key, enabled.map((e) => e.name).toList());
-  }
-
-  void _persistOpacity(Map<WeatherLayer, double> opacity) {
-    _settings.put(
-      _opacityKey,
-      opacity.map((k, v) => MapEntry(k.name, v)),
-    );
-  }
-
-  void _persistOrder(List<WeatherLayer> order) {
-    _settings.put(_orderKey, order.map((e) => e.name).toList());
+  static bool _same(WeatherLayersState a, WeatherLayersState b) {
+    if (identical(a, b)) return true;
+    if (a.enabled.length != b.enabled.length) return false;
+    if (a.order.length != b.order.length) return false;
+    if (a.opacity.length != b.opacity.length) return false;
+    for (final l in a.enabled) {
+      if (!b.enabled.contains(l)) return false;
+    }
+    for (var i = 0; i < a.order.length; i++) {
+      if (a.order[i] != b.order[i]) return false;
+    }
+    for (final e in a.opacity.entries) {
+      final other = b.opacity[e.key];
+      if (other == null || other != e.value) return false;
+    }
+    return true;
   }
 
   static List<WeatherLayer> _normalizeOrder(List<WeatherLayer> existing, Set<WeatherLayer> enabled) {
@@ -126,14 +187,14 @@ class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
     for (final l in existing) {
       if (enabled.contains(l) && !out.contains(l)) out.add(l);
     }
-    for (final l in enabled) {
-      if (!out.contains(l)) out.add(l);
+    for (final l in WeatherLayer.values) {
+      if (enabled.contains(l) && !out.contains(l)) out.add(l);
     }
     return out;
   }
 
   static List<WeatherLayer> _loadOrder(SettingsRepository settings, Set<WeatherLayer> enabled) {
-    final raw = settings.get<Object?>(_orderKey);
+    final raw = settings.get<Object?>(SettingsKeys.weatherLayerOrder);
     if (raw is List) {
       final out = <WeatherLayer>[];
       for (final v in raw) {
@@ -149,7 +210,7 @@ class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
   }
 
   static Map<WeatherLayer, double> _loadOpacity(SettingsRepository settings) {
-    final raw = settings.get<Object?>(_opacityKey);
+    final raw = settings.get<Object?>(SettingsKeys.weatherLayerOpacity);
     if (raw is Map) {
       final out = <WeatherLayer, double>{};
       for (final entry in raw.entries) {
@@ -161,18 +222,25 @@ class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
         if (match.isEmpty) continue;
         out[match.first] = value.toDouble().clamp(0.0, maxOpacity);
       }
+      for (final e in const {
+        WeatherLayer.radar: 0.65,
+        WeatherLayer.wind: maxOpacity,
+        WeatherLayer.temperature: maxOpacity,
+      }.entries) {
+        out.putIfAbsent(e.key, () => e.value);
+      }
       return out;
     }
 
-    return {
+    return const {
       WeatherLayer.radar: 0.65,
       WeatherLayer.wind: maxOpacity,
       WeatherLayer.temperature: maxOpacity,
     };
   }
 
-  static Set<WeatherLayer> load(SettingsRepository settings, UserProfile profile) {
-    final raw = settings.get<Object?>(_key);
+  static Set<WeatherLayer> _loadEnabled(SettingsRepository settings) {
+    final raw = settings.get<Object?>(SettingsKeys.enabledWeatherLayers);
     if (raw is List) {
       final enabled = <WeatherLayer>{};
       for (final v in raw) {
@@ -185,27 +253,66 @@ class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
       return enabled.length <= maxEnabled ? enabled : enabled.take(maxEnabled).toSet();
     }
 
+    return const <WeatherLayer>{};
+  }
+
+  static Set<WeatherLayer> load(SettingsRepository settings, UserProfile profile) {
+    final enabled = _loadEnabled(settings);
+    if (enabled.isNotEmpty) {
+      return enabled.length <= maxEnabled ? enabled : enabled.take(maxEnabled).toSet();
+    }
+
     // fallback to profile defaults
     final defaults = <WeatherLayer>{};
     for (final l in profile.defaultLayers) {
-      switch (l) {
-        case 'precipitation':
-          defaults.add(WeatherLayer.radar);
-        case 'wind':
-          defaults.add(WeatherLayer.wind);
-        case 'temp':
-          defaults.add(WeatherLayer.temperature);
-        default:
-          break;
-      }
+      final mapped = _fromProfileLayerKey(l);
+      if (mapped != null) defaults.add(mapped);
     }
     return defaults.length <= maxEnabled ? defaults : defaults.take(maxEnabled).toSet();
   }
+
+  static WeatherLayer? _fromProfileLayerKey(String key) {
+    return switch (key) {
+      'precipitation' => WeatherLayer.radar,
+      'wind' => WeatherLayer.wind,
+      'temp' => WeatherLayer.temperature,
+      _ => null,
+    };
+  }
+
+  static Set<WeatherLayer> _layersFromProfile(UserProfile profile) {
+    final out = <WeatherLayer>{};
+    for (final l in profile.defaultLayers) {
+      final mapped = _fromProfileLayerKey(l);
+      if (mapped != null) out.add(mapped);
+    }
+    return out.length <= maxEnabled ? out : out.take(maxEnabled).toSet();
+  }
+
+  @override
+  void dispose() {
+    _persistDebounce?.cancel();
+    _persistDebounce = null;
+    for (final sub in _subs) {
+      sub.cancel();
+    }
+    _subs.clear();
+    super.dispose();
+  }
 }
 
-final weatherLayersProvider = StateNotifierProvider.autoDispose<WeatherLayersNotifier, WeatherLayersState>((ref) {
+final weatherLayersProvider = StateNotifierProvider<WeatherLayersNotifier, WeatherLayersState>((ref) {
   final settings = ref.watch(settingsRepositoryProvider);
   final profile = ref.watch(profileNotifierProvider);
+  final raw = settings.get<Object?>(SettingsKeys.enabledWeatherLayers);
+  final hasExplicitSelection = raw is List;
   final initial = WeatherLayersNotifier.load(settings, profile);
-  return WeatherLayersNotifier(settings, initial);
+  final notifier = WeatherLayersNotifier(settings, initial, hasExplicitSelection: hasExplicitSelection);
+
+  ref.listen<UserProfile>(profileNotifierProvider, (prev, next) {
+    if (prev?.id == next.id) return;
+    notifier.applyProfileDefaultsIfUnset(next);
+  });
+
+  return notifier;
 });

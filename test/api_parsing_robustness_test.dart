@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'dart:io';
 import 'package:hive_ce/hive.dart';
+import 'package:weathernav/data/repositories/cache_repository_hive.dart';
 import 'package:weathernav/data/repositories/geocoding_repository_impl.dart';
 import 'package:weathernav/data/repositories/poi_repository_impl.dart';
 import 'package:weathernav/data/repositories/rainviewer_repository_impl.dart';
@@ -17,6 +18,7 @@ void main() {
     final dir = await Directory.systemTemp.createTemp('weathernav_test_hive_');
     Hive.init(dir.path);
     await Hive.openBox('settings');
+    await Hive.openBox('cache');
   });
 
   tearDownAll(() async {
@@ -62,7 +64,11 @@ void main() {
       },
     );
 
-    final repo = RainViewerRepositoryImpl(dio, HiveSettingsRepository());
+    final repo = RainViewerRepositoryImpl(
+      dio,
+      HiveCacheRepository(),
+      legacy: HiveSettingsRepository(),
+    );
     final t = await repo.getLatestRadarTime();
     expect(t, isNull);
   });

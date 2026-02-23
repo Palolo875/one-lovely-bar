@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:weathernav/core/config/app_config.dart';
+import 'package:weathernav/core/network/dio_error_mapper.dart';
 import 'package:weathernav/domain/failures/app_failure.dart';
 import 'package:weathernav/domain/models/poi.dart';
 import 'package:weathernav/domain/repositories/poi_repository.dart';
@@ -43,7 +44,11 @@ class OverpassPoiRepository implements PoiRepository {
         ),
       );
     } on DioException catch (e, st) {
-      throw AppFailure('Impossible de charger les POIs.', cause: e, stackTrace: st);
+      throw AppFailure(
+        mapDioExceptionToMessage(e, defaultMessage: 'Impossible de charger les POIs.'),
+        cause: e,
+        stackTrace: st,
+      );
     } catch (e, st) {
       throw AppFailure('Erreur inattendue lors du chargement des POIs.', cause: e, stackTrace: st);
     }

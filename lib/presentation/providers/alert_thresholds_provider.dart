@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:weathernav/core/logging/app_logger.dart';
+import 'package:weathernav/core/storage/settings_keys.dart';
 import 'package:weathernav/domain/repositories/settings_repository.dart';
 import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
 
@@ -20,13 +24,32 @@ class AlertThresholdsNotifier extends StateNotifier<AlertThresholdsState> {
           AlertThresholdsState(
             values: _read(_settings),
           ),
-        );
-  final SettingsRepository _settings;
+        ) {
+    var syncScheduled = false;
+    void sync() {
+      final next = _read(_settings);
+      if (!_same(next, state.values)) {
+        state = state.copyWith(values: next);
+      }
+    }
 
-  static const _key = 'alert_thresholds';
+    void scheduleSync() {
+      if (syncScheduled) return;
+      syncScheduled = true;
+      scheduleMicrotask(() {
+        syncScheduled = false;
+        sync();
+      });
+    }
+
+    _sub = _settings.watch(SettingsKeys.alertThresholds).listen((_) => scheduleSync());
+  }
+  final SettingsRepository _settings;
+  StreamSubscription? _sub;
+  Timer? _persistDebounce;
 
   static Map<String, double> _read(SettingsRepository settings) {
-    final raw = settings.get<Object?>(_key);
+    final raw = settings.get<Object?>(SettingsKeys.alertThresholds);
     if (raw is Map) {
       final out = <String, double>{};
       for (final e in raw.entries) {
@@ -46,20 +69,61 @@ class AlertThresholdsNotifier extends StateNotifier<AlertThresholdsState> {
     };
   }
 
+  static bool _same(Map<String, double> a, Map<String, double> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (final e in a.entries) {
+      final other = b[e.key];
+      if (other == null) return false;
+      if (other != e.value) return false;
+    }
+    return true;
+  }
+
+  Future<void> _persistNow(Map<String, double> values) async {
+    try {
+      await _settings.put(SettingsKeys.alertThresholds, values);
+    } catch (e, st) {
+      AppLogger.error('Failed to persist alert thresholds', name: 'settings', error: e, stackTrace: st);
+      final next = _read(_settings);
+      if (!_same(next, state.values)) {
+        state = state.copyWith(values: next);
+      }
+    }
+  }
+
   void setValue(String key, double value) {
     final next = Map<String, double>.from(state.values);
     next[key] = value;
     state = state.copyWith(values: next);
-    _settings.put(_key, next);
+    _persistDebounce?.cancel();
+    _persistDebounce = Timer(const Duration(milliseconds: 250), () {
+      unawaited(_persistNow(next));
+    });
   }
 
-  void resetDefaults() {
-    _settings.delete(_key);
-    state = state.copyWith(values: _read(_settings));
+  Future<void> resetDefaults() async {
+    final prev = state;
+    _persistDebounce?.cancel();
+    _persistDebounce = null;
+    try {
+      await _settings.delete(SettingsKeys.alertThresholds);
+      state = state.copyWith(values: _read(_settings));
+    } catch (e, st) {
+      AppLogger.error('Failed to reset alert thresholds', name: 'settings', error: e, stackTrace: st);
+      state = prev;
+    }
+  }
+
+  @override
+  void dispose() {
+    _persistDebounce?.cancel();
+    _sub?.cancel();
+    super.dispose();
   }
 }
 
-final alertThresholdsProvider = StateNotifierProvider.autoDispose<AlertThresholdsNotifier, AlertThresholdsState>((ref) {
+final alertThresholdsProvider = StateNotifierProvider<AlertThresholdsNotifier, AlertThresholdsState>((ref) {
   final settings = ref.watch(settingsRepositoryProvider);
   return AlertThresholdsNotifier(settings);
 });

@@ -18,6 +18,7 @@ part 'router_provider.g.dart';
 
 @riverpod
 GoRouter router(RouterRef ref) {
+  ref.keepAlive();
   final refresh = ValueNotifier<int>(0);
   ref.onDispose(refresh.dispose);
 
@@ -31,7 +32,7 @@ GoRouter router(RouterRef ref) {
     refreshListenable: refresh,
     redirect: (context, state) {
       final completed = ref.read(onboardingCompletedProvider);
-      final isOnboarding = state.matchedLocation == '/onboarding';
+      final isOnboarding = state.uri.path == '/onboarding';
 
       if (!completed && !isOnboarding) return '/onboarding';
       if (completed && isOnboarding) return '/';

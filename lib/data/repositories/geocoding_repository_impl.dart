@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:weathernav/core/config/app_config.dart';
+import 'package:weathernav/core/network/dio_error_mapper.dart';
 import 'package:weathernav/domain/failures/app_failure.dart';
 import 'package:weathernav/domain/models/place_suggestion.dart';
 import 'package:weathernav/domain/repositories/geocoding_repository.dart';
@@ -34,7 +35,11 @@ class PhotonGeocodingRepository implements GeocodingRepository {
         },
       );
     } on DioException catch (e, st) {
-      throw AppFailure('Impossible de rechercher ce lieu.', cause: e, stackTrace: st);
+      throw AppFailure(
+        mapDioExceptionToMessage(e, defaultMessage: 'Impossible de rechercher ce lieu.'),
+        cause: e,
+        stackTrace: st,
+      );
     } catch (e, st) {
       throw AppFailure('Erreur inattendue lors de la recherche de lieu.', cause: e, stackTrace: st);
     }

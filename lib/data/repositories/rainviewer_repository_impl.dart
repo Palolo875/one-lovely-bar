@@ -1,14 +1,17 @@
 import 'package:dio/dio.dart';
 import 'package:weathernav/core/config/app_config.dart';
+import 'package:weathernav/core/network/dio_error_mapper.dart';
 import 'package:weathernav/domain/failures/app_failure.dart';
+import 'package:weathernav/domain/repositories/cache_repository.dart';
 import 'package:weathernav/domain/repositories/rainviewer_repository.dart';
 import 'package:weathernav/domain/repositories/settings_repository.dart';
 
 class RainViewerRepositoryImpl implements RainViewerRepository {
 
-  RainViewerRepositoryImpl(this._dio, this._settings);
+  RainViewerRepositoryImpl(this._dio, this._cache, {this.legacy});
   final Dio _dio;
-  final SettingsRepository _settings;
+  final CacheRepository _cache;
+  final SettingsRepository? legacy;
 
   static const _ttl = Duration(minutes: 5);
   static const _key = 'rainviewer_latest_time';
@@ -35,7 +38,11 @@ class RainViewerRepositoryImpl implements RainViewerRepository {
     } on DioException catch (e, st) {
       final stale = _readCache(freshOnly: false);
       if (stale != null) return stale;
-      throw AppFailure('Impossible de récupérer le radar pluie.', cause: e, stackTrace: st);
+      throw AppFailure(
+        mapDioExceptionToMessage(e, defaultMessage: 'Impossible de récupérer le radar pluie.'),
+        cause: e,
+        stackTrace: st,
+      );
     } catch (e, st) {
       final stale = _readCache(freshOnly: false);
       if (stale != null) return stale;
@@ -55,7 +62,7 @@ class RainViewerRepositoryImpl implements RainViewerRepository {
     if (time is! num) return null;
 
     final v = time.toInt();
-    await _settings.put(_key, {
+    await _cache.put(_key, {
       'ts': DateTime.now().millisecondsSinceEpoch,
       'time': v,
     });
@@ -63,7 +70,7 @@ class RainViewerRepositoryImpl implements RainViewerRepository {
   }
 
   int? _readCache({required bool freshOnly}) {
-    final raw = _settings.get<Map>(_key);
+    final raw = _cache.get<Object?>(_key) ?? legacy?.get<Object?>(_key);
     if (raw is! Map) return null;
     final ts = raw['ts'];
     final time = raw['time'];

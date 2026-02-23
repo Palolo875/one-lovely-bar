@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:weathernav/core/logging/app_logger.dart';
+import 'package:weathernav/core/storage/settings_keys.dart';
 import 'package:weathernav/presentation/providers/settings_provider.dart';
 import 'package:weathernav/presentation/providers/profile_provider.dart';
 import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
@@ -22,8 +25,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   ProfileType? _selectedProfile;
   bool _requestingPermissions = false;
 
-  static const _profileKey = 'primary_profile_type';
-
   @override
   void dispose() {
     _controller.dispose();
@@ -38,7 +39,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Future<void> _persistProfile(ProfileType type) async {
     final settings = ref.read(settingsRepositoryProvider);
-    await settings.put(_profileKey, type.name);
+    try {
+      await settings.put(SettingsKeys.primaryProfileType, type.name);
+    } catch (e, st) {
+      AppLogger.warn('Onboarding: failed to persist profile type', name: 'onboarding', error: e, stackTrace: st);
+    }
   }
 
   Future<void> _next() async {
@@ -76,7 +81,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   void _selectProfile(ProfileType type) {
     setState(() => _selectedProfile = type);
     ref.read(profileNotifierProvider.notifier).setProfileByType(type);
-    _persistProfile(type);
+    unawaited(_persistProfile(type));
   }
 
   List<ProfileType> get _profiles => const [

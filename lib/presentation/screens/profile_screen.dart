@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -63,19 +65,25 @@ class ProfileScreen extends ConsumerWidget {
                 RadioListTile<ThemeMode>(
                   value: ThemeMode.system,
                   groupValue: settings.themeMode,
-                  onChanged: (v) => settingsNotifier.setThemeMode(v ?? ThemeMode.system),
+                  onChanged: (v) {
+                    unawaited(settingsNotifier.setThemeMode(v ?? ThemeMode.system));
+                  },
                   title: const Text('Automatique'),
                 ),
                 RadioListTile<ThemeMode>(
                   value: ThemeMode.light,
                   groupValue: settings.themeMode,
-                  onChanged: (v) => settingsNotifier.setThemeMode(v ?? ThemeMode.system),
+                  onChanged: (v) {
+                    unawaited(settingsNotifier.setThemeMode(v ?? ThemeMode.system));
+                  },
                   title: const Text('Clair'),
                 ),
                 RadioListTile<ThemeMode>(
                   value: ThemeMode.dark,
                   groupValue: settings.themeMode,
-                  onChanged: (v) => settingsNotifier.setThemeMode(v ?? ThemeMode.system),
+                  onChanged: (v) {
+                    unawaited(settingsNotifier.setThemeMode(v ?? ThemeMode.system));
+                  },
                   title: const Text('Sombre'),
                 ),
               ],
@@ -141,7 +149,9 @@ class ProfileScreen extends ConsumerWidget {
                 RadioListTile<MapStyleSource>(
                   value: MapStyleSource.openFreeMap,
                   groupValue: mapStyle.source,
-                  onChanged: (v) => mapStyleNotifier.setSource(v ?? MapStyleSource.openFreeMap),
+                  onChanged: (v) {
+                    unawaited(mapStyleNotifier.setSource(v ?? MapStyleSource.openFreeMap));
+                  },
                   title: const Text('OpenFreeMap (par défaut)'),
                   subtitle: const Text('Pas de SLA — fallback recommandé'),
                 ),
@@ -149,14 +159,18 @@ class ProfileScreen extends ConsumerWidget {
                 RadioListTile<MapStyleSource>(
                   value: MapStyleSource.cartoPositron,
                   groupValue: mapStyle.source,
-                  onChanged: (v) => mapStyleNotifier.setSource(v ?? MapStyleSource.openFreeMap),
+                  onChanged: (v) {
+                    unawaited(mapStyleNotifier.setSource(v ?? MapStyleSource.openFreeMap));
+                  },
                   title: const Text('Carto Positron (fallback)'),
                 ),
                 const Divider(height: 1),
                 RadioListTile<MapStyleSource>(
                   value: MapStyleSource.stamenToner,
                   groupValue: mapStyle.source,
-                  onChanged: (v) => mapStyleNotifier.setSource(v ?? MapStyleSource.openFreeMap),
+                  onChanged: (v) {
+                    unawaited(mapStyleNotifier.setSource(v ?? MapStyleSource.openFreeMap));
+                  },
                   title: const Text('Stamen Toner (fallback)'),
                 ),
               ],
@@ -300,7 +314,9 @@ class ProfileScreen extends ConsumerWidget {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton.icon(
-                      onPressed: alertThresholdsNotifier.resetDefaults,
+                      onPressed: () {
+                        unawaited(alertThresholdsNotifier.resetDefaults());
+                      },
                       icon: const Icon(LucideIcons.rotateCcw),
                       label: const Text('Réinitialiser'),
                     ),
@@ -330,12 +346,17 @@ class ProfileScreen extends ConsumerWidget {
                       builder: (_) => _AddOfflineZoneSheet(initial: pos),
                     );
                     if (created == null) return;
-                    offlineZonesNotifier.add(
+                    final ok = offlineZonesNotifier.add(
                       name: created.name,
                       lat: created.lat,
                       lng: created.lng,
                       radiusKm: created.radiusKm,
                     );
+                    if (!ok && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Paramètres invalides pour la zone hors-ligne.')),
+                      );
+                    }
                   },
                 ),
                 const Divider(height: 1),
@@ -390,7 +411,7 @@ Future<void> _pickOne(
   required String title,
   required String current,
   required List<String> values,
-  required ValueChanged<String> onSelected,
+  required Future<void> Function(String) onSelected,
 }) async {
   final selected = await showModalBottomSheet<String>(
     context: context,
@@ -413,7 +434,7 @@ Future<void> _pickOne(
     },
   );
   if (selected == null) return;
-  onSelected(selected);
+  await onSelected(selected);
 }
 
 class _ProfilePickerSheet extends ConsumerWidget {

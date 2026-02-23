@@ -6,6 +6,7 @@ import 'package:weathernav/core/logging/app_logger.dart';
 import 'package:weathernav/domain/failures/app_failure.dart';
 import 'package:weathernav/domain/models/user_profile.dart';
 import 'package:weathernav/domain/models/weather_condition.dart';
+import 'package:weathernav/presentation/providers/cache_repository_provider.dart';
 import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
 
 class HomePersistentWeatherSheet extends ConsumerWidget {
@@ -112,10 +113,11 @@ class HomePersistentWeatherSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     DateTime? cachedAt;
     try {
+      final cache = ref.watch(cacheRepositoryProvider);
       final settings = ref.watch(settingsRepositoryProvider);
       final key =
           'wx_current:${center.latitude.toStringAsFixed(3)},${center.longitude.toStringAsFixed(3)}';
-      final raw = settings.get(key);
+      final raw = cache.get<Object?>(key) ?? settings.get<Object?>(key);
       if (raw is Map && raw['ts'] is int) {
         cachedAt = DateTime.fromMillisecondsSinceEpoch(raw['ts'] as int);
       }

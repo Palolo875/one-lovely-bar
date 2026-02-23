@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:weathernav/core/config/app_config.dart';
 import 'package:weathernav/core/logging/app_logger.dart';
+import 'package:weathernav/core/network/dio_error_mapper.dart';
 import 'package:weathernav/domain/failures/app_failure.dart';
 import 'package:weathernav/domain/models/route_instruction.dart';
 import 'package:weathernav/domain/models/route_models.dart';
@@ -80,7 +81,11 @@ class ValhallaRoutingRepository implements RoutingRepository {
         ),
       );
     } on DioException catch (e, st) {
-      throw AppFailure('Impossible de calculer l’itinéraire.', cause: e, stackTrace: st);
+      throw AppFailure(
+        mapDioExceptionToMessage(e, defaultMessage: 'Impossible de calculer l’itinéraire.'),
+        cause: e,
+        stackTrace: st,
+      );
     } catch (e, st) {
       throw AppFailure('Erreur inattendue lors du calcul de l’itinéraire.', cause: e, stackTrace: st);
     }
@@ -152,7 +157,11 @@ class ValhallaRoutingRepository implements RoutingRepository {
         ),
       );
     } on DioException catch (e, st) {
-      throw AppFailure('Impossible de récupérer les instructions.', cause: e, stackTrace: st);
+      throw AppFailure(
+        mapDioExceptionToMessage(e, defaultMessage: 'Impossible de récupérer les instructions.'),
+        cause: e,
+        stackTrace: st,
+      );
     } catch (e, st) {
       throw AppFailure('Erreur inattendue lors de la récupération des instructions.', cause: e, stackTrace: st);
     }

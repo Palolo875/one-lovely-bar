@@ -6,6 +6,7 @@ import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:weathernav/core/config/app_config.dart';
 import 'package:weathernav/core/logging/app_logger.dart';
 import 'package:weathernav/core/network/dio_factory.dart';
+import 'package:weathernav/core/storage/settings_keys.dart';
 
 class WorkmanagerTasks {
   static const weatherRefreshTask = 'weathernav_weather_refresh';
@@ -18,8 +19,10 @@ void callbackDispatcher() {
 
     await Hive.initFlutter();
     await Hive.openBox('settings');
+    await Hive.openBox('cache');
 
     final settings = Hive.box('settings');
+    final cache = Hive.box('cache');
 
     // Best-effort refresh: we ping RainViewer and Open-Meteo for cached locations.
     final dio = createAppDio();
@@ -37,7 +40,7 @@ void callbackDispatcher() {
               if (last is Map<String, dynamic>) {
                 final time = last['time'];
                 if (time is num) {
-                  settings.put('rainviewer_latest_time', {
+                  cache.put(SettingsKeys.rainviewerLatestTime, {
                     'ts': DateTime.now().millisecondsSinceEpoch,
                     'time': time.toInt(),
                   });
@@ -50,7 +53,10 @@ void callbackDispatcher() {
         AppLogger.warn('Background refresh: RainViewer ping failed', name: 'background', error: e, stackTrace: st);
       }
 
-      final keys = settings.keys.map((k) => k.toString()).toList();
+      final keys = <String>{
+        ...cache.keys.map((k) => k.toString()),
+        ...settings.keys.map((k) => k.toString()),
+      }.toList();
 
       for (final key in keys) {
         if (key.startsWith('wx_current:')) {
@@ -84,7 +90,7 @@ void callbackDispatcher() {
                 'timestamp': current['time']?.toString(),
               };
 
-              settings.put(key, {
+              cache.put(key, {
                 'ts': DateTime.now().millisecondsSinceEpoch,
                 'data': payload,
               });
@@ -139,7 +145,7 @@ void callbackDispatcher() {
                   });
                 }
 
-                settings.put(key, {
+                cache.put(key, {
                   'ts': DateTime.now().millisecondsSinceEpoch,
                   'data': out,
                 });

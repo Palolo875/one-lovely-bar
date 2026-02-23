@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:weathernav/core/logging/app_logger.dart';
+import 'package:weathernav/core/storage/settings_keys.dart';
 import 'package:weathernav/domain/repositories/settings_repository.dart';
 import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
 
@@ -40,17 +42,18 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
       : super(
           AppSettingsState(
             themeMode: _readThemeMode(_settings),
-            speedUnit: _settings.getOrDefault<String>('unit_speed', 'km/h'),
-            tempUnit: _settings.getOrDefault<String>('unit_temp', '°C'),
-            distanceUnit: _settings.getOrDefault<String>('unit_distance', 'km'),
+            speedUnit: _settings.getOrDefault<String>(SettingsKeys.unitSpeed, 'km/h'),
+            tempUnit: _settings.getOrDefault<String>(SettingsKeys.unitTemp, '°C'),
+            distanceUnit: _settings.getOrDefault<String>(SettingsKeys.unitDistance, 'km'),
           ),
         ) {
+    var syncScheduled = false;
     void sync() {
       final next = AppSettingsState(
         themeMode: _readThemeMode(_settings),
-        speedUnit: _settings.getOrDefault<String>('unit_speed', 'km/h'),
-        tempUnit: _settings.getOrDefault<String>('unit_temp', '°C'),
-        distanceUnit: _settings.getOrDefault<String>('unit_distance', 'km'),
+        speedUnit: _settings.getOrDefault<String>(SettingsKeys.unitSpeed, 'km/h'),
+        tempUnit: _settings.getOrDefault<String>(SettingsKeys.unitTemp, '°C'),
+        distanceUnit: _settings.getOrDefault<String>(SettingsKeys.unitDistance, 'km'),
       );
       if (next.themeMode != state.themeMode ||
           next.speedUnit != state.speedUnit ||
@@ -60,9 +63,23 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
       }
     }
 
-    for (final key in const ['theme_mode', 'unit_speed', 'unit_temp', 'unit_distance']) {
+    void scheduleSync() {
+      if (syncScheduled) return;
+      syncScheduled = true;
+      scheduleMicrotask(() {
+        syncScheduled = false;
+        sync();
+      });
+    }
+
+    for (final key in const [
+      SettingsKeys.themeMode,
+      SettingsKeys.unitSpeed,
+      SettingsKeys.unitTemp,
+      SettingsKeys.unitDistance,
+    ]) {
       _subs.add(
-        _settings.watch(key).listen((_) => sync()),
+        _settings.watch(key).listen((_) => scheduleSync()),
       );
     }
   }
@@ -70,37 +87,81 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
   final List<StreamSubscription> _subs = [];
 
   static ThemeMode _readThemeMode(SettingsRepository settings) {
-    final raw = settings.getOrDefault<String>('theme_mode', 'system');
+    final raw = settings.getOrDefault<String>(SettingsKeys.themeMode, 'system');
     if (raw == 'light') return ThemeMode.light;
     if (raw == 'dark') return ThemeMode.dark;
     return ThemeMode.system;
   }
 
-  void setThemeMode(ThemeMode mode) {
-    state = state.copyWith(themeMode: mode);
-    _settings.put(
-      'theme_mode',
-      switch (mode) {
-        ThemeMode.light => 'light',
-        ThemeMode.dark => 'dark',
-        _ => 'system',
-      },
-    );
+  Future<void> setThemeMode(ThemeMode mode) async {
+    final prev = state;
+    try {
+      await _settings.put(
+        SettingsKeys.themeMode,
+        switch (mode) {
+          ThemeMode.light => 'light',
+          ThemeMode.dark => 'dark',
+          _ => 'system',
+        },
+      );
+      state = state.copyWith(themeMode: mode);
+    } catch (e, st) {
+      AppLogger.error(
+        'Failed to persist theme mode',
+        name: 'settings',
+        error: e,
+        stackTrace: st,
+      );
+      state = prev;
+    }
   }
 
-  void setSpeedUnit(String value) {
-    state = state.copyWith(speedUnit: value);
-    _settings.put('unit_speed', value);
+  Future<void> setSpeedUnit(String value) async {
+    final prev = state;
+    try {
+      await _settings.put(SettingsKeys.unitSpeed, value);
+      state = state.copyWith(speedUnit: value);
+    } catch (e, st) {
+      AppLogger.error(
+        'Failed to persist speed unit',
+        name: 'settings',
+        error: e,
+        stackTrace: st,
+      );
+      state = prev;
+    }
   }
 
-  void setTempUnit(String value) {
-    state = state.copyWith(tempUnit: value);
-    _settings.put('unit_temp', value);
+  Future<void> setTempUnit(String value) async {
+    final prev = state;
+    try {
+      await _settings.put(SettingsKeys.unitTemp, value);
+      state = state.copyWith(tempUnit: value);
+    } catch (e, st) {
+      AppLogger.error(
+        'Failed to persist temperature unit',
+        name: 'settings',
+        error: e,
+        stackTrace: st,
+      );
+      state = prev;
+    }
   }
 
-  void setDistanceUnit(String value) {
-    state = state.copyWith(distanceUnit: value);
-    _settings.put('unit_distance', value);
+  Future<void> setDistanceUnit(String value) async {
+    final prev = state;
+    try {
+      await _settings.put(SettingsKeys.unitDistance, value);
+      state = state.copyWith(distanceUnit: value);
+    } catch (e, st) {
+      AppLogger.error(
+        'Failed to persist distance unit',
+        name: 'settings',
+        error: e,
+        stackTrace: st,
+      );
+      state = prev;
+    }
   }
 
   @override
@@ -112,7 +173,7 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
   }
 }
 
-final appSettingsProvider = StateNotifierProvider.autoDispose<AppSettingsNotifier, AppSettingsState>((ref) {
+final appSettingsProvider = StateNotifierProvider<AppSettingsNotifier, AppSettingsState>((ref) {
   final settings = ref.watch(settingsRepositoryProvider);
   return AppSettingsNotifier(settings);
 });
@@ -120,21 +181,31 @@ final appSettingsProvider = StateNotifierProvider.autoDispose<AppSettingsNotifie
 class OnboardingStatusNotifier extends StateNotifier<bool> {
 
   OnboardingStatusNotifier(this._settings)
-      : super(_settings.getOrDefault<bool>(_key, false) == true) {
-    _sub = _settings.watch(_key).listen((event) {
-      final next = _settings.getOrDefault<bool>(_key, false) == true;
+      : super(_settings.getOrDefault<bool>(SettingsKeys.onboardingCompleted, false) == true) {
+    _sub = _settings.watch(SettingsKeys.onboardingCompleted).listen((event) {
+      final next = _settings.getOrDefault<bool>(SettingsKeys.onboardingCompleted, false) == true;
       if (next != state) state = next;
     });
   }
-  static const _key = 'onboarding_completed';
 
   final SettingsRepository _settings;
   StreamSubscription? _sub;
 
   Future<void> setCompleted(bool value) async {
     if (value == state) return;
-    state = value;
-    await _settings.put(_key, value);
+    final prev = state;
+    try {
+      await _settings.put(SettingsKeys.onboardingCompleted, value);
+      state = value;
+    } catch (e, st) {
+      AppLogger.error(
+        'Failed to persist onboarding completion',
+        name: 'settings',
+        error: e,
+        stackTrace: st,
+      );
+      state = prev;
+    }
   }
 
   @override
@@ -144,7 +215,7 @@ class OnboardingStatusNotifier extends StateNotifier<bool> {
   }
 }
 
-final onboardingCompletedProvider = StateNotifierProvider.autoDispose<OnboardingStatusNotifier, bool>((ref) {
+final onboardingCompletedProvider = StateNotifierProvider<OnboardingStatusNotifier, bool>((ref) {
   final settings = ref.watch(settingsRepositoryProvider);
   return OnboardingStatusNotifier(settings);
 });
