@@ -9,7 +9,6 @@ import 'package:weathernav/domain/models/route_models.dart';
 import 'package:weathernav/domain/repositories/routing_repository.dart';
 
 class ValhallaRoutingRepository implements RoutingRepository {
-
   ValhallaRoutingRepository(this._dio);
   final Dio _dio;
 
@@ -50,12 +49,12 @@ class ValhallaRoutingRepository implements RoutingRepository {
     };
   }
 
-  Future<Response> _callValhalla(Map<String, dynamic> requestJson) async {
+  Future<Response<dynamic>> _callValhalla(
+    Map<String, dynamic> requestJson,
+  ) async {
     return _dio.get(
       '${AppConfig.valhallaBaseUrl}/route',
-      queryParameters: {
-        'json': jsonEncode(requestJson),
-      },
+      queryParameters: {'json': jsonEncode(requestJson)},
     );
   }
 
@@ -68,7 +67,7 @@ class ValhallaRoutingRepository implements RoutingRepository {
     required String profile,
     List<RoutePoint>? waypoints,
   }) async {
-    late final Response response;
+    late final Response<dynamic> response;
     try {
       response = await _callValhalla(
         _buildRequestJson(
@@ -82,12 +81,19 @@ class ValhallaRoutingRepository implements RoutingRepository {
       );
     } on DioException catch (e, st) {
       throw AppFailure(
-        mapDioExceptionToMessage(e, defaultMessage: 'Impossible de calculer l’itinéraire.'),
+        mapDioExceptionToMessage(
+          e,
+          defaultMessage: 'Impossible de calculer l’itinéraire.',
+        ),
         cause: e,
         stackTrace: st,
       );
     } catch (e, st) {
-      throw AppFailure('Erreur inattendue lors du calcul de l’itinéraire.', cause: e, stackTrace: st);
+      throw AppFailure(
+        'Erreur inattendue lors du calcul de l’itinéraire.',
+        cause: e,
+        stackTrace: st,
+      );
     }
 
     final parsed = () {
@@ -121,9 +127,17 @@ class ValhallaRoutingRepository implements RoutingRepository {
               ]
             : decoded;
 
-        return (points: points, distanceKm: distanceKm, durationSeconds: durationSeconds);
+        return (
+          points: points,
+          distanceKm: distanceKm,
+          durationSeconds: durationSeconds,
+        );
       } catch (e, st) {
-        throw AppFailure('Réponse itinéraire invalide.', cause: e, stackTrace: st);
+        throw AppFailure(
+          'Réponse itinéraire invalide.',
+          cause: e,
+          stackTrace: st,
+        );
       }
     }();
 
@@ -144,7 +158,7 @@ class ValhallaRoutingRepository implements RoutingRepository {
     required String profile,
     List<RoutePoint>? waypoints,
   }) async {
-    late final Response response;
+    late final Response<dynamic> response;
     try {
       response = await _callValhalla(
         _buildRequestJson(
@@ -158,17 +172,27 @@ class ValhallaRoutingRepository implements RoutingRepository {
       );
     } on DioException catch (e, st) {
       throw AppFailure(
-        mapDioExceptionToMessage(e, defaultMessage: 'Impossible de récupérer les instructions.'),
+        mapDioExceptionToMessage(
+          e,
+          defaultMessage: 'Impossible de récupérer les instructions.',
+        ),
         cause: e,
         stackTrace: st,
       );
     } catch (e, st) {
-      throw AppFailure('Erreur inattendue lors de la récupération des instructions.', cause: e, stackTrace: st);
+      throw AppFailure(
+        'Erreur inattendue lors de la récupération des instructions.',
+        cause: e,
+        stackTrace: st,
+      );
     }
 
     final data = _asMap(response.data);
     if (data == null) {
-      throw const AppFailure('Réponse instructions invalide.', cause: FormatException('Invalid Valhalla response root'));
+      throw const AppFailure(
+        'Réponse instructions invalide.',
+        cause: FormatException('Invalid Valhalla response root'),
+      );
     }
     final trip = _asMap(data['trip']) ?? const <String, dynamic>{};
     final legs = _asList(trip['legs']) ?? const <dynamic>[];
@@ -233,13 +257,17 @@ class ValhallaRoutingRepository implements RoutingRepository {
         index = lngResult.nextIndex;
         lng += lngResult.delta;
 
-        coordinates.add(RoutePoint(
-          latitude: lat * factor,
-          longitude: lng * factor,
-        ));
+        coordinates.add(
+          RoutePoint(latitude: lat * factor, longitude: lng * factor),
+        );
       }
     } catch (e, st) {
-      AppLogger.warn('Valhalla polyline decode failed', name: 'routing', error: e, stackTrace: st);
+      AppLogger.warn(
+        'Valhalla polyline decode failed',
+        name: 'routing',
+        error: e,
+        stackTrace: st,
+      );
       return const <RoutePoint>[];
     }
 
@@ -274,16 +302,19 @@ class ValhallaRoutingRepository implements RoutingRepository {
 
   String _mapProfileToCosting(String profile) {
     switch (profile) {
-      case 'cyclist': return 'bicycle';
-      case 'hiker': return 'pedestrian';
-      case 'driver': return 'auto';
-      default: return 'auto';
+      case 'cyclist':
+        return 'bicycle';
+      case 'hiker':
+        return 'pedestrian';
+      case 'driver':
+        return 'auto';
+      default:
+        return 'auto';
     }
   }
 }
 
 class _PolylineDelta {
-
   const _PolylineDelta({required this.delta, required this.nextIndex});
   final int delta;
   final int nextIndex;

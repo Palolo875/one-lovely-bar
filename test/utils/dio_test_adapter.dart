@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 
 class TestDioAdapter implements HttpClientAdapter {
-
   TestDioAdapter({required this.handler});
   final FutureOr<ResponseBody> Function(RequestOptions options) handler;
 
@@ -15,30 +14,42 @@ class TestDioAdapter implements HttpClientAdapter {
   Future<ResponseBody> fetch(
     RequestOptions options,
     Stream<List<int>>? requestStream,
-    Future? cancelFuture,
+    Future<void>? cancelFuture,
   ) async {
     return await handler(options);
   }
 
-  static ResponseBody jsonBody(Object? data, {int statusCode = 200, Map<String, List<String>>? headers}) {
+  static ResponseBody jsonBody(
+    Object? data, {
+    int statusCode = 200,
+    Map<String, List<String>>? headers,
+  }) {
     final encoded = utf8.encode(jsonEncode(data));
     return ResponseBody.fromBytes(
       encoded,
       statusCode,
-      headers: headers ?? {
-        Headers.contentTypeHeader: [Headers.jsonContentType],
-      },
+      headers:
+          headers ??
+          {
+            Headers.contentTypeHeader: [Headers.jsonContentType],
+          },
     );
   }
 
-  static ResponseBody textBody(String data, {int statusCode = 200, Map<String, List<String>>? headers}) {
+  static ResponseBody textBody(
+    String data, {
+    int statusCode = 200,
+    Map<String, List<String>>? headers,
+  }) {
     final encoded = utf8.encode(data);
     return ResponseBody.fromBytes(
       encoded,
       statusCode,
-      headers: headers ?? {
-        Headers.contentTypeHeader: [Headers.textPlainContentType],
-      },
+      headers:
+          headers ??
+          {
+            Headers.contentTypeHeader: [Headers.textPlainContentType],
+          },
     );
   }
 }

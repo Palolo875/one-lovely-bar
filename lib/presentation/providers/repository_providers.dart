@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:riverpod/riverpod.dart';
 import 'package:weathernav/core/config/app_config.dart';
 import 'package:weathernav/core/network/dio_factory.dart';
 import 'package:weathernav/data/repositories/geocoding_repository_impl.dart';

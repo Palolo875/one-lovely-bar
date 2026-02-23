@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:riverpod/riverpod.dart';
 import 'package:weathernav/presentation/providers/route_provider.dart';
 import 'package:weathernav/presentation/providers/settings_provider.dart';
 import 'package:weathernav/presentation/screens/guidance_screen.dart';

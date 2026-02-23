@@ -66,7 +66,7 @@ final class PlaceSearchProvider
   }
 }
 
-String _$placeSearchHash() => r'332890827616c8066db5285a1c8328d312c258cc';
+String _$placeSearchHash() => r'90f167a7b030151a16854b87b68a08c27b5e0a54';
 
 final class PlaceSearchFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<List<PlaceSuggestion>>, String> {

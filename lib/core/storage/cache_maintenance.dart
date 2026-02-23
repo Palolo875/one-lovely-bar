@@ -1,11 +1,11 @@
 import 'package:hive_ce/hive.dart';
 
 Future<void> purgeCacheBox(
-  Box box, {
+  Box<Object?> box, {
   Duration maxAge = const Duration(days: 7),
 }) async {
   final now = DateTime.now();
-  final toDelete = <dynamic>[];
+  final toDelete = <Object?>[];
 
   for (final key in box.keys) {
     final v = box.get(key);

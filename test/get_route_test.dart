@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:weathernav/domain/models/route_models.dart';
+import 'package:weathernav/domain/models/route_instruction.dart';
 import 'package:weathernav/domain/repositories/routing_repository.dart';
 import 'package:weathernav/domain/usecases/get_route.dart';
 
@@ -33,6 +34,18 @@ class _FakeRoutingRepository implements RoutingRepository {
       durationMinutes: 2,
       profile: profile,
     );
+  }
+
+  @override
+  Future<List<RouteInstruction>> getRouteInstructions({
+    required double startLat,
+    required double startLng,
+    required double endLat,
+    required double endLng,
+    required String profile,
+    List<RoutePoint>? waypoints,
+  }) async {
+    return <RouteInstruction>[];
   }
 }
 

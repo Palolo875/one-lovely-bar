@@ -262,6 +262,8 @@ class _ProfileSlide extends StatelessWidget {
 
   String _label(ProfileType t) {
     switch (t) {
+      case ProfileType.universal:
+        return 'Universel';
       case ProfileType.cyclist:
         return 'Cycliste';
       case ProfileType.hiker:
@@ -274,13 +276,13 @@ class _ProfileSlide extends StatelessWidget {
         return 'Parapente';
       case ProfileType.camper:
         return 'Campeur';
-      default:
-        return 'Profil';
     }
   }
 
   IconData _icon(ProfileType t) {
     switch (t) {
+      case ProfileType.universal:
+        return LucideIcons.user;
       case ProfileType.cyclist:
         return LucideIcons.bike;
       case ProfileType.hiker:
@@ -293,8 +295,6 @@ class _ProfileSlide extends StatelessWidget {
         return LucideIcons.wind;
       case ProfileType.camper:
         return LucideIcons.tent;
-      default:
-        return LucideIcons.user;
     }
   }
 

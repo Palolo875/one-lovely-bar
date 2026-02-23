@@ -4,16 +4,19 @@ import 'package:weathernav/domain/failures/app_failure.dart';
 import 'package:weathernav/domain/models/trip_history_item.dart';
 import 'package:weathernav/domain/repositories/trip_history_repository.dart';
 
-TripHistoryRepository createTripHistoryRepository() => TripHistoryRepositoryImplWeb();
+TripHistoryRepository createTripHistoryRepository() =>
+    TripHistoryRepositoryImplWeb();
 
 class TripHistoryRepositoryImplWeb implements TripHistoryRepository {
   static const _boxName = 'trips';
 
-  Box get _box {
+  Box<Map<String, Object?>> get _box {
     if (!Hive.isBoxOpen(_boxName)) {
-      throw StateError('Hive box "$_boxName" is not open. Call Hive.openBox("$_boxName") at startup.');
+      throw StateError(
+        'Hive box "$_boxName" is not open. Call Hive.openBox("$_boxName") at startup.',
+      );
     }
-    return Hive.box(_boxName);
+    return Hive.box<Map<String, Object?>>(_boxName);
   }
 
   int _nextId() {
@@ -27,7 +30,14 @@ class TripHistoryRepositoryImplWeb implements TripHistoryRepository {
   @override
   Future<void> addTrip({
     required DateTime createdAt,
-    required String profile, required double startLat, required double startLng, required double endLat, required double endLng, required double distanceKm, required double durationMinutes, DateTime? departureTime,
+    required String profile,
+    required double startLat,
+    required double startLng,
+    required double endLat,
+    required double endLng,
+    required double distanceKm,
+    required double durationMinutes,
+    DateTime? departureTime,
     String? gpx,
   }) async {
     try {
@@ -46,7 +56,11 @@ class TripHistoryRepositoryImplWeb implements TripHistoryRepository {
         'gpx': gpx,
       });
     } catch (e, st) {
-      throw AppFailure("Impossible d'enregistrer le trajet.", cause: e, stackTrace: st);
+      throw AppFailure(
+        "Impossible d'enregistrer le trajet.",
+        cause: e,
+        stackTrace: st,
+      );
     }
   }
 
@@ -54,10 +68,14 @@ class TripHistoryRepositoryImplWeb implements TripHistoryRepository {
   Future<TripHistoryItem?> getTrip(int id) async {
     try {
       final raw = _box.get(id);
-      if (raw is! Map) return null;
+      if (raw == null) return null;
       return _mapMap(raw);
     } catch (e, st) {
-      throw AppFailure('Impossible de charger le trajet.', cause: e, stackTrace: st);
+      throw AppFailure(
+        'Impossible de charger le trajet.',
+        cause: e,
+        stackTrace: st,
+      );
     }
   }
 
@@ -68,32 +86,39 @@ class TripHistoryRepositoryImplWeb implements TripHistoryRepository {
       for (final k in _box.keys) {
         if (k is! int) continue;
         final raw = _box.get(k);
-        if (raw is! Map) continue;
+        if (raw == null) continue;
         out.add(_mapMap(raw));
       }
       out.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       if (out.length > limit) return out.sublist(0, limit);
       return out;
     } catch (e, st) {
-      throw AppFailure("Impossible de charger l'historique.", cause: e, stackTrace: st);
+      throw AppFailure(
+        "Impossible de charger l'historique.",
+        cause: e,
+        stackTrace: st,
+      );
     }
   }
 
-  TripHistoryItem _mapMap(Map row) {
-    final createdAt = DateTime.fromMillisecondsSinceEpoch(row['created_at_ms'] as int);
+  TripHistoryItem _mapMap(Map<String, Object?> row) {
+    final createdAtMs = row['created_at_ms'] as int? ?? 0;
+    final createdAt = DateTime.fromMillisecondsSinceEpoch(createdAtMs);
     final departureMs = row['departure_time_ms'] as int?;
 
     return TripHistoryItem(
-      id: row['id'] as int,
+      id: row['id'] as int? ?? 0,
       createdAt: createdAt,
-      departureTime: departureMs == null ? null : DateTime.fromMillisecondsSinceEpoch(departureMs),
-      profile: row['profile'] as String,
-      startLat: (row['start_lat'] as num).toDouble(),
-      startLng: (row['start_lng'] as num).toDouble(),
-      endLat: (row['end_lat'] as num).toDouble(),
-      endLng: (row['end_lng'] as num).toDouble(),
-      distanceKm: (row['distance_km'] as num).toDouble(),
-      durationMinutes: (row['duration_minutes'] as num).toDouble(),
+      departureTime: departureMs == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(departureMs),
+      profile: row['profile'] as String? ?? '',
+      startLat: (row['start_lat'] as num?)?.toDouble() ?? 0.0,
+      startLng: (row['start_lng'] as num?)?.toDouble() ?? 0.0,
+      endLat: (row['end_lat'] as num?)?.toDouble() ?? 0.0,
+      endLng: (row['end_lng'] as num?)?.toDouble() ?? 0.0,
+      distanceKm: (row['distance_km'] as num?)?.toDouble() ?? 0.0,
+      durationMinutes: (row['duration_minutes'] as num?)?.toDouble() ?? 0.0,
       gpx: row['gpx'] as String?,
     );
   }

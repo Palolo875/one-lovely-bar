@@ -6,7 +6,6 @@ import 'package:weathernav/domain/models/place_suggestion.dart';
 import 'package:weathernav/domain/repositories/geocoding_repository.dart';
 
 class PhotonGeocodingRepository implements GeocodingRepository {
-
   PhotonGeocodingRepository(this._dio);
   final Dio _dio;
 
@@ -25,23 +24,27 @@ class PhotonGeocodingRepository implements GeocodingRepository {
   Future<List<PlaceSuggestion>> search(String query, {int limit = 8}) async {
     if (query.trim().isEmpty) return const <PlaceSuggestion>[];
 
-    late final Response response;
+    late final Response<dynamic> response;
     try {
       response = await _dio.get(
         '${AppConfig.photonBaseUrl}/api/',
-        queryParameters: {
-          'q': query,
-          'limit': limit,
-        },
+        queryParameters: {'q': query, 'limit': limit},
       );
     } on DioException catch (e, st) {
       throw AppFailure(
-        mapDioExceptionToMessage(e, defaultMessage: 'Impossible de rechercher ce lieu.'),
+        mapDioExceptionToMessage(
+          e,
+          defaultMessage: 'Impossible de rechercher ce lieu.',
+        ),
         cause: e,
         stackTrace: st,
       );
     } catch (e, st) {
-      throw AppFailure('Erreur inattendue lors de la recherche de lieu.', cause: e, stackTrace: st);
+      throw AppFailure(
+        'Erreur inattendue lors de la recherche de lieu.',
+        cause: e,
+        stackTrace: st,
+      );
     }
 
     final data = _asMap(response.data);
@@ -64,7 +67,12 @@ class PhotonGeocodingRepository implements GeocodingRepository {
       final lat = coords[1];
       if (lon is! num || lat is! num) continue;
 
-      final name = (properties['name'] ?? properties['street'] ?? properties['city'] ?? properties['country'])?.toString();
+      final name =
+          (properties['name'] ??
+                  properties['street'] ??
+                  properties['city'] ??
+                  properties['country'])
+              ?.toString();
       if (name == null || name.trim().isEmpty) continue;
 
       results.add(

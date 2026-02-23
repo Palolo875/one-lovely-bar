@@ -18,7 +18,7 @@ class AlertThresholdsState {
 
 class AlertThresholdsNotifier extends Notifier<AlertThresholdsState> {
   late final SettingsRepository _settings;
-  StreamSubscription? _sub;
+  StreamSubscription<void>? _sub;
   Timer? _persistDebounce;
 
   @override

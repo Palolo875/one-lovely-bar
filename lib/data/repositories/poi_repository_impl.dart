@@ -6,7 +6,6 @@ import 'package:weathernav/domain/models/poi.dart';
 import 'package:weathernav/domain/repositories/poi_repository.dart';
 
 class OverpassPoiRepository implements PoiRepository {
-
   OverpassPoiRepository(this._dio);
   final Dio _dio;
 
@@ -31,9 +30,15 @@ class OverpassPoiRepository implements PoiRepository {
   }) async {
     if (categories.isEmpty) return const <Poi>[];
 
-    final query = _buildQuery(lat: lat, lng: lng, radius: radiusMeters, categories: categories, limit: limit);
+    final query = _buildQuery(
+      lat: lat,
+      lng: lng,
+      radius: radiusMeters,
+      categories: categories,
+      limit: limit,
+    );
 
-    late final Response response;
+    late final Response<dynamic> response;
     try {
       response = await _dio.post(
         '${AppConfig.overpassBaseUrl}/api/interpreter',
@@ -45,12 +50,19 @@ class OverpassPoiRepository implements PoiRepository {
       );
     } on DioException catch (e, st) {
       throw AppFailure(
-        mapDioExceptionToMessage(e, defaultMessage: 'Impossible de charger les POIs.'),
+        mapDioExceptionToMessage(
+          e,
+          defaultMessage: 'Impossible de charger les POIs.',
+        ),
         cause: e,
         stackTrace: st,
       );
     } catch (e, st) {
-      throw AppFailure('Erreur inattendue lors du chargement des POIs.', cause: e, stackTrace: st);
+      throw AppFailure(
+        'Erreur inattendue lors du chargement des POIs.',
+        cause: e,
+        stackTrace: st,
+      );
     }
 
     final data = _asMap(response.data);
@@ -66,7 +78,8 @@ class OverpassPoiRepository implements PoiRepository {
       final idRaw = em['id'];
       final latRaw = em['lat'];
       final lonRaw = em['lon'];
-      if (type == null || idRaw == null || latRaw is! num || lonRaw is! num) continue;
+      if (type == null || idRaw == null || latRaw is! num || lonRaw is! num)
+        continue;
 
       final tags = _asMap(em['tags']);
       if (tags == null) continue;
@@ -108,7 +121,9 @@ class OverpassPoiRepository implements PoiRepository {
       filters.add('node["tourism"="alpine_hut"](around:$radius,$lat,$lng);');
     }
     if (categories.contains(PoiCategory.weatherStation)) {
-      filters.add('node["man_made"="monitoring_station"]["monitoring:weather"="yes"](around:$radius,$lat,$lng);');
+      filters.add(
+        'node["man_made"="monitoring_station"]["monitoring:weather"="yes"](around:$radius,$lat,$lng);',
+      );
     }
     if (categories.contains(PoiCategory.port)) {
       filters.add('node["harbour"="yes"](around:$radius,$lat,$lng);');
@@ -121,7 +136,8 @@ class OverpassPoiRepository implements PoiRepository {
   PoiCategory? _categoryFromTags(Map<String, dynamic> tags) {
     if (tags['amenity'] == 'shelter') return PoiCategory.shelter;
     if (tags['tourism'] == 'alpine_hut') return PoiCategory.hut;
-    if (tags['man_made'] == 'monitoring_station' && tags['monitoring:weather'] == 'yes') {
+    if (tags['man_made'] == 'monitoring_station' &&
+        tags['monitoring:weather'] == 'yes') {
       return PoiCategory.weatherStation;
     }
     if (tags['harbour'] == 'yes') return PoiCategory.port;

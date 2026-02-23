@@ -6,6 +6,7 @@ import 'package:mockito/annotations.dart';
 import 'package:weathernav/domain/models/offline_zone.dart';
 import 'package:weathernav/domain/repositories/offline_zones_repository.dart';
 import 'package:weathernav/presentation/providers/offline_zones_provider.dart';
+import 'package:weathernav/presentation/providers/offline_zones_repository_provider.dart';
 
 import 'offline_zones_provider_test.mocks.dart';
 
@@ -67,7 +68,7 @@ void main() {
         final state = await notifier.build();
 
         // Assert
-        expect(state.zones, []);
+        expect(state.zones, isEmpty);
         expect(state.isLoading, false);
         expect(state.error, contains('Failed to load offline zones'));
         verify(mockRepository.read()).called(1);
@@ -80,16 +81,16 @@ void main() {
         final zones = <OfflineZone>[];
         when(mockRepository.read()).thenReturn(zones);
         when(mockRepository.watch()).thenAnswer((_) => Stream.value(zones));
-        when(mockRepository.save(any)).thenAnswer((_) async {
-          return null;
-        });
+        when(mockRepository.save(any)).thenAnswer((_) async {});
       });
 
       test('should add valid zone successfully', () async {
         // Arrange
         final initialZones = <OfflineZone>[];
         when(mockRepository.read()).thenReturn(initialZones);
-        when(mockRepository.watch()).thenAnswer((_) => Stream.value(initialZones));
+        when(
+          mockRepository.watch(),
+        ).thenAnswer((_) => Stream.value(initialZones));
 
         // Initialize notifier
         await notifier.build();
@@ -105,8 +106,10 @@ void main() {
         // Assert
         expect(result, true);
         verify(mockRepository.save(any)).called(1);
-        
-        final savedZones = verify(mockRepository.save(captureAny)).captured.single as List<OfflineZone>;
+
+        final savedZones =
+            verify(mockRepository.save(captureAny)).captured.single
+                as List<OfflineZone>;
         expect(savedZones.length, 1);
         expect(savedZones.first.name, 'New Zone');
         expect(savedZones.first.lat, 48.8566);
@@ -118,7 +121,9 @@ void main() {
         // Arrange
         final initialZones = <OfflineZone>[];
         when(mockRepository.read()).thenReturn(initialZones);
-        when(mockRepository.watch()).thenAnswer((_) => Stream.value(initialZones));
+        when(
+          mockRepository.watch(),
+        ).thenAnswer((_) => Stream.value(initialZones));
 
         // Initialize notifier
         await notifier.build();
@@ -140,7 +145,9 @@ void main() {
         // Arrange
         final initialZones = <OfflineZone>[];
         when(mockRepository.read()).thenReturn(initialZones);
-        when(mockRepository.watch()).thenAnswer((_) => Stream.value(initialZones));
+        when(
+          mockRepository.watch(),
+        ).thenAnswer((_) => Stream.value(initialZones));
 
         // Initialize notifier
         await notifier.build();
@@ -162,7 +169,9 @@ void main() {
         // Arrange
         final initialZones = <OfflineZone>[];
         when(mockRepository.read()).thenReturn(initialZones);
-        when(mockRepository.watch()).thenAnswer((_) => Stream.value(initialZones));
+        when(
+          mockRepository.watch(),
+        ).thenAnswer((_) => Stream.value(initialZones));
         when(mockRepository.save(any)).thenThrow(Exception('Save failed'));
 
         // Initialize notifier
@@ -179,7 +188,7 @@ void main() {
         // Assert
         expect(result, false);
         verify(mockRepository.save(any)).called(1);
-        
+
         final currentState = container.read(offlineZonesProvider);
         expect(currentState.value?.error, contains('Failed to add zone'));
       });
@@ -199,9 +208,7 @@ void main() {
         final zones = [zone];
         when(mockRepository.read()).thenReturn(zones);
         when(mockRepository.watch()).thenAnswer((_) => Stream.value(zones));
-        when(mockRepository.save(any)).thenAnswer((_) async {
-          return null;
-        });
+        when(mockRepository.save(any)).thenAnswer((_) async {});
 
         // Initialize notifier
         await notifier.build();
@@ -212,8 +219,10 @@ void main() {
         // Assert
         expect(result, true);
         verify(mockRepository.save(any)).called(1);
-        
-        final savedZones = verify(mockRepository.save(captureAny)).captured.single as List<OfflineZone>;
+
+        final savedZones =
+            verify(mockRepository.save(captureAny)).captured.single
+                as List<OfflineZone>;
         expect(savedZones.length, 0);
       });
 
@@ -249,15 +258,13 @@ void main() {
         final zones = [zone];
         when(mockRepository.read()).thenReturn(zones);
         when(mockRepository.watch()).thenAnswer((_) => Stream.value(zones));
-        when(mockRepository.save(any)).thenAnswer((_) async {
-          return null;
-        });
+        when(mockRepository.save(any)).thenAnswer((_) async {});
 
         // Initialize notifier
         await notifier.build();
 
         // Act
-        final result = await notifier.update(
+        final result = await notifier.updateZone(
           zone.id,
           name: 'Updated Zone',
           radiusKm: 15,
@@ -266,8 +273,10 @@ void main() {
         // Assert
         expect(result, true);
         verify(mockRepository.save(any)).called(1);
-        
-        final savedZones = verify(mockRepository.save(captureAny)).captured.single as List<OfflineZone>;
+
+        final savedZones =
+            verify(mockRepository.save(captureAny)).captured.single
+                as List<OfflineZone>;
         expect(savedZones.length, 1);
         expect(savedZones.first.name, 'Updated Zone');
         expect(savedZones.first.radiusKm, 15.0);
@@ -284,7 +293,10 @@ void main() {
         await notifier.build();
 
         // Act
-        final result = await notifier.update('non-existent', name: 'Updated');
+        final result = await notifier.updateZone(
+          'non-existent',
+          name: 'Updated',
+        );
 
         // Assert
         expect(result, false);
@@ -306,9 +318,15 @@ void main() {
             createdAt: DateTime.now(),
           ),
         ];
-        
-        when(mockRepository.read()).thenReturn(initialZones).thenReturn(refreshedZones);
-        when(mockRepository.watch()).thenAnswer((_) => Stream.value(initialZones));
+
+        var readCall = 0;
+        when(mockRepository.read()).thenAnswer((_) {
+          readCall++;
+          return readCall == 1 ? initialZones : refreshedZones;
+        });
+        when(
+          mockRepository.watch(),
+        ).thenAnswer((_) => Stream.value(initialZones));
 
         // Initialize notifier
         await notifier.build();
@@ -328,7 +346,9 @@ void main() {
       test('should clear error state', () async {
         // Arrange
         when(mockRepository.read()).thenThrow(Exception('Test error'));
-        when(mockRepository.watch()).thenAnswer((_) => Stream.error(Exception('Test error')));
+        when(
+          mockRepository.watch(),
+        ).thenAnswer((_) => Stream.error(Exception('Test error')));
 
         // Initialize notifier with error
         await notifier.build();
@@ -361,7 +381,6 @@ void main() {
             createdAt: DateTime.now(),
           ),
         ],
-        isLoading: false,
       );
 
       // Assert
@@ -372,10 +391,7 @@ void main() {
 
     test('should handle empty state correctly', () {
       // Arrange
-      const state = OfflineZonesState(
-        zones: [],
-        isLoading: false,
-      );
+      const state = OfflineZonesState();
 
       // Assert
       expect(state.hasError, false);
@@ -385,11 +401,7 @@ void main() {
 
     test('should handle error state correctly', () {
       // Arrange
-      const state = OfflineZonesState(
-        zones: [],
-        isLoading: false,
-        error: 'Test error',
-      );
+      const state = OfflineZonesState(error: 'Test error');
 
       // Assert
       expect(state.hasError, true);

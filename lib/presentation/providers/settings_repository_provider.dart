@@ -1,5 +1,4 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:riverpod/riverpod.dart';
 
 import 'package:weathernav/data/repositories/settings_repository_hive.dart';
 import 'package:weathernav/domain/repositories/settings_repository.dart';

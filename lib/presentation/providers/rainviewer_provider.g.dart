@@ -55,7 +55,7 @@ final class RainViewerRepositoryProvider
 }
 
 String _$rainViewerRepositoryHash() =>
-    r'17b38db9748ddc78051393e33c18904e2fe351f3';
+    r'35748962f8e308d3056d0953fb16597dcf1b55df';
 
 @ProviderFor(rainViewerLatestTime)
 final rainViewerLatestTimeProvider = RainViewerLatestTimeProvider._();
@@ -89,4 +89,4 @@ final class RainViewerLatestTimeProvider
 }
 
 String _$rainViewerLatestTimeHash() =>
-    r'5b57d07a29281fb177481c34d53a3f7eacd3ff9c';
+    r'656a11e59b9c9fb35f054302e7a6510a720a640c';

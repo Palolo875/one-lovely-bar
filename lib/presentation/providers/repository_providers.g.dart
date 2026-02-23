@@ -47,7 +47,7 @@ final class DioProvider extends $FunctionalProvider<Dio, Dio, Dio>
   }
 }
 
-String _$dioHash() => r'63358ca468925a6ed469aec08373fff5010e504e';
+String _$dioHash() => r'64f2627f72582161025c76151f62aa11f4ebb959';
 
 @ProviderFor(weatherRepository)
 final weatherRepositoryProvider = WeatherRepositoryProvider._();
@@ -94,7 +94,7 @@ final class WeatherRepositoryProvider
   }
 }
 
-String _$weatherRepositoryHash() => r'9958aa63d962e203e1154b9562adb3824fa4c615';
+String _$weatherRepositoryHash() => r'18fc9d991de99365f06782d92cacea161ffa13ac';
 
 @ProviderFor(routingRepository)
 final routingRepositoryProvider = RoutingRepositoryProvider._();
@@ -141,7 +141,7 @@ final class RoutingRepositoryProvider
   }
 }
 
-String _$routingRepositoryHash() => r'2829fbc73085c60021d005519ff3f98b9c3854e4';
+String _$routingRepositoryHash() => r'1acf27682e72f875d7111e9c41919a89490098be';
 
 @ProviderFor(geocodingRepository)
 final geocodingRepositoryProvider = GeocodingRepositoryProvider._();
@@ -189,4 +189,4 @@ final class GeocodingRepositoryProvider
 }
 
 String _$geocodingRepositoryHash() =>
-    r'c3c0d50de925b2c7007817251b567666fe8fba3d';
+    r'30fc20f19d1f0575960a86a7644929d6a20c1a3d';

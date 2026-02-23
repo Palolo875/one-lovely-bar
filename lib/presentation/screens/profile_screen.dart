@@ -64,7 +64,7 @@ class ProfileScreen extends ConsumerWidget {
               title: Text(profile.name),
               subtitle: const Text('Profil actif'),
               onTap: () {
-                showModalBottomSheet(
+                showModalBottomSheet<void>(
                   context: context,
                   builder: (_) => const _ProfilePickerSheet(),
                 );
@@ -277,11 +277,15 @@ class ProfileScreen extends ConsumerWidget {
                       final enabledOrdered = layers.order
                           .where(layers.enabled.contains)
                           .toList();
-                      if (newIndex > oldIndex) newIndex -= 1;
-                      if (oldIndex < 0 || oldIndex >= enabledOrdered.length)
+                      var targetIndex = newIndex;
+                      if (targetIndex > oldIndex) {
+                        targetIndex -= 1;
+                      }
+                      if (oldIndex < 0 || oldIndex >= enabledOrdered.length) {
                         return;
+                      }
                       final layer = enabledOrdered[oldIndex];
-                      layersNotifier.moveLayer(layer, newIndex);
+                      layersNotifier.moveLayer(layer, targetIndex);
                     },
                     children: [
                       for (final l in layers.order.where(

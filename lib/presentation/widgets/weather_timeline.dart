@@ -4,7 +4,6 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:weathernav/domain/models/weather_condition.dart';
 
 class WeatherTimeline extends StatelessWidget {
-
   const WeatherTimeline({required this.conditions, super.key});
   final List<WeatherCondition> conditions;
 
@@ -22,10 +21,10 @@ class WeatherTimeline extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
-              color: _getConditionColor(condition.weatherCode).withOpacity(0.1),
+              color: _getConditionColor(condition.weatherCode).withAlpha(26),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: _getConditionColor(condition.weatherCode).withOpacity(0.2),
+                color: _getConditionColor(condition.weatherCode).withAlpha(51),
               ),
             ),
             child: Column(
@@ -33,7 +32,10 @@ class WeatherTimeline extends StatelessWidget {
               children: [
                 Text(
                   DateFormat('HH:mm').format(condition.timestamp),
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 Icon(
                   _getWeatherIcon(condition.weatherCode),
@@ -41,7 +43,10 @@ class WeatherTimeline extends StatelessWidget {
                 ),
                 Text(
                   '${condition.temperature.round()}°',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 Text(
                   '${condition.windSpeed.round()} km/h',

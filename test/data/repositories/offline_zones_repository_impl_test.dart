@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
@@ -29,7 +31,7 @@ void main() {
         final result = repository.read();
 
         // Assert
-        expect(result, []);
+        expect(result, isEmpty);
         verify(mockSettingsRepository.get<Object?>(any)).called(1);
       });
 
@@ -62,13 +64,15 @@ void main() {
 
       test('should handle invalid data format', () {
         // Arrange
-        when(mockSettingsRepository.get<Object?>(any)).thenReturn('invalid data');
+        when(
+          mockSettingsRepository.get<Object?>(any),
+        ).thenReturn('invalid data');
 
         // Act
         final result = repository.read();
 
         // Assert
-        expect(result, []);
+        expect(result, isEmpty);
         verify(mockSettingsRepository.get<Object?>(any)).called(1);
       });
 
@@ -105,13 +109,15 @@ void main() {
 
       test('should handle storage read errors', () {
         // Arrange
-        when(mockSettingsRepository.get<Object?>(any)).thenThrow(Exception('Storage error'));
+        when(
+          mockSettingsRepository.get<Object?>(any),
+        ).thenThrow(Exception('Storage error'));
 
         // Act
         final result = repository.read();
 
         // Assert
-        expect(result, []);
+        expect(result, isEmpty);
         verify(mockSettingsRepository.get<Object?>(any)).called(1);
       });
     });
@@ -130,12 +136,17 @@ void main() {
           },
         ];
         final streamController = StreamController<void>();
-        when(mockSettingsRepository.watch(any)).thenAnswer((_) => streamController.stream);
+        when(
+          mockSettingsRepository.watch(any),
+        ).thenAnswer((_) => streamController.stream);
         when(mockSettingsRepository.get<Object?>(any)).thenReturn(zonesData);
 
         // Act
         final stream = repository.watch();
-        final expectStream = expectLater(stream, emits(isA<List<OfflineZone>>()));
+        final expectStream = expectLater(
+          stream,
+          emits(isA<List<OfflineZone>>()),
+        );
 
         // Assert
         streamController.add(null);
@@ -149,12 +160,16 @@ void main() {
       test('should handle watch stream errors', () async {
         // Arrange
         final streamController = StreamController<void>();
-        when(mockSettingsRepository.watch(any)).thenAnswer((_) => streamController.stream);
-        when(mockSettingsRepository.get<Object?>(any)).thenReturn([]);
+        when(
+          mockSettingsRepository.watch(any),
+        ).thenAnswer((_) => streamController.stream);
+        when(
+          mockSettingsRepository.get<Object?>(any),
+        ).thenReturn(const <Object?>[]);
 
         // Act
         final stream = repository.watch();
-        final expectStream = expectLater(stream, emits([]));
+        final expectStream = expectLater(stream, emits(isEmpty));
 
         // Assert
         streamController.addError(Exception('Stream error'));
@@ -166,7 +181,9 @@ void main() {
 
       test('should handle watch setup errors', () {
         // Arrange
-        when(mockSettingsRepository.watch(any)).thenThrow(Exception('Setup error'));
+        when(
+          mockSettingsRepository.watch(any),
+        ).thenThrow(Exception('Setup error'));
 
         // Act
         final stream = repository.watch();
@@ -190,51 +207,56 @@ void main() {
             createdAt: DateTime.now(),
           ),
         ];
-        when(mockSettingsRepository.put(any, any)).thenAnswer((_) async {
-          return null;
-        });
+        when(mockSettingsRepository.put(any, any)).thenAnswer((_) async {});
 
         // Act
         await repository.save(zones);
 
         // Assert
-        verify(mockSettingsRepository.put(any, argThat(isA<List>()))).called(1);
-        
-        final capturedData = verify(mockSettingsRepository.put(captureAny, captureAny)).captured[1] as List;
+        verify(
+          mockSettingsRepository.put(any, argThat(isA<List<Object?>>())),
+        ).called(1);
+
+        final capturedData =
+            verify(
+                  mockSettingsRepository.put(captureAny, captureAny),
+                ).captured[1]
+                as List<Object?>;
         expect(capturedData.length, 1);
-        expect(capturedData.first['id'], '1');
-        expect(capturedData.first['name'], 'Test Zone');
+        final first = capturedData.first;
+        final firstMap = first as Map?;
+        expect(firstMap?['id'], '1');
+        expect(firstMap?['name'], 'Test Zone');
       });
 
       test('should reject too many zones', () async {
         // Arrange
-        final zones = List.generate(1001, (index) => OfflineZone(
-          id: index.toString(),
-          name: 'Zone $index',
-          lat: 48.8566,
-          lng: 2.3522,
-          radiusKm: 10,
-          createdAt: DateTime.now(),
-        ));
+        final zones = List.generate(
+          1001,
+          (index) => OfflineZone(
+            id: index.toString(),
+            name: 'Zone $index',
+            lat: 48.8566,
+            lng: 2.3522,
+            radiusKm: 10,
+            createdAt: DateTime.now(),
+          ),
+        );
 
         // Act & Assert
-        expect(
-          () => repository.save(zones),
-          throwsA(isA<ArgumentError>()),
-        );
+        expect(() => repository.save(zones), throwsA(isA<ArgumentError>()));
         verifyNever(mockSettingsRepository.put(any, any));
       });
 
       test('should handle save errors', () async {
         // Arrange
         final zones = <OfflineZone>[];
-        when(mockSettingsRepository.put(any, any)).thenThrow(Exception('Save error'));
+        when(
+          mockSettingsRepository.put(any, any),
+        ).thenThrow(Exception('Save error'));
 
         // Act & Assert
-        expect(
-          () => repository.save(zones),
-          throwsA(isA<Exception>()),
-        );
+        expect(() => repository.save(zones), throwsA(isA<Exception>()));
         verify(mockSettingsRepository.put(any, any)).called(1);
       });
     });
@@ -258,7 +280,7 @@ void main() {
         final result = repository.read();
 
         // Assert
-        expect(result, []); // Invalid zone should be filtered out
+        expect(result, isEmpty); // Invalid zone should be filtered out
       });
 
       test('should validate timestamp', () {
@@ -270,7 +292,9 @@ void main() {
             'lat': 48.8566,
             'lng': 2.3522,
             'radiusKm': 10.0,
-            'createdAtMs': DateTime.now().add(const Duration(days: 1)).millisecondsSinceEpoch, // Future timestamp
+            'createdAtMs': DateTime.now()
+                .add(const Duration(days: 1))
+                .millisecondsSinceEpoch, // Future timestamp
           },
         ];
         when(mockSettingsRepository.get<Object?>(any)).thenReturn(zonesData);
@@ -279,7 +303,7 @@ void main() {
         final result = repository.read();
 
         // Assert
-        expect(result, []); // Invalid zone should be filtered out
+        expect(result, isEmpty); // Invalid zone should be filtered out
       });
 
       test('should validate radius bounds', () {
@@ -300,7 +324,7 @@ void main() {
         final result = repository.read();
 
         // Assert
-        expect(result, []); // Invalid zone should be filtered out
+        expect(result, isEmpty); // Invalid zone should be filtered out
       });
     });
   });

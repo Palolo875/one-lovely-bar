@@ -32,7 +32,7 @@ class MapStyleState {
 
 class MapStyleNotifier extends Notifier<MapStyleState> {
   late final SettingsRepository _settings;
-  StreamSubscription? _sub;
+  StreamSubscription<void>? _sub;
 
   @override
   MapStyleState build() {

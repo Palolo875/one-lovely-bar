@@ -78,7 +78,13 @@ class _InMemoryOfflineZonesRepository implements OfflineZonesRepository {
       final lng = m['lng'];
       final radius = m['radiusKm'];
       final createdMs = m['createdAtMs'];
-      if (id == null || name == null || lat is! num || lng is! num || radius is! num || createdMs is! num) continue;
+      if (id == null ||
+          name == null ||
+          lat is! num ||
+          lng is! num ||
+          radius is! num ||
+          createdMs is! num)
+        continue;
       out.add(
         OfflineZone(
           id: id,
@@ -132,7 +138,9 @@ void main() {
 
     final notifier = container.read(offlineZonesProvider.notifier);
 
-    final ok = notifier.add(
+    await container.read(offlineZonesProvider.future);
+
+    final ok = await notifier.add(
       name: 'Paris',
       lat: 48.8566,
       lng: 2.3522,
@@ -143,7 +151,7 @@ void main() {
 
     await Future<void>.delayed(const Duration(milliseconds: 1));
 
-    final zones = container.read(offlineZonesProvider);
+    final zones = container.read(offlineZonesProvider).requireValue.zones;
     expect(zones.length, 1);
     expect(zones.first.name, 'Paris');
   });
@@ -163,24 +171,14 @@ void main() {
 
     final notifier = container.read(offlineZonesProvider.notifier);
 
-    expect(
-      notifier.add(name: ' ', lat: 0, lng: 0, radiusKm: 1),
-      isFalse,
-    );
-    expect(
-      notifier.add(name: 'Ok', lat: 91, lng: 0, radiusKm: 1),
-      isFalse,
-    );
-    expect(
-      notifier.add(name: 'Ok', lat: 0, lng: 181, radiusKm: 1),
-      isFalse,
-    );
-    expect(
-      notifier.add(name: 'Ok', lat: 0, lng: 0, radiusKm: 0),
-      isFalse,
-    );
+    container.read(offlineZonesProvider);
 
-    expect(container.read(offlineZonesProvider), isEmpty);
+    expect(notifier.add(name: ' ', lat: 0, lng: 0, radiusKm: 1), isFalse);
+    expect(notifier.add(name: 'Ok', lat: 91, lng: 0, radiusKm: 1), isFalse);
+    expect(notifier.add(name: 'Ok', lat: 0, lng: 181, radiusKm: 1), isFalse);
+    expect(notifier.add(name: 'Ok', lat: 0, lng: 0, radiusKm: 0), isFalse);
+
+    expect(container.read(offlineZonesProvider).requireValue.zones, isEmpty);
   });
 
   test('remove updates state and persists', () async {
@@ -198,19 +196,23 @@ void main() {
 
     final notifier = container.read(offlineZonesProvider.notifier);
 
-    expect(
-      notifier.add(name: 'A', lat: 0, lng: 0, radiusKm: 1),
-      isTrue,
-    );
+    await container.read(offlineZonesProvider.future);
 
-    final id = container.read(offlineZonesProvider).single.id;
-    notifier.remove(id);
+    expect(await notifier.add(name: 'A', lat: 0, lng: 0, radiusKm: 1), isTrue);
+
+    final id = container
+        .read(offlineZonesProvider)
+        .requireValue
+        .zones
+        .single
+        .id;
+    await notifier.remove(id);
 
     await Future<void>.delayed(const Duration(milliseconds: 1));
 
-    expect(container.read(offlineZonesProvider), isEmpty);
-    expect(repo.get<Object?>('offline_zones'), isA<List>());
-    expect((repo.get<Object?>('offline_zones')! as List).length, 0);
+    expect(container.read(offlineZonesProvider).requireValue.zones, isEmpty);
+    expect(repo.get<Object?>('offline_zones'), isA<List<Object?>>());
+    expect((repo.get<Object?>('offline_zones')! as List<Object?>).length, 0);
   });
 
   test('syncs from repository watch events', () async {
@@ -241,7 +243,7 @@ void main() {
 
     await Future<void>.delayed(const Duration(milliseconds: 1));
 
-    final zones = container.read(offlineZonesProvider);
+    final zones = container.read(offlineZonesProvider).requireValue.zones;
     expect(zones.length, 1);
     expect(zones.single.id, 'z1');
   });

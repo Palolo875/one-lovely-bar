@@ -37,7 +37,7 @@ class AppSettingsState {
 
 class AppSettingsNotifier extends Notifier<AppSettingsState> {
   late final SettingsRepository _settings;
-  final List<StreamSubscription> _subs = [];
+  final List<StreamSubscription<void>> _subs = [];
 
   @override
   AppSettingsState build() {
@@ -183,7 +183,7 @@ final appSettingsProvider =
 
 class OnboardingStatusNotifier extends Notifier<bool> {
   late final SettingsRepository _settings;
-  StreamSubscription? _sub;
+  StreamSubscription<void>? _sub;
 
   @override
   bool build() {

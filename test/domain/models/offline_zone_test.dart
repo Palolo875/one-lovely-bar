@@ -4,7 +4,7 @@ import 'package:weathernav/domain/models/offline_zone.dart';
 
 void main() {
   group('OfflineZone', () {
-    final testDateTime = DateTime(2024, 1, 1, 12, 0);
+    final testDateTime = DateTime(2024, 1, 1, 12);
 
     group('creation and validation', () {
       test('should create valid zone', () {
@@ -155,10 +155,7 @@ void main() {
           createdAt: testDateTime,
         );
 
-        final updated = original.copyWith(
-          name: 'Updated Zone',
-          radiusKm: 15,
-        );
+        final updated = original.copyWith(name: 'Updated Zone', radiusKm: 15);
 
         expect(updated.id, '1'); // Unchanged
         expect(updated.name, 'Updated Zone'); // Changed

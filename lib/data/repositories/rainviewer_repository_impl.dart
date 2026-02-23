@@ -7,7 +7,6 @@ import 'package:weathernav/domain/repositories/rainviewer_repository.dart';
 import 'package:weathernav/domain/repositories/settings_repository.dart';
 
 class RainViewerRepositoryImpl implements RainViewerRepository {
-
   RainViewerRepositoryImpl(this._dio, this._cache, {this.legacy});
   final Dio _dio;
   final CacheRepository _cache;
@@ -32,21 +31,30 @@ class RainViewerRepositoryImpl implements RainViewerRepository {
     final cached = _readCache(freshOnly: true);
     if (cached != null) return cached;
 
-    late final Response response;
+    late final Response<dynamic> response;
     try {
-      response = await _dio.get('${AppConfig.rainviewerApiBaseUrl}/public/weather-maps.json');
+      response = await _dio.get(
+        '${AppConfig.rainviewerApiBaseUrl}/public/weather-maps.json',
+      );
     } on DioException catch (e, st) {
       final stale = _readCache(freshOnly: false);
       if (stale != null) return stale;
       throw AppFailure(
-        mapDioExceptionToMessage(e, defaultMessage: 'Impossible de récupérer le radar pluie.'),
+        mapDioExceptionToMessage(
+          e,
+          defaultMessage: 'Impossible de récupérer le radar pluie.',
+        ),
         cause: e,
         stackTrace: st,
       );
     } catch (e, st) {
       final stale = _readCache(freshOnly: false);
       if (stale != null) return stale;
-      throw AppFailure('Erreur inattendue lors de la récupération du radar pluie.', cause: e, stackTrace: st);
+      throw AppFailure(
+        'Erreur inattendue lors de la récupération du radar pluie.',
+        cause: e,
+        stackTrace: st,
+      );
     }
 
     final data = _asMap(response.data);
@@ -77,7 +85,9 @@ class RainViewerRepositoryImpl implements RainViewerRepository {
     if (ts is! int || time is! int) return null;
     if (!freshOnly) return time;
 
-    final age = DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(ts));
+    final age = DateTime.now().difference(
+      DateTime.fromMillisecondsSinceEpoch(ts),
+    );
     if (age > _ttl) return null;
     return time;
   }

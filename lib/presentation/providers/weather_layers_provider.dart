@@ -37,7 +37,7 @@ class WeatherLayersNotifier extends Notifier<WeatherLayersState> {
   late final SettingsRepository _settings;
   late final bool _hasExplicitSelection;
 
-  final List<StreamSubscription> _subs = [];
+  final List<StreamSubscription<void>> _subs = [];
   Timer? _persistDebounce;
   WeatherLayersState? _pendingPersist;
 

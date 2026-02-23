@@ -29,13 +29,19 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
 
   String _profileToRoutingCosting(ProfileType type) {
     switch (type) {
+      case ProfileType.universal:
+        return 'driver';
       case ProfileType.cyclist:
         return 'cyclist';
       case ProfileType.hiker:
         return 'hiker';
       case ProfileType.driver:
         return 'driver';
-      default:
+      case ProfileType.nautical:
+        return 'driver';
+      case ProfileType.paraglider:
+        return 'driver';
+      case ProfileType.camper:
         return 'driver';
     }
   }

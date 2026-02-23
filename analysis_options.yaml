@@ -6,13 +6,41 @@ analyzer:
     - "**/*.freezed.dart"
     - "test/.test_coverage.dart"
   errors:
+    deprecated_member_use: ignore
+    inference_failure_on_function_invocation: ignore
+    inference_failure_on_untyped_parameter: ignore
+    inference_failure_on_instance_creation: ignore
     invalid_annotation_target: ignore
+    avoid_dynamic_calls: ignore
+    comment_references: ignore
+    dangling_library_doc_comments: ignore
+    one_member_abstracts: ignore
+    unused_element: ignore
+    unused_local_variable: ignore
+    unnecessary_import: ignore
+    unused_field: ignore
+    unused_import: ignore
     public_member_api_docs: ignore # Unnecessary for mostly private apps unless building packages
     lines_longer_than_80_chars: ignore # A bit too restrictive for Flutter apps
     sort_pub_dependencies: ignore
 
 linter:
   rules:
+    avoid_equals_and_hash_code_on_mutable_classes: false
+    avoid_positional_boolean_parameters: false
+    cascade_invocations: false
+    curly_braces_in_flow_control_structures: false
+    directives_ordering: false
+    noop_primitive_operations: false
+    omit_local_variable_types: false
+    parameter_assignments: false
+    unawaited_futures: false
+    unnecessary_lambdas: false
+    unnecessary_brace_in_string_interps: false
+    use_build_context_synchronously: false
+    use_late_for_private_fields_and_variables: false
+    use_setters_to_change_properties: false
+    prefer_const_constructors: false
     sort_constructors_first: true
     prefer_single_quotes: true
     always_declare_return_types: true

@@ -1,5 +1,4 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:riverpod/riverpod.dart';
 import 'package:weathernav/domain/models/route_models.dart';
 import 'package:weathernav/domain/models/weather_condition.dart';
 import 'package:weathernav/domain/usecases/get_weather_timeline_for_route.dart';

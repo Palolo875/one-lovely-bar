@@ -95,7 +95,7 @@ class OpenMeteoRepository implements WeatherRepository {
   ) {
     final key = _keyForLatLng('wx_forecast:$days', lat, lng);
     final raw = _cache.get<Object?>(key) ?? legacy?.get<Object?>(key);
-    if (raw is! Map) return null;
+    if (raw is! Map<Object?, Object?>) return null;
     final ts = raw['ts'];
     final data = raw['data'];
     if (ts is! int || data is! List) return null;
@@ -104,7 +104,7 @@ class OpenMeteoRepository implements WeatherRepository {
     );
     if (age > _forecastTtl) return null;
     return data
-        .whereType<Map>()
+        .whereType<Map<Object?, Object?>>()
         .map((m) => WeatherCondition.fromJson(Map<String, dynamic>.from(m)))
         .toList();
   }
@@ -116,11 +116,11 @@ class OpenMeteoRepository implements WeatherRepository {
   ) {
     final key = _keyForLatLng('wx_forecast:$days', lat, lng);
     final raw = _cache.get<Object?>(key) ?? legacy?.get<Object?>(key);
-    if (raw is! Map) return null;
+    if (raw is! Map<Object?, Object?>) return null;
     final data = raw['data'];
     if (data is! List) return null;
     return data
-        .whereType<Map>()
+        .whereType<Map<Object?, Object?>>()
         .map((m) => WeatherCondition.fromJson(Map<String, dynamic>.from(m)))
         .toList();
   }
@@ -143,7 +143,7 @@ class OpenMeteoRepository implements WeatherRepository {
     final cached = _readCurrentFromCache(lat, lng);
     if (cached != null) return cached;
 
-    late final Response response;
+    late final Response<dynamic> response;
     try {
       response = await _dio.get(
         '${AppConfig.openMeteoBaseUrl}/forecast',
@@ -212,7 +212,7 @@ class OpenMeteoRepository implements WeatherRepository {
     final cached = _readForecastFromCache(lat, lng, days);
     if (cached != null) return cached;
 
-    late final Response response;
+    late final Response<dynamic> response;
     try {
       response = await _dio.get(
         '${AppConfig.openMeteoBaseUrl}/forecast',
@@ -322,7 +322,7 @@ class OpenMeteoRepository implements WeatherRepository {
 
     // Note: For large routes, we might need to chunk this or use a different approach.
     // For now, let's assume it's a reasonable number of points.
-    late final Response response;
+    late final Response<dynamic> response;
     try {
       response = await _dio.get(
         '${AppConfig.openMeteoBaseUrl}/forecast',

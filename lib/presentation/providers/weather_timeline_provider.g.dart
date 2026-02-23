@@ -66,7 +66,7 @@ final class WeatherTimelineProvider
   }
 }
 
-String _$weatherTimelineHash() => r'6fcd50d6f6bf26944ed3a4a208ae79d787d0056c';
+String _$weatherTimelineHash() => r'cfca937fb08fc0c1d6280e89b0e953327ea7b02d';
 
 final class WeatherTimelineFamily extends $Family
     with

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:weathernav/domain/models/grid_point_weather.dart';
+import 'package:weathernav/domain/models/weather_condition.dart';
 import 'package:weathernav/domain/usecases/get_weather_grid.dart';
 import 'package:weathernav/domain/failures/app_failure.dart';
 import 'package:weathernav/presentation/providers/repository_providers.dart';
@@ -7,7 +8,6 @@ import 'package:weathernav/presentation/providers/cache_repository_provider.dart
 import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
 
 class WeatherGridRequest {
-
   const WeatherGridRequest({
     required this.centerLat,
     required this.centerLng,
@@ -32,79 +32,89 @@ class WeatherGridRequest {
   int get hashCode => Object.hash(centerLat, centerLng, gridSize, stepDegrees);
 }
 
-final weatherGridProvider = FutureProvider.autoDispose.family<List<GridPointWeather>, WeatherGridRequest>((ref, req) async {
-  final repo = ref.watch(weatherRepositoryProvider);
+final weatherGridProvider = FutureProvider.autoDispose
+    .family<List<GridPointWeather>, WeatherGridRequest>((ref, req) async {
+      final repo = ref.watch(weatherRepositoryProvider);
 
-  final cache = ref.watch(cacheRepositoryProvider);
-  final legacy = ref.watch(settingsRepositoryProvider);
+      final cache = ref.watch(cacheRepositoryProvider);
+      final legacy = ref.watch(settingsRepositoryProvider);
 
-  const ttl = Duration(minutes: 5);
-  final key = 'wx_grid:${req.centerLat.toStringAsFixed(3)},${req.centerLng.toStringAsFixed(3)}:${req.gridSize}:${req.stepDegrees.toStringAsFixed(3)}';
+      const ttl = Duration(minutes: 5);
+      final key =
+          'wx_grid:${req.centerLat.toStringAsFixed(3)},${req.centerLng.toStringAsFixed(3)}:${req.gridSize}:${req.stepDegrees.toStringAsFixed(3)}';
 
-  List<GridPointWeather>? readCache({required bool freshOnly}) {
-    final raw = cache.get<Object?>(key) ?? legacy.get<Object?>(key);
-    if (raw is! Map) return null;
-    final ts = raw['ts'];
-    final data = raw['data'];
-    if (ts is! int || data is! List) return null;
-    if (freshOnly) {
-      final age = DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(ts));
-      if (age > ttl) return null;
-    }
+      List<GridPointWeather>? readCache({required bool freshOnly}) {
+        final raw = cache.get<Object?>(key) ?? legacy.get<Object?>(key);
+        if (raw is! Map) return null;
+        final ts = raw['ts'];
+        final data = raw['data'];
+        if (ts is! int || data is! List) return null;
+        if (freshOnly) {
+          final age = DateTime.now().difference(
+            DateTime.fromMillisecondsSinceEpoch(ts),
+          );
+          if (age > ttl) return null;
+        }
 
-    final out = <GridPointWeather>[];
-    for (final m in data) {
-      if (m is! Map) continue;
-      final mm = Map<String, Object?>.from(m);
-      final lat = mm['lat'];
-      final lng = mm['lng'];
-      final condition = mm['condition'];
-      if (lat is! num || lng is! num || condition is! Map) continue;
-      out.add(
-        GridPointWeather(
-          latitude: lat.toDouble(),
-          longitude: lng.toDouble(),
-          condition: WeatherCondition.fromJson(Map<String, dynamic>.from(condition)),
-        ),
-      );
-    }
-    return out;
-  }
+        final out = <GridPointWeather>[];
+        for (final m in data) {
+          if (m is! Map) continue;
+          final mm = Map<String, Object?>.from(m);
+          final lat = mm['lat'];
+          final lng = mm['lng'];
+          final condition = mm['condition'];
+          if (lat is! num || lng is! num || condition is! Map) continue;
+          out.add(
+            GridPointWeather(
+              latitude: lat.toDouble(),
+              longitude: lng.toDouble(),
+              condition: WeatherCondition.fromJson(
+                Map<String, dynamic>.from(condition),
+              ),
+            ),
+          );
+        }
+        return out;
+      }
 
-  void writeCache(List<GridPointWeather> list) {
-    cache.put(key, {
-      'ts': DateTime.now().millisecondsSinceEpoch,
-      'data': list
-          .map(
-            (g) => {
-              'lat': g.latitude,
-              'lng': g.longitude,
-              'condition': g.condition.toJson(),
-            },
-          )
-          .toList(),
+      void writeCache(List<GridPointWeather> list) {
+        cache.put(key, {
+          'ts': DateTime.now().millisecondsSinceEpoch,
+          'data': list
+              .map(
+                (g) => {
+                  'lat': g.latitude,
+                  'lng': g.longitude,
+                  'condition': g.condition.toJson(),
+                },
+              )
+              .toList(),
+        });
+      }
+
+      final cached = readCache(freshOnly: true);
+      if (cached != null) return cached;
+
+      try {
+        final result = await GetWeatherGrid(repo)(
+          centerLat: req.centerLat,
+          centerLng: req.centerLng,
+          gridSize: req.gridSize,
+          stepDegrees: req.stepDegrees,
+        );
+        writeCache(result);
+        return result;
+      } on AppFailure {
+        final stale = readCache(freshOnly: false);
+        if (stale != null) return stale;
+        rethrow;
+      } catch (e, st) {
+        final stale = readCache(freshOnly: false);
+        if (stale != null) return stale;
+        throw AppFailure(
+          'Impossible de récupérer la grille météo.',
+          cause: e,
+          stackTrace: st,
+        );
+      }
     });
-  }
-
-  final cached = readCache(freshOnly: true);
-  if (cached != null) return cached;
-
-  try {
-    final result = await GetWeatherGrid(repo)(
-      centerLat: req.centerLat,
-      centerLng: req.centerLng,
-      gridSize: req.gridSize,
-      stepDegrees: req.stepDegrees,
-    );
-    writeCache(result);
-    return result;
-  } on AppFailure {
-    final stale = readCache(freshOnly: false);
-    if (stale != null) return stale;
-    rethrow;
-  } catch (e, st) {
-    final stale = readCache(freshOnly: false);
-    if (stale != null) return stale;
-    throw AppFailure('Impossible de récupérer la grille météo.', cause: e, stackTrace: st);
-  }
-});

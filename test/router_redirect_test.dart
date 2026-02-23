@@ -1,16 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
 import 'package:weathernav/presentation/providers/router_provider.dart';
-import 'package:weathernav/presentation/providers/settings_provider.dart';
+import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
+import 'package:weathernav/domain/repositories/settings_repository.dart';
+import 'package:weathernav/core/storage/settings_keys.dart';
+import 'package:weathernav/presentation/screens/home_screen.dart';
+import 'package:weathernav/presentation/screens/onboarding_screen.dart';
 
-class _FakeOnboardingNotifier extends StateNotifier<bool> {
-  _FakeOnboardingNotifier(super.state);
+class _FakeSettingsRepository implements SettingsRepository {
+  _FakeSettingsRepository(this._data);
+  final Map<String, Object?> _data;
 
-  Future<void> setCompleted(bool value) async {
-    state = value;
+  @override
+  T? get<T>(String key) => _data[key] is T ? _data[key] as T : null;
+
+  @override
+  T getOrDefault<T>(String key, T defaultValue) {
+    final v = _data[key];
+    if (v is T) return v;
+    return defaultValue;
   }
+
+  @override
+  Future<void> put(String key, Object? value) async {
+    _data[key] = value;
+  }
+
+  @override
+  Future<void> delete(String key) async {
+    _data.remove(key);
+  }
+
+  @override
+  Stream<void> watch(String key) => const Stream<void>.empty();
 }
 
 class _TestApp extends ConsumerWidget {
@@ -23,67 +46,16 @@ class _TestApp extends ConsumerWidget {
   }
 }
 
-class _HomePlaceholder extends StatelessWidget {
-  const _HomePlaceholder();
-
-  static const keyValue = Key('home');
-
-  @override
-  Widget build(BuildContext context) {
-    return const SizedBox(key: keyValue);
-  }
-}
-
-class _OnboardingPlaceholder extends StatelessWidget {
-  const _OnboardingPlaceholder();
-
-  static const keyValue = Key('onboarding');
-
-  @override
-  Widget build(BuildContext context) {
-    return const SizedBox(key: keyValue);
-  }
-}
-
-GoRouter _createTestRouter(WidgetRef ref) {
-  final refresh = ValueNotifier<int>(0);
-  ref.onDispose(refresh.dispose);
-
-  ref.listen<bool>(onboardingCompletedProvider, (prev, next) {
-    if (prev == next) return;
-    refresh.value++;
-  });
-
-  return GoRouter(
-    initialLocation: '/',
-    refreshListenable: refresh,
-    redirect: (context, state) {
-      final completed = ref.read(onboardingCompletedProvider);
-      final isOnboarding = state.matchedLocation == '/onboarding';
-      if (!completed && !isOnboarding) return '/onboarding';
-      if (completed && isOnboarding) return '/';
-      return null;
-    },
-    routes: [
-      GoRoute(
-        path: '/',
-        builder: (context, state) => const _HomePlaceholder(),
-      ),
-      GoRoute(
-        path: '/onboarding',
-        builder: (context, state) => const _OnboardingPlaceholder(),
-      ),
-    ],
-  );
-}
-
 void main() {
-  testWidgets('Redirects to onboarding when onboarding is not completed', (tester) async {
+  testWidgets('Redirects to onboarding when onboarding is not completed', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          onboardingCompletedProvider.overrideWith((ref) => _FakeOnboardingNotifier(false)),
-          routerProvider.overrideWith(_createTestRouter),
+          settingsRepositoryProvider.overrideWithValue(
+            _FakeSettingsRepository({SettingsKeys.onboardingCompleted: false}),
+          ),
         ],
         child: const _TestApp(),
       ),
@@ -91,16 +63,17 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.byKey(_OnboardingPlaceholder.keyValue), findsOneWidget);
-    expect(find.byKey(_HomePlaceholder.keyValue), findsNothing);
+    expect(find.byType(OnboardingScreen), findsOneWidget);
+    expect(find.byType(HomeScreen), findsNothing);
   });
 
   testWidgets('Shows home when onboarding is completed', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          onboardingCompletedProvider.overrideWith((ref) => _FakeOnboardingNotifier(true)),
-          routerProvider.overrideWith(_createTestRouter),
+          settingsRepositoryProvider.overrideWithValue(
+            _FakeSettingsRepository({SettingsKeys.onboardingCompleted: true}),
+          ),
         ],
         child: const _TestApp(),
       ),
@@ -108,7 +81,7 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.byKey(_HomePlaceholder.keyValue), findsOneWidget);
-    expect(find.byKey(_OnboardingPlaceholder.keyValue), findsNothing);
+    expect(find.byType(HomeScreen), findsOneWidget);
+    expect(find.byType(OnboardingScreen), findsNothing);
   });
 }

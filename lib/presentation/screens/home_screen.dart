@@ -459,16 +459,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   IconData _getProfileIcon(ProfileType type) {
-    switch (type) {
-      case ProfileType.cyclist:
-        return LucideIcons.bike;
-      case ProfileType.hiker:
-        return LucideIcons.footprints;
-      case ProfileType.driver:
-        return LucideIcons.car;
-      default:
-        return LucideIcons.user;
-    }
+    return switch (type) {
+      ProfileType.universal => LucideIcons.user,
+      ProfileType.cyclist => LucideIcons.bike,
+      ProfileType.hiker => LucideIcons.footprints,
+      ProfileType.driver => LucideIcons.car,
+      ProfileType.nautical => LucideIcons.ship,
+      ProfileType.paraglider => LucideIcons.wind,
+      ProfileType.camper => LucideIcons.tent,
+    };
   }
 
   void _showProfileSwitcher(BuildContext context) {
@@ -618,10 +617,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Slider(
-                            value: filter.radiusMeters.toDouble().clamp(
-                              500,
-                              10000,
-                            ),
+                            value: filter.radiusMeters
+                                .toDouble()
+                                .clamp(500.0, 10000.0)
+                                .toDouble(),
                             min: 500,
                             max: 10000,
                             divisions: 19,

@@ -5,11 +5,13 @@ import 'package:weathernav/domain/repositories/cache_repository.dart';
 class HiveCacheRepository implements CacheRepository {
   static const String boxName = 'cache';
 
-  Box get _box {
+  Box<Object?> get _box {
     if (!Hive.isBoxOpen(boxName)) {
-      throw StateError('Hive box "$boxName" is not open. Call Hive.openBox("$boxName") at startup.');
+      throw StateError(
+        'Hive box "$boxName" is not open. Call Hive.openBox("$boxName") at startup.',
+      );
     }
-    return Hive.box(boxName);
+    return Hive.box<Object?>(boxName);
   }
 
   @override

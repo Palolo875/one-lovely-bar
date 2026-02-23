@@ -8,7 +8,6 @@ import 'package:weathernav/presentation/providers/cache_repository_provider.dart
 import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
 
 class PoiRequest {
-
   const PoiRequest({
     required this.lat,
     required this.lng,
@@ -53,7 +52,10 @@ final poiRepositoryProvider = Provider<PoiRepository>((ref) {
   return OverpassPoiRepository(ref.watch(dioProvider));
 });
 
-final poiSearchProvider = FutureProvider.autoDispose.family<List<Poi>, PoiRequest>((ref, req) async {
+final poiSearchProvider = FutureProvider.autoDispose.family<List<Poi>, PoiRequest>((
+  ref,
+  req,
+) async {
   final repo = ref.watch(poiRepositoryProvider);
 
   final cache = ref.watch(cacheRepositoryProvider);
@@ -74,7 +76,9 @@ final poiSearchProvider = FutureProvider.autoDispose.family<List<Poi>, PoiReques
     final data = raw['data'];
     if (ts is! int || data is! List) return null;
     if (freshOnly) {
-      final age = DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(ts));
+      final age = DateTime.now().difference(
+        DateTime.fromMillisecondsSinceEpoch(ts),
+      );
       if (age > ttl) return null;
     }
 
@@ -87,7 +91,12 @@ final poiSearchProvider = FutureProvider.autoDispose.family<List<Poi>, PoiReques
       final lat = mm['lat'];
       final lng = mm['lng'];
       final cat = mm['category']?.toString();
-      if (id == null || name == null || lat is! num || lng is! num || cat == null) continue;
+      if (id == null ||
+          name == null ||
+          lat is! num ||
+          lng is! num ||
+          cat == null)
+        continue;
       final match = PoiCategory.values.where((c) => c.name == cat).toList();
       if (match.isEmpty) continue;
       out.add(
@@ -139,12 +148,15 @@ final poiSearchProvider = FutureProvider.autoDispose.family<List<Poi>, PoiReques
   } catch (e, st) {
     final stale = readCache(freshOnly: false);
     if (stale != null) return stale;
-    throw AppFailure('Impossible de charger les POIs.', cause: e, stackTrace: st);
+    throw AppFailure(
+      'Impossible de charger les POIs.',
+      cause: e,
+      stackTrace: st,
+    );
   }
 });
 
 class PoiFilterState {
-
   const PoiFilterState({
     required this.enabled,
     required this.categories,
@@ -154,7 +166,11 @@ class PoiFilterState {
   final Set<PoiCategory> categories;
   final int radiusMeters;
 
-  PoiFilterState copyWith({bool? enabled, Set<PoiCategory>? categories, int? radiusMeters}) {
+  PoiFilterState copyWith({
+    bool? enabled,
+    Set<PoiCategory>? categories,
+    int? radiusMeters,
+  }) {
     return PoiFilterState(
       enabled: enabled ?? this.enabled,
       categories: categories ?? this.categories,
@@ -163,15 +179,15 @@ class PoiFilterState {
   }
 }
 
-class PoiFilterNotifier extends StateNotifier<PoiFilterState> {
-  PoiFilterNotifier()
-      : super(
-          const PoiFilterState(
-            enabled: false,
-            categories: {PoiCategory.shelter, PoiCategory.hut},
-            radiusMeters: 2500,
-          ),
-        );
+class PoiFilterNotifier extends Notifier<PoiFilterState> {
+  @override
+  PoiFilterState build() {
+    return const PoiFilterState(
+      enabled: false,
+      categories: {PoiCategory.shelter, PoiCategory.hut},
+      radiusMeters: 2500,
+    );
+  }
 
   void toggleEnabled() => state = state.copyWith(enabled: !state.enabled);
 
@@ -188,6 +204,6 @@ class PoiFilterNotifier extends StateNotifier<PoiFilterState> {
   void setRadius(int meters) => state = state.copyWith(radiusMeters: meters);
 }
 
-final poiFilterProvider = StateNotifierProvider<PoiFilterNotifier, PoiFilterState>((ref) {
-  return PoiFilterNotifier();
-});
+final poiFilterProvider = NotifierProvider<PoiFilterNotifier, PoiFilterState>(
+  PoiFilterNotifier.new,
+);
