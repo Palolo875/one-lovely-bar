@@ -191,12 +191,13 @@ class OnboardingStatusNotifier extends StateNotifier<bool> {
   final SettingsRepository _settings;
   StreamSubscription? _sub;
 
-  Future<void> setCompleted(bool value) async {
-    if (value == state) return;
+  Future<bool> setCompleted(bool value) async {
+    if (value == state) return true;
     final prev = state;
     try {
       await _settings.put(SettingsKeys.onboardingCompleted, value);
       state = value;
+      return true;
     } catch (e, st) {
       AppLogger.error(
         'Failed to persist onboarding completion',
@@ -205,6 +206,7 @@ class OnboardingStatusNotifier extends StateNotifier<bool> {
         stackTrace: st,
       );
       state = prev;
+      return false;
     }
   }
 

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,6 +22,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   int _index = 0;
   ProfileType? _selectedProfile;
   bool _requestingPermissions = false;
+  bool _finishing = false;
 
   @override
   void dispose() {
@@ -32,21 +31,54 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Future<void> _setCompletedAndExit() async {
-    await ref.read(onboardingCompletedProvider.notifier).setCompleted(true);
-    if (!mounted) return;
-    context.go('/');
+    if (_finishing) return;
+    if (_selectedProfile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Choisissez un profil pour continuer.')),
+      );
+      return;
+    }
+
+    setState(() => _finishing = true);
+    try {
+      final profileOk = await _persistProfile(_selectedProfile!);
+      if (!profileOk) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Impossible d'enregistrer votre profil. Réessayez.")),
+        );
+        return;
+      }
+
+      final ok = await ref.read(onboardingCompletedProvider.notifier).setCompleted(true);
+      if (!ok) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Impossible d'enregistrer votre progression. Réessayez.")),
+        );
+        return;
+      }
+
+      if (!mounted) return;
+      context.go('/');
+    } finally {
+      if (mounted) setState(() => _finishing = false);
+    }
   }
 
-  Future<void> _persistProfile(ProfileType type) async {
+  Future<bool> _persistProfile(ProfileType type) async {
     final settings = ref.read(settingsRepositoryProvider);
     try {
       await settings.put(SettingsKeys.primaryProfileType, type.name);
+      return true;
     } catch (e, st) {
       AppLogger.warn('Onboarding: failed to persist profile type', name: 'onboarding', error: e, stackTrace: st);
+      return false;
     }
   }
 
   Future<void> _next() async {
+    if (_finishing) return;
     if (_index == 1 && _selectedProfile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Choisissez un profil pour continuer.')),
@@ -63,6 +95,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Future<void> _skip() async {
+    if (_finishing) return;
     await _setCompletedAndExit();
   }
 
@@ -72,6 +105,25 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     try {
       await Permission.locationWhenInUse.request();
       await Permission.notification.request();
+
+      final location = await Permission.locationWhenInUse.status;
+      final notif = await Permission.notification.status;
+
+      if (!mounted) return;
+      if (location.isGranted && notif.isGranted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Permissions accordées.')),
+        );
+      } else if (location.isPermanentlyDenied || notif.isPermanentlyDenied) {
+        final snackBar = SnackBar(
+          content: const Text('Permissions refusées. Vous pouvez les activer dans les paramètres.'),
+          action: SnackBarAction(
+            label: 'Paramètres',
+            onPressed: () => openAppSettings(),
+          ),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      }
     } catch (e, st) {
       AppLogger.warn('Onboarding: permission request failed', name: 'onboarding', error: e, stackTrace: st);
     }
@@ -81,7 +133,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   void _selectProfile(ProfileType type) {
     setState(() => _selectedProfile = type);
     ref.read(profileNotifierProvider.notifier).setProfileByType(type);
-    unawaited(_persistProfile(type));
   }
 
   List<ProfileType> get _profiles => const [
@@ -95,7 +146,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final canSkip = _index >= 0;
+    final canSkip = _index == 2;
 
     return Scaffold(
       body: SafeArea(
@@ -108,7 +159,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   const Spacer(),
                   if (canSkip)
                     TextButton(
-                      onPressed: _skip,
+                      onPressed: _finishing ? null : _skip,
                       child: const Text('Passer'),
                     ),
                 ],
@@ -117,6 +168,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             Expanded(
               child: PageView(
                 controller: _controller,
+                physics: const NeverScrollableScrollPhysics(),
                 onPageChanged: (i) => setState(() => _index = i),
                 children: [
                   _Slide(
@@ -142,7 +194,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _next,
+                      onPressed: _finishing ? null : _next,
                       child: Text(_index == 2 ? 'Commencer' : 'Continuer'),
                     ),
                   ),

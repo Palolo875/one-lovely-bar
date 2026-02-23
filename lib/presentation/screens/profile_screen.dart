@@ -25,7 +25,7 @@ class ProfileScreen extends ConsumerWidget {
     final profile = ref.watch(profileNotifierProvider);
     final alertThresholds = ref.watch(alertThresholdsProvider);
     final alertThresholdsNotifier = ref.read(alertThresholdsProvider.notifier);
-    final offlineZones = ref.watch(offlineZonesProvider);
+    final offlineZonesAsync = ref.watch(offlineZonesProvider);
     final offlineZonesNotifier = ref.read(offlineZonesProvider.notifier);
     final mapStyle = ref.watch(mapStyleProvider);
     final mapStyleNotifier = ref.read(mapStyleProvider.notifier);
@@ -346,13 +346,15 @@ class ProfileScreen extends ConsumerWidget {
                       builder: (_) => _AddOfflineZoneSheet(initial: pos),
                     );
                     if (created == null) return;
-                    final ok = offlineZonesNotifier.add(
+                    
+                    final success = await offlineZonesNotifier.add(
                       name: created.name,
                       lat: created.lat,
                       lng: created.lng,
                       radiusKm: created.radiusKm,
                     );
-                    if (!ok && context.mounted) {
+                    
+                    if (!success && context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Paramètres invalides pour la zone hors-ligne.')),
                       );
@@ -360,27 +362,74 @@ class ProfileScreen extends ConsumerWidget {
                   },
                 ),
                 const Divider(height: 1),
-                if (offlineZones.isEmpty)
-                  const Padding(
+                offlineZonesAsync.when(
+                  loading: () => const Padding(
                     padding: EdgeInsets.all(16),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text('Aucune zone configurée.'),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                  error: (error, stack) => Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Erreur: ${error.toString()}', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.red)),
+                        const SizedBox(height: 8),
+                        ElevatedButton(
+                          onPressed: () {
+                            offlineZonesNotifier.clearError();
+                            offlineZonesNotifier.refresh();
+                          },
+                          child: const Text('Réessayer'),
+                        ),
+                      ],
                     ),
-                  )
-                else
-                  for (final z in offlineZones) ...[
-                    ListTile(
-                      leading: const Icon(LucideIcons.map),
-                      title: Text(z.name),
-                      subtitle: Text('${z.radiusKm.toStringAsFixed(1)} km • ${z.lat.toStringAsFixed(3)}, ${z.lng.toStringAsFixed(3)}'),
-                      trailing: IconButton(
-                        onPressed: () => offlineZonesNotifier.remove(z.id),
-                        icon: const Icon(LucideIcons.trash2),
-                      ),
-                    ),
-                    const Divider(height: 1),
-                  ],
+                  ),
+                  data: (state) {
+                    final offlineZones = state.zones;
+                    final isLoading = state.isLoading;
+                    
+                    return Column(
+                      children: [
+                        if (offlineZones.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text('Aucune zone configurée.'),
+                            ),
+                          )
+                        else
+                          ...offlineZones.map((z) => Column(
+                            children: [
+                              ListTile(
+                                leading: isLoading 
+                                    ? const SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      )
+                                    : const Icon(LucideIcons.map),
+                                title: Text(z.name),
+                                subtitle: Text('${z.radiusKm.toStringAsFixed(1)} km • ${z.lat.toStringAsFixed(3)}, ${z.lng.toStringAsFixed(3)}'),
+                                trailing: IconButton(
+                                  onPressed: isLoading ? null : () async {
+                                    final success = await offlineZonesNotifier.remove(z.id);
+                                    if (!success && context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Échec de la suppression de la zone.')),
+                                      );
+                                    }
+                                  },
+                                  icon: const Icon(LucideIcons.trash2),
+                                ),
+                              ),
+                              const Divider(height: 1),
+                            ],
+                          )),
+                      ],
+                    );
+                  },
+                ),
               ],
             ),
           ),
