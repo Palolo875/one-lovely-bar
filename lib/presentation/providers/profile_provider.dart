@@ -28,7 +28,6 @@ class ProfileNotifier extends _$ProfileNotifier {
           type: ProfileType.cyclist,
           defaultLayers: ['precipitation', 'wind', 'air_quality'],
         );
-        break;
       case ProfileType.hiker:
         state = const UserProfile(
           id: 'hiker',
@@ -36,7 +35,6 @@ class ProfileNotifier extends _$ProfileNotifier {
           type: ProfileType.hiker,
           defaultLayers: ['precipitation', 'cloud_cover', 'uv'],
         );
-        break;
       // Add other profiles as needed
       default:
         state = const UserProfile(

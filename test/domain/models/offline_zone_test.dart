@@ -4,7 +4,7 @@ import 'package:weathernav/domain/models/offline_zone.dart';
 
 void main() {
   group('OfflineZone', () {
-    final testDateTime = DateTime(2024, 1, 1, 12, 0, 0);
+    final testDateTime = DateTime(2024, 1, 1, 12, 0);
 
     group('creation and validation', () {
       test('should create valid zone', () {
@@ -13,7 +13,7 @@ void main() {
           name: 'Test Zone',
           lat: 48.8566,
           lng: 2.3522,
-          radiusKm: 10.0,
+          radiusKm: 10,
           createdAt: testDateTime,
         );
 
@@ -31,7 +31,7 @@ void main() {
           name: 'Valid Zone',
           lat: 48.8566,
           lng: 2.3522,
-          radiusKm: 10.0,
+          radiusKm: 10,
           createdAt: testDateTime,
         );
 
@@ -45,7 +45,7 @@ void main() {
           name: 'Test Zone',
           lat: 48.8566,
           lng: 2.3522,
-          radiusKm: 10.0,
+          radiusKm: 10,
           createdAt: testDateTime,
         );
 
@@ -58,7 +58,7 @@ void main() {
           name: '',
           lat: 48.8566,
           lng: 2.3522,
-          radiusKm: 10.0,
+          radiusKm: 10,
           createdAt: testDateTime,
         );
 
@@ -71,7 +71,7 @@ void main() {
           name: 'a' * 101, // 101 characters
           lat: 48.8566,
           lng: 2.3522,
-          radiusKm: 10.0,
+          radiusKm: 10,
           createdAt: testDateTime,
         );
 
@@ -82,9 +82,9 @@ void main() {
         final zone = OfflineZone.validated(
           id: '1',
           name: 'Test Zone',
-          lat: 91.0, // Invalid latitude
+          lat: 91, // Invalid latitude
           lng: 2.3522,
-          radiusKm: 10.0,
+          radiusKm: 10,
           createdAt: testDateTime,
         );
 
@@ -96,8 +96,8 @@ void main() {
           id: '1',
           name: 'Test Zone',
           lat: 48.8566,
-          lng: 181.0, // Invalid longitude
-          radiusKm: 10.0,
+          lng: 181, // Invalid longitude
+          radiusKm: 10,
           createdAt: testDateTime,
         );
 
@@ -110,7 +110,7 @@ void main() {
           name: 'Test Zone',
           lat: 48.8566,
           lng: 2.3522,
-          radiusKm: -1.0, // Negative radius
+          radiusKm: -1, // Negative radius
           createdAt: testDateTime,
         );
 
@@ -123,7 +123,7 @@ void main() {
           name: 'Test Zone',
           lat: 48.8566,
           lng: 2.3522,
-          radiusKm: 1001.0, // Too large
+          radiusKm: 1001, // Too large
           createdAt: testDateTime,
         );
 
@@ -136,7 +136,7 @@ void main() {
           name: 'Test Zone',
           lat: double.nan, // NaN
           lng: 2.3522,
-          radiusKm: 10.0,
+          radiusKm: 10,
           createdAt: testDateTime,
         );
 
@@ -151,13 +151,13 @@ void main() {
           name: 'Original Zone',
           lat: 48.8566,
           lng: 2.3522,
-          radiusKm: 10.0,
+          radiusKm: 10,
           createdAt: testDateTime,
         );
 
         final updated = original.copyWith(
           name: 'Updated Zone',
-          radiusKm: 15.0,
+          radiusKm: 15,
         );
 
         expect(updated.id, '1'); // Unchanged
@@ -174,7 +174,7 @@ void main() {
           name: 'Original Zone',
           lat: 48.8566,
           lng: 2.3522,
-          radiusKm: 10.0,
+          radiusKm: 10,
           createdAt: testDateTime,
         );
 
@@ -191,7 +191,7 @@ void main() {
           name: 'Paris Zone',
           lat: 48.8566, // Paris coordinates
           lng: 2.3522,
-          radiusKm: 10.0,
+          radiusKm: 10,
           createdAt: testDateTime,
         );
 
@@ -207,7 +207,7 @@ void main() {
           name: 'Paris Zone',
           lat: 48.8566, // Paris coordinates
           lng: 2.3522,
-          radiusKm: 1.0, // Small radius
+          radiusKm: 1, // Small radius
           createdAt: testDateTime,
         );
 
@@ -221,14 +221,14 @@ void main() {
         final zone = OfflineZone(
           id: '1',
           name: 'Test Zone',
-          lat: 0.0,
-          lng: 0.0,
-          radiusKm: 1.0,
+          lat: 0,
+          lng: 0,
+          radiusKm: 1,
           createdAt: testDateTime,
         );
 
         // Coordinates approximately 1km from center
-        final result = zone.contains(0.0090, 0.0); // ~1km north
+        final result = zone.contains(0.0090, 0); // ~1km north
 
         expect(result, true);
       });
@@ -239,9 +239,9 @@ void main() {
         final zone = OfflineZone(
           id: '1',
           name: 'Test Zone',
-          lat: 0.0,
-          lng: 0.0,
-          radiusKm: 10.0,
+          lat: 0,
+          lng: 0,
+          radiusKm: 10,
           createdAt: testDateTime,
         );
 
@@ -258,7 +258,7 @@ void main() {
           name: 'Test Zone',
           lat: 48.8566,
           lng: 2.3522,
-          radiusKm: 10.0,
+          radiusKm: 10,
           createdAt: testDateTime,
         );
 
@@ -267,7 +267,7 @@ void main() {
           name: 'Test Zone',
           lat: 48.8566,
           lng: 2.3522,
-          radiusKm: 10.0,
+          radiusKm: 10,
           createdAt: testDateTime,
         );
 
@@ -281,7 +281,7 @@ void main() {
           name: 'Zone 1',
           lat: 48.8566,
           lng: 2.3522,
-          radiusKm: 10.0,
+          radiusKm: 10,
           createdAt: testDateTime,
         );
 
@@ -290,7 +290,7 @@ void main() {
           name: 'Zone 1',
           lat: 48.8566,
           lng: 2.3522,
-          radiusKm: 10.0,
+          radiusKm: 10,
           createdAt: testDateTime,
         );
 
@@ -305,7 +305,7 @@ void main() {
           name: 'Test Zone',
           lat: 48.8566,
           lng: 2.3522,
-          radiusKm: 10.0,
+          radiusKm: 10,
           createdAt: testDateTime,
         );
 
@@ -375,7 +375,7 @@ void main() {
           name: 'Test Zone',
           lat: 48.8566,
           lng: 2.3522,
-          radiusKm: 10.0,
+          radiusKm: 10,
           createdAt: testDateTime,
         );
 

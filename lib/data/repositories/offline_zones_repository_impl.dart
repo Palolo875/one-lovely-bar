@@ -126,9 +126,9 @@ List<OfflineZone> _decode(Object? raw) {
   }
   
   final zones = <OfflineZone>[];
-  int invalidCount = 0;
+  var invalidCount = 0;
   
-  for (int i = 0; i < raw.length; i++) {
+  for (var i = 0; i < raw.length; i++) {
     try {
       final zone = _decodeOne(raw[i]);
       if (zone != null) {
@@ -174,7 +174,7 @@ OfflineZone? _decodeOne(Object? raw) {
     if (raw is Map<String, Object?>) {
       data = raw;
     } else {
-      data = Map<String, Object?>.from(raw as Map);
+      data = Map<String, Object?>.from(raw);
     }
     
     final id = data['id']?.toString();

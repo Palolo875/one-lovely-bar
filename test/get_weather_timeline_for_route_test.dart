@@ -20,7 +20,7 @@ class _FakeWeatherRepository implements WeatherRepository {
             windSpeed: 5,
             windDirection: 0,
             weatherCode: 0,
-            timestamp: DateTime(2026, 1),
+            timestamp: DateTime(2026),
           ),
         )
         .toList();
@@ -86,7 +86,7 @@ void main() {
     final usecase = GetWeatherTimelineForRoute(repo);
 
     const route = RouteData(
-      points: const [],
+      points: [],
       distanceKm: 0,
       durationMinutes: 0,
       profile: 'driver',

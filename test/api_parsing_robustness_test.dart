@@ -1,6 +1,7 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'dart:io';
 import 'package:hive_ce/hive.dart';
 import 'package:weathernav/data/repositories/cache_repository_hive.dart';
 import 'package:weathernav/data/repositories/geocoding_repository_impl.dart';

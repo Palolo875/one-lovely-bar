@@ -119,7 +119,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           content: const Text('Permissions refusées. Vous pouvez les activer dans les paramètres.'),
           action: SnackBarAction(
             label: 'Paramètres',
-            onPressed: () => openAppSettings(),
+            onPressed: openAppSettings,
           ),
         );
         ScaffoldMessenger.of(context).showSnackBar(snackBar);

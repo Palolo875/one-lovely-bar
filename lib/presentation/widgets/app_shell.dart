@@ -4,7 +4,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 class AppShell extends StatelessWidget {
 
-  const AppShell({super.key, required this.navigationShell});
+  const AppShell({required this.navigationShell, super.key});
   final StatefulNavigationShell navigationShell;
 
   void _onTap(BuildContext context, int index) {

@@ -253,7 +253,6 @@ class ProfileScreen extends ConsumerWidget {
                           Expanded(
                             child: Slider(
                               value: (layers.opacity[WeatherLayer.radar] ?? 0.65).clamp(0.0, 1.0),
-                              min: 0,
                               max: WeatherLayersNotifier.maxOpacity,
                               divisions: 10,
                               label: '${((layers.opacity[WeatherLayer.radar] ?? 0.65) * 100).round()}%',
@@ -372,7 +371,7 @@ class ProfileScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Erreur: ${error.toString()}', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.red)),
+                        Text('Erreur: ${error}', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.red)),
                         const SizedBox(height: 8),
                         ElevatedButton(
                           onPressed: () {

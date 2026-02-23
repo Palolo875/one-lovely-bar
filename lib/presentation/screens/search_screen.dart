@@ -8,7 +8,7 @@ import 'package:weathernav/presentation/providers/place_search_provider.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
 
-  const SearchScreen({super.key, required this.title});
+  const SearchScreen({required this.title, super.key});
   final String title;
 
   @override

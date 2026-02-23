@@ -464,7 +464,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           Expanded(
                             child: Slider(
                               value: (layers.opacity[WeatherLayer.radar] ?? 0.65).clamp(0.0, 1.0),
-                              min: 0,
                               divisions: 10,
                               label: '${((layers.opacity[WeatherLayer.radar] ?? 0.65) * 100).round()}%',
                               onChanged: (v) => notifier.setOpacity(WeatherLayer.radar, v),

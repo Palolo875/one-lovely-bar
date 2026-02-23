@@ -4,9 +4,9 @@ import 'package:weathernav/core/network/dio_error_mapper.dart';
 import 'package:weathernav/domain/failures/app_failure.dart';
 import 'package:weathernav/domain/models/route_models.dart';
 import 'package:weathernav/domain/models/weather_condition.dart';
-import 'package:weathernav/domain/repositories/weather_repository.dart';
 import 'package:weathernav/domain/repositories/cache_repository.dart';
 import 'package:weathernav/domain/repositories/settings_repository.dart';
+import 'package:weathernav/domain/repositories/weather_repository.dart';
 
 class OpenMeteoRepository implements WeatherRepository {
 

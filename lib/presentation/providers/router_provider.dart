@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:weathernav/presentation/providers/route_provider.dart';
+import 'package:weathernav/presentation/providers/settings_provider.dart';
+import 'package:weathernav/presentation/screens/guidance_screen.dart';
+import 'package:weathernav/presentation/screens/history_screen.dart';
 import 'package:weathernav/presentation/screens/home_screen.dart';
 import 'package:weathernav/presentation/screens/itinerary_screen.dart';
 import 'package:weathernav/presentation/screens/onboarding_screen.dart';
 import 'package:weathernav/presentation/screens/planning_screen.dart';
+import 'package:weathernav/presentation/screens/profile_screen.dart';
 import 'package:weathernav/presentation/screens/route_simulation_screen.dart';
 import 'package:weathernav/presentation/screens/search_screen.dart';
-import 'package:weathernav/presentation/screens/guidance_screen.dart';
-import 'package:weathernav/presentation/screens/history_screen.dart';
-import 'package:weathernav/presentation/screens/profile_screen.dart';
 import 'package:weathernav/presentation/widgets/app_shell.dart';
-import 'package:weathernav/presentation/providers/route_provider.dart';
-import 'package:weathernav/presentation/providers/settings_provider.dart';
 
 part 'router_provider.g.dart';
 

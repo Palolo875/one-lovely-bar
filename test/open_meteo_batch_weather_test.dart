@@ -65,8 +65,8 @@ void main() {
     final repo = OpenMeteoRepository(dio, _MemoryCacheRepository());
 
     final result = await repo.getBatchWeather([
-      RoutePoint(latitude: 48.0, longitude: 2.0),
-      RoutePoint(latitude: 48.1, longitude: 2.1),
+      const RoutePoint(latitude: 48, longitude: 2),
+      const RoutePoint(latitude: 48.1, longitude: 2.1),
     ]);
 
     expect(result.length, 2);
@@ -101,8 +101,8 @@ void main() {
     final repo = OpenMeteoRepository(dio, _MemoryCacheRepository());
 
     final result = await repo.getBatchWeather([
-      RoutePoint(latitude: 48.0, longitude: 2.0),
-      RoutePoint(latitude: 48.1, longitude: 2.1),
+      const RoutePoint(latitude: 48, longitude: 2),
+      const RoutePoint(latitude: 48.1, longitude: 2.1),
     ]);
 
     expect(result.length, 2);

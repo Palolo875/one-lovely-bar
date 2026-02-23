@@ -24,7 +24,7 @@ import 'package:weathernav/presentation/providers/map_style_provider.dart';
 
 class GuidanceScreen extends ConsumerStatefulWidget {
 
-  const GuidanceScreen({super.key, required this.request});
+  const GuidanceScreen({required this.request, super.key});
   final RouteRequest request;
 
   @override

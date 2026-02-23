@@ -195,7 +195,7 @@ class AppLogger {
     };
     
     final formattedMessage = data != null
-        ? '$message | Data: ${data.toString()}'
+        ? '$message | Data: ${data}'
         : message;
     
     developer.log(
@@ -254,7 +254,7 @@ class AppLogger {
       );
       
       return result;
-    } catch (error, stackTrace) {
+    } catch (error) {
       stopwatch.stop();
       
       performance(

@@ -11,11 +11,7 @@ import 'package:weathernav/presentation/providers/settings_repository_provider.d
 
 class HomePersistentWeatherSheet extends ConsumerWidget {
   const HomePersistentWeatherSheet({
-    super.key,
-    required this.currentWeather,
-    required this.forecast,
-    required this.profile,
-    required this.center,
+    required this.currentWeather, required this.forecast, required this.profile, required this.center, super.key,
   });
 
   final AsyncValue<WeatherCondition> currentWeather;

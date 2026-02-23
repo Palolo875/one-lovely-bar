@@ -1,5 +1,5 @@
-import 'package:weathernav/domain/models/route_models.dart';
 import 'package:weathernav/domain/models/route_instruction.dart';
+import 'package:weathernav/domain/models/route_models.dart';
 
 abstract class RoutingRepository {
   Future<RouteData> getRoute({

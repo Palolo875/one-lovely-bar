@@ -1,8 +1,8 @@
+import 'package:sqlite3/sqlite3.dart' show Row;
 import 'package:weathernav/core/storage/local_database.dart';
 import 'package:weathernav/domain/failures/app_failure.dart';
 import 'package:weathernav/domain/models/trip_history_item.dart';
 import 'package:weathernav/domain/repositories/trip_history_repository.dart';
-import 'package:sqlite3/sqlite3.dart' show Row;
 
 TripHistoryRepository createTripHistoryRepository() => TripHistoryRepositoryImplIo();
 

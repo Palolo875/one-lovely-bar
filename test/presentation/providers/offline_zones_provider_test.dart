@@ -39,7 +39,7 @@ void main() {
             name: 'Test Zone',
             lat: 48.8566,
             lng: 2.3522,
-            radiusKm: 10.0,
+            radiusKm: 10,
             createdAt: DateTime.now(),
           ),
         ];
@@ -80,7 +80,9 @@ void main() {
         final zones = <OfflineZone>[];
         when(mockRepository.read()).thenReturn(zones);
         when(mockRepository.watch()).thenAnswer((_) => Stream.value(zones));
-        when(mockRepository.save(any)).thenAnswer((_) async {});
+        when(mockRepository.save(any)).thenAnswer((_) async {
+          return null;
+        });
       });
 
       test('should add valid zone successfully', () async {
@@ -97,7 +99,7 @@ void main() {
           name: 'New Zone',
           lat: 48.8566,
           lng: 2.3522,
-          radiusKm: 10.0,
+          radiusKm: 10,
         );
 
         // Assert
@@ -126,7 +128,7 @@ void main() {
           name: '', // Invalid empty name
           lat: 48.8566,
           lng: 2.3522,
-          radiusKm: 10.0,
+          radiusKm: 10,
         );
 
         // Assert
@@ -146,9 +148,9 @@ void main() {
         // Act
         final result = await notifier.add(
           name: 'Invalid Zone',
-          lat: 91.0, // Invalid latitude
+          lat: 91, // Invalid latitude
           lng: 2.3522,
-          radiusKm: 10.0,
+          radiusKm: 10,
         );
 
         // Assert
@@ -171,7 +173,7 @@ void main() {
           name: 'New Zone',
           lat: 48.8566,
           lng: 2.3522,
-          radiusKm: 10.0,
+          radiusKm: 10,
         );
 
         // Assert
@@ -191,13 +193,15 @@ void main() {
           name: 'Test Zone',
           lat: 48.8566,
           lng: 2.3522,
-          radiusKm: 10.0,
+          radiusKm: 10,
           createdAt: DateTime.now(),
         );
         final zones = [zone];
         when(mockRepository.read()).thenReturn(zones);
         when(mockRepository.watch()).thenAnswer((_) => Stream.value(zones));
-        when(mockRepository.save(any)).thenAnswer((_) async {});
+        when(mockRepository.save(any)).thenAnswer((_) async {
+          return null;
+        });
 
         // Initialize notifier
         await notifier.build();
@@ -239,13 +243,15 @@ void main() {
           name: 'Test Zone',
           lat: 48.8566,
           lng: 2.3522,
-          radiusKm: 10.0,
+          radiusKm: 10,
           createdAt: DateTime.now(),
         );
         final zones = [zone];
         when(mockRepository.read()).thenReturn(zones);
         when(mockRepository.watch()).thenAnswer((_) => Stream.value(zones));
-        when(mockRepository.save(any)).thenAnswer((_) async {});
+        when(mockRepository.save(any)).thenAnswer((_) async {
+          return null;
+        });
 
         // Initialize notifier
         await notifier.build();
@@ -254,7 +260,7 @@ void main() {
         final result = await notifier.update(
           zone.id,
           name: 'Updated Zone',
-          radiusKm: 15.0,
+          radiusKm: 15,
         );
 
         // Assert
@@ -296,7 +302,7 @@ void main() {
             name: 'Refreshed Zone',
             lat: 48.8566,
             lng: 2.3522,
-            radiusKm: 10.0,
+            radiusKm: 10,
             createdAt: DateTime.now(),
           ),
         ];
@@ -351,12 +357,11 @@ void main() {
             name: 'Test Zone',
             lat: 48.8566,
             lng: 2.3522,
-            radiusKm: 10.0,
+            radiusKm: 10,
             createdAt: DateTime.now(),
           ),
         ],
         isLoading: false,
-        error: null,
       );
 
       // Assert
@@ -367,10 +372,9 @@ void main() {
 
     test('should handle empty state correctly', () {
       // Arrange
-      final state = const OfflineZonesState(
+      const state = OfflineZonesState(
         zones: [],
         isLoading: false,
-        error: null,
       );
 
       // Assert
@@ -381,7 +385,7 @@ void main() {
 
     test('should handle error state correctly', () {
       // Arrange
-      final state = const OfflineZonesState(
+      const state = OfflineZonesState(
         zones: [],
         isLoading: false,
         error: 'Test error',

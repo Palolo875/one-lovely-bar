@@ -5,7 +5,7 @@ import 'package:weathernav/domain/models/weather_condition.dart';
 
 class WeatherTimeline extends StatelessWidget {
 
-  const WeatherTimeline({super.key, required this.conditions});
+  const WeatherTimeline({required this.conditions, super.key});
   final List<WeatherCondition> conditions;
 
   @override

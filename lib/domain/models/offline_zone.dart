@@ -121,18 +121,18 @@ class OfflineZone {
   /// Uses the Haversine formula to calculate great-circle distance
   /// between the zone center and the specified point
   bool contains(double lat, double lng) {
-    const double earthRadiusKm = 6371.0;
+    const earthRadiusKm = 6371;
     
-    final double dLat = _toRadians(this.lat - lat);
-    final double dLng = _toRadians(this.lng - lng);
+    final dLat = _toRadians(this.lat - lat);
+    final dLng = _toRadians(this.lng - lng);
     
     final double a = 
         (dLat / 2).sin() * (dLat / 2).sin() +
         _toRadians(lat).cos() * _toRadians(this.lat).cos() *
         (dLng / 2).sin() * (dLng / 2).sin();
     
-    final double c = 2 * a.sqrt().asin();
-    final double distance = earthRadiusKm * c;
+    final c = 2 * a.sqrt().asin();
+    final distance = earthRadiusKm * c;
     
     return distance <= radiusKm;
   }

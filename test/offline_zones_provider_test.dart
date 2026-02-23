@@ -71,7 +71,7 @@ class _InMemoryOfflineZonesRepository implements OfflineZonesRepository {
     final out = <OfflineZone>[];
     for (final item in raw) {
       if (item is! Map) continue;
-      final m = Map<String, Object?>.from(item as Map);
+      final m = Map<String, Object?>.from(item);
       final id = m['id']?.toString();
       final name = m['name']?.toString();
       final lat = m['lat'];
@@ -210,7 +210,7 @@ void main() {
 
     expect(container.read(offlineZonesProvider), isEmpty);
     expect(repo.get<Object?>('offline_zones'), isA<List>());
-    expect((repo.get<Object?>('offline_zones') as List).length, 0);
+    expect((repo.get<Object?>('offline_zones')! as List).length, 0);
   });
 
   test('syncs from repository watch events', () async {

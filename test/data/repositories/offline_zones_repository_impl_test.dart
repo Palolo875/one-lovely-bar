@@ -186,11 +186,13 @@ void main() {
             name: 'Test Zone',
             lat: 48.8566,
             lng: 2.3522,
-            radiusKm: 10.0,
+            radiusKm: 10,
             createdAt: DateTime.now(),
           ),
         ];
-        when(mockSettingsRepository.put(any, any)).thenAnswer((_) async {});
+        when(mockSettingsRepository.put(any, any)).thenAnswer((_) async {
+          return null;
+        });
 
         // Act
         await repository.save(zones);
@@ -211,7 +213,7 @@ void main() {
           name: 'Zone $index',
           lat: 48.8566,
           lng: 2.3522,
-          radiusKm: 10.0,
+          radiusKm: 10,
           createdAt: DateTime.now(),
         ));
 

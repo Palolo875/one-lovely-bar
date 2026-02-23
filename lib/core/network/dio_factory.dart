@@ -17,7 +17,6 @@ Dio createAppDio({bool enableLogging = false}) {
   if (enableLogging) {
     dio.interceptors.add(
       LogInterceptor(
-        responseBody: false,
         requestHeader: false,
         responseHeader: false,
       ),

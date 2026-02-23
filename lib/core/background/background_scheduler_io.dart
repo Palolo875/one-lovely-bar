@@ -1,7 +1,6 @@
-import 'package:workmanager/workmanager.dart';
-
 import 'package:weathernav/core/background/background_scheduler.dart';
 import 'package:weathernav/core/background/workmanager_tasks.dart';
+import 'package:workmanager/workmanager.dart';
 
 class BackgroundSchedulerImpl implements BackgroundScheduler {
   @override

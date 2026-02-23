@@ -42,7 +42,7 @@ class OfflineZonesNotifier extends AsyncNotifier<OfflineZonesState> {
       return OfflineZonesState(zones: zones);
     } catch (e, st) {
       AppLogger.error('Failed to initialize offline zones', name: 'OfflineZonesNotifier', error: e, stackTrace: st);
-      return OfflineZonesState(error: 'Failed to load offline zones: ${e.toString()}');
+      return OfflineZonesState(error: 'Failed to load offline zones: ${e}');
     }
   }
   
@@ -57,10 +57,10 @@ class OfflineZonesNotifier extends AsyncNotifier<OfflineZonesState> {
   
   void _setupWatchListener() {
     _subscription = _repo.watch().listen(
-      (zones) => _handleExternalChange(zones),
+      _handleExternalChange,
       onError: (e, st) {
         AppLogger.error('Error in zones watch stream', name: 'OfflineZonesNotifier', error: e, stackTrace: st);
-        state = AsyncValue.data(state.value?.copyWith(error: 'Sync error: ${e.toString()}') ?? OfflineZonesState(error: 'Sync error: ${e.toString()}'));
+        state = AsyncValue.data(state.value?.copyWith(error: 'Sync error: ${e}') ?? OfflineZonesState(error: 'Sync error: ${e}'));
       },
     );
   }
@@ -87,10 +87,10 @@ class OfflineZonesNotifier extends AsyncNotifier<OfflineZonesState> {
       try {
         final currentZones = await _loadInitialZones();
         if (!_same(currentZones, state.value?.zones)) {
-          state = AsyncValue.data(state.value?.copyWith(zones: currentZones, error: 'Failed to save changes') ?? OfflineZonesState(error: 'Failed to save changes'));
+          state = AsyncValue.data(state.value?.copyWith(zones: currentZones, error: 'Failed to save changes') ?? const OfflineZonesState(error: 'Failed to save changes'));
         }
       } catch (recoveryError) {
-        state = AsyncValue.data(state.value?.copyWith(error: 'Failed to save and sync data') ?? OfflineZonesState(error: 'Failed to save and sync data'));
+        state = AsyncValue.data(state.value?.copyWith(error: 'Failed to save and sync data') ?? const OfflineZonesState(error: 'Failed to save and sync data'));
       }
     }
   }
@@ -196,6 +196,7 @@ class OfflineZonesNotifier extends AsyncNotifier<OfflineZonesState> {
     }
   }
   
+  @override
   Future<bool> update(String id, {
     String? name,
     double? lat,
@@ -279,7 +280,7 @@ class OfflineZonesNotifier extends AsyncNotifier<OfflineZonesState> {
   }
   
   void clearError() {
-    if (state.value?.hasError == true) {
+    if (state.value?.hasError ?? false) {
       state = AsyncValue.data(state.value!.copyWith(error: null));
     }
   }

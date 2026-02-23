@@ -81,7 +81,7 @@ final poiSearchProvider = FutureProvider.autoDispose.family<List<Poi>, PoiReques
     final out = <Poi>[];
     for (final m in data) {
       if (m is! Map) continue;
-      final mm = Map<String, Object?>.from(m as Map);
+      final mm = Map<String, Object?>.from(m);
       final id = mm['id']?.toString();
       final name = mm['name']?.toString();
       final lat = mm['lat'];

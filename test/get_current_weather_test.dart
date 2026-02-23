@@ -18,7 +18,7 @@ class _FakeWeatherRepository implements WeatherRepository {
       windSpeed: 2,
       windDirection: 0,
       weatherCode: 0,
-      timestamp: DateTime(2026, 1),
+      timestamp: DateTime(2026),
     );
   }
 

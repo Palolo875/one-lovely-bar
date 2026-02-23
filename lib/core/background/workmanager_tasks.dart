@@ -1,12 +1,10 @@
-import 'package:workmanager/workmanager.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/widgets.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
-
 import 'package:weathernav/core/config/app_config.dart';
 import 'package:weathernav/core/logging/app_logger.dart';
 import 'package:weathernav/core/network/dio_factory.dart';
 import 'package:weathernav/core/storage/settings_keys.dart';
+import 'package:workmanager/workmanager.dart';
 
 class WorkmanagerTasks {
   static const weatherRefreshTask = 'weathernav_weather_refresh';

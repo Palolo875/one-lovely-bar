@@ -55,7 +55,7 @@ final weatherGridProvider = FutureProvider.autoDispose.family<List<GridPointWeat
     final out = <GridPointWeather>[];
     for (final m in data) {
       if (m is! Map) continue;
-      final mm = Map<String, Object?>.from(m as Map);
+      final mm = Map<String, Object?>.from(m);
       final lat = mm['lat'];
       final lng = mm['lng'];
       final condition = mm['condition'];
@@ -64,7 +64,7 @@ final weatherGridProvider = FutureProvider.autoDispose.family<List<GridPointWeat
         GridPointWeather(
           latitude: lat.toDouble(),
           longitude: lng.toDouble(),
-          condition: WeatherCondition.fromJson(Map<String, dynamic>.from(condition as Map)),
+          condition: WeatherCondition.fromJson(Map<String, dynamic>.from(condition)),
         ),
       );
     }

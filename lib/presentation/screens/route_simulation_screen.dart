@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter/services.dart';
+import 'package:weathernav/domain/failures/app_failure.dart';
+import 'package:weathernav/domain/models/route_alert.dart';
 import 'package:weathernav/domain/models/route_models.dart';
 import 'package:weathernav/domain/models/user_profile.dart';
-import 'package:weathernav/domain/failures/app_failure.dart';
 import 'package:weathernav/domain/usecases/export_route_to_gpx.dart';
-import 'package:weathernav/domain/models/route_alert.dart';
-import 'package:weathernav/presentation/providers/trip_history_provider.dart';
 import 'package:weathernav/presentation/providers/profile_provider.dart';
-import 'package:weathernav/presentation/providers/route_provider.dart';
-import 'package:weathernav/presentation/providers/weather_timeline_eta_provider.dart';
 import 'package:weathernav/presentation/providers/route_alerts_provider.dart';
+import 'package:weathernav/presentation/providers/route_provider.dart';
+import 'package:weathernav/presentation/providers/trip_history_provider.dart';
+import 'package:weathernav/presentation/providers/weather_timeline_eta_provider.dart';
 import 'package:weathernav/presentation/widgets/weather_timeline.dart';
 
 class RouteSimulationScreen extends ConsumerStatefulWidget {

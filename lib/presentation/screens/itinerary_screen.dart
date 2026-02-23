@@ -1,23 +1,24 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:weathernav/core/logging/app_logger.dart';
-import 'package:weathernav/presentation/map/maplibre_camera_utils.dart';
 import 'package:weathernav/domain/failures/app_failure.dart';
 import 'package:weathernav/domain/models/place_suggestion.dart';
 import 'package:weathernav/domain/models/route_models.dart';
 import 'package:weathernav/domain/models/user_profile.dart';
 import 'package:weathernav/domain/usecases/export_route_to_gpx.dart';
+import 'package:weathernav/presentation/map/maplibre_camera_utils.dart';
+import 'package:weathernav/presentation/providers/map_style_provider.dart';
 import 'package:weathernav/presentation/providers/profile_provider.dart';
-import 'package:weathernav/presentation/providers/route_provider.dart';
 import 'package:weathernav/presentation/providers/route_alerts_provider.dart';
+import 'package:weathernav/presentation/providers/route_provider.dart';
 import 'package:weathernav/presentation/providers/trip_history_provider.dart';
 import 'package:weathernav/presentation/providers/weather_timeline_eta_provider.dart';
-import 'package:weathernav/presentation/providers/map_style_provider.dart';
 import 'package:weathernav/presentation/widgets/weather_timeline.dart';
 
 class ItineraryScreen extends ConsumerStatefulWidget {

@@ -5,8 +5,8 @@ import 'package:weathernav/presentation/providers/settings_provider.dart';
 import 'package:weathernav/presentation/providers/weather_layers_provider.dart';
 
 class FakeSettingsRepository implements SettingsRepository {
-  final Map<String, Object?> _data;
   FakeSettingsRepository([Map<String, Object?>? seed]) : _data = {...?seed};
+  final Map<String, Object?> _data;
 
   @override
   T? get<T>(String key) {
@@ -41,7 +41,7 @@ class FakeSettingsRepository implements SettingsRepository {
 void main() {
   test('load() falls back to profile defaults with mapping and maxEnabled', () {
     final settings = FakeSettingsRepository();
-    final profile = const UserProfile(
+    const profile = UserProfile(
       id: 'p1',
       name: 'P1',
       type: ProfileType.universal,

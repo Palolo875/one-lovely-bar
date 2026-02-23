@@ -34,6 +34,6 @@ class HiveSettingsRepository implements SettingsRepository {
 
   @override
   Stream<void> watch(String key) {
-    return _box.watch(key: key).map((_) => null);
+    return _box.watch(key: key).map((_) {});
   }
 }
