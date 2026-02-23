@@ -9,7 +9,6 @@ import 'package:weathernav/domain/repositories/settings_repository.dart';
 import 'package:weathernav/domain/repositories/weather_repository.dart';
 
 class OpenMeteoRepository implements WeatherRepository {
-
   OpenMeteoRepository(this._dio, this._cache, {this.legacy});
   final Dio _dio;
   final CacheRepository _cache;
@@ -31,7 +30,8 @@ class OpenMeteoRepository implements WeatherRepository {
 
   DateTime _asDateTime(dynamic v) {
     if (v is DateTime) return v;
-    if (v is String) return DateTime.tryParse(v) ?? DateTime.fromMillisecondsSinceEpoch(0);
+    if (v is String)
+      return DateTime.tryParse(v) ?? DateTime.fromMillisecondsSinceEpoch(0);
     return DateTime.fromMillisecondsSinceEpoch(0);
   }
 
@@ -60,7 +60,9 @@ class OpenMeteoRepository implements WeatherRepository {
     final ts = raw['ts'];
     final data = raw['data'];
     if (ts is! int || data is! Map) return null;
-    final age = DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(ts));
+    final age = DateTime.now().difference(
+      DateTime.fromMillisecondsSinceEpoch(ts),
+    );
     if (age > _currentTtl) return null;
     return WeatherCondition.fromJson(Map<String, dynamic>.from(data));
   }
@@ -74,7 +76,11 @@ class OpenMeteoRepository implements WeatherRepository {
     return WeatherCondition.fromJson(Map<String, dynamic>.from(data));
   }
 
-  Future<void> _writeCurrentToCache(double lat, double lng, WeatherCondition c) async {
+  Future<void> _writeCurrentToCache(
+    double lat,
+    double lng,
+    WeatherCondition c,
+  ) async {
     final key = _keyForLatLng('wx_current', lat, lng);
     await _cache.put(key, {
       'ts': DateTime.now().millisecondsSinceEpoch,
@@ -82,14 +88,20 @@ class OpenMeteoRepository implements WeatherRepository {
     });
   }
 
-  List<WeatherCondition>? _readForecastFromCache(double lat, double lng, int days) {
+  List<WeatherCondition>? _readForecastFromCache(
+    double lat,
+    double lng,
+    int days,
+  ) {
     final key = _keyForLatLng('wx_forecast:$days', lat, lng);
     final raw = _cache.get<Object?>(key) ?? legacy?.get<Object?>(key);
     if (raw is! Map) return null;
     final ts = raw['ts'];
     final data = raw['data'];
     if (ts is! int || data is! List) return null;
-    final age = DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(ts));
+    final age = DateTime.now().difference(
+      DateTime.fromMillisecondsSinceEpoch(ts),
+    );
     if (age > _forecastTtl) return null;
     return data
         .whereType<Map>()
@@ -97,7 +109,11 @@ class OpenMeteoRepository implements WeatherRepository {
         .toList();
   }
 
-  List<WeatherCondition>? _readForecastFromCacheAllowStale(double lat, double lng, int days) {
+  List<WeatherCondition>? _readForecastFromCacheAllowStale(
+    double lat,
+    double lng,
+    int days,
+  ) {
     final key = _keyForLatLng('wx_forecast:$days', lat, lng);
     final raw = _cache.get<Object?>(key) ?? legacy?.get<Object?>(key);
     if (raw is! Map) return null;
@@ -109,7 +125,12 @@ class OpenMeteoRepository implements WeatherRepository {
         .toList();
   }
 
-  Future<void> _writeForecastToCache(double lat, double lng, int days, List<WeatherCondition> list) async {
+  Future<void> _writeForecastToCache(
+    double lat,
+    double lng,
+    int days,
+    List<WeatherCondition> list,
+  ) async {
     final key = _keyForLatLng('wx_forecast:$days', lat, lng);
     await _cache.put(key, {
       'ts': DateTime.now().millisecondsSinceEpoch,
@@ -130,21 +151,29 @@ class OpenMeteoRepository implements WeatherRepository {
           'latitude': lat,
           'longitude': lng,
           'current_weather': true,
-          'hourly': 'temperature_2m,precipitation,windspeed_10m,winddirection_10m,weathercode',
+          'hourly':
+              'temperature_2m,precipitation,windspeed_10m,winddirection_10m,weathercode',
         },
       );
     } on DioException catch (e, st) {
       final stale = _readCurrentFromCacheAllowStale(lat, lng);
       if (stale != null) return stale;
       throw AppFailure(
-        mapDioExceptionToMessage(e, defaultMessage: 'Impossible de récupérer la météo actuelle.'),
+        mapDioExceptionToMessage(
+          e,
+          defaultMessage: 'Impossible de récupérer la météo actuelle.',
+        ),
         cause: e,
         stackTrace: st,
       );
     } catch (e, st) {
       final stale = _readCurrentFromCacheAllowStale(lat, lng);
       if (stale != null) return stale;
-      throw AppFailure('Erreur inattendue lors de la récupération de la météo actuelle.', cause: e, stackTrace: st);
+      throw AppFailure(
+        'Erreur inattendue lors de la récupération de la météo actuelle.',
+        cause: e,
+        stackTrace: st,
+      );
     }
 
     final condition = () {
@@ -152,7 +181,9 @@ class OpenMeteoRepository implements WeatherRepository {
         final root = _asMap(response.data);
         final current = root == null ? null : _asMap(root['current_weather']);
         if (current == null) {
-          throw const FormatException('Invalid Open-Meteo current_weather payload');
+          throw const FormatException(
+            'Invalid Open-Meteo current_weather payload',
+          );
         }
 
         return WeatherCondition(
@@ -173,7 +204,11 @@ class OpenMeteoRepository implements WeatherRepository {
   }
 
   @override
-  Future<List<WeatherCondition>> getForecast(double lat, double lng, {int days = 7}) async {
+  Future<List<WeatherCondition>> getForecast(
+    double lat,
+    double lng, {
+    int days = 7,
+  }) async {
     final cached = _readForecastFromCache(lat, lng, days);
     if (cached != null) return cached;
 
@@ -184,7 +219,8 @@ class OpenMeteoRepository implements WeatherRepository {
         queryParameters: {
           'latitude': lat,
           'longitude': lng,
-          'hourly': 'temperature_2m,precipitation,windspeed_10m,winddirection_10m,weathercode,visibility,uv_index,cloudcover',
+          'hourly':
+              'temperature_2m,precipitation,windspeed_10m,winddirection_10m,weathercode,visibility,uv_index,cloudcover',
           'forecast_days': days,
         },
       );
@@ -192,14 +228,21 @@ class OpenMeteoRepository implements WeatherRepository {
       final stale = _readForecastFromCacheAllowStale(lat, lng, days);
       if (stale != null) return stale;
       throw AppFailure(
-        mapDioExceptionToMessage(e, defaultMessage: 'Impossible de récupérer les prévisions météo.'),
+        mapDioExceptionToMessage(
+          e,
+          defaultMessage: 'Impossible de récupérer les prévisions météo.',
+        ),
         cause: e,
         stackTrace: st,
       );
     } catch (e, st) {
       final stale = _readForecastFromCacheAllowStale(lat, lng, days);
       if (stale != null) return stale;
-      throw AppFailure('Erreur inattendue lors de la récupération des prévisions météo.', cause: e, stackTrace: st);
+      throw AppFailure(
+        'Erreur inattendue lors de la récupération des prévisions météo.',
+        cause: e,
+        stackTrace: st,
+      );
     }
 
     final conditions = () {
@@ -220,8 +263,8 @@ class OpenMeteoRepository implements WeatherRepository {
         final uv = _asList(hourly['uv_index']);
         final clouds = _asList(hourly['cloudcover']);
 
-        final len = times?.length ?? 0;
-        if (len == 0 ||
+        if (times == null ||
+            times.isEmpty ||
             temp == null ||
             precip == null ||
             wind == null ||
@@ -232,6 +275,8 @@ class OpenMeteoRepository implements WeatherRepository {
             clouds == null) {
           throw const FormatException('Invalid Open-Meteo hourly arrays');
         }
+
+        final len = times.length;
 
         final out = <WeatherCondition>[];
         for (var i = 0; i < len; i++) {
@@ -251,7 +296,11 @@ class OpenMeteoRepository implements WeatherRepository {
         }
         return out;
       } catch (e, st) {
-        throw AppFailure('Réponse prévisions météo invalide.', cause: e, stackTrace: st);
+        throw AppFailure(
+          'Réponse prévisions météo invalide.',
+          cause: e,
+          stackTrace: st,
+        );
       }
     }();
 
@@ -260,7 +309,9 @@ class OpenMeteoRepository implements WeatherRepository {
   }
 
   @override
-  Future<List<WeatherCondition>> getBatchWeather(List<RoutePoint> points) async {
+  Future<List<WeatherCondition>> getBatchWeather(
+    List<RoutePoint> points,
+  ) async {
     if (points.isEmpty) return const <WeatherCondition>[];
 
     final safePoints = points.length <= 20 ? points : _evenSample(points, 20);
@@ -284,12 +335,19 @@ class OpenMeteoRepository implements WeatherRepository {
       );
     } on DioException catch (e, st) {
       throw AppFailure(
-        mapDioExceptionToMessage(e, defaultMessage: 'Impossible de récupérer la météo sur le trajet.'),
+        mapDioExceptionToMessage(
+          e,
+          defaultMessage: 'Impossible de récupérer la météo sur le trajet.',
+        ),
         cause: e,
         stackTrace: st,
       );
     } catch (e, st) {
-      throw AppFailure('Erreur inattendue lors de la récupération de la météo sur le trajet.', cause: e, stackTrace: st);
+      throw AppFailure(
+        'Erreur inattendue lors de la récupération de la météo sur le trajet.',
+        cause: e,
+        stackTrace: st,
+      );
     }
 
     final dynamic raw = response.data;
@@ -306,14 +364,24 @@ class OpenMeteoRepository implements WeatherRepository {
         final times = _asList(hourly['time']);
         if (times == null || times.isEmpty) continue;
 
-        results.add(WeatherCondition(
-          temperature: _asDouble((_asList(hourly['temperature_2m']) ?? const [0])[0]),
-          precipitation: _asDouble((_asList(hourly['precipitation']) ?? const [0])[0]),
-          windSpeed: _asDouble((_asList(hourly['windspeed_10m']) ?? const [0])[0]),
-          windDirection: 0,
-          weatherCode: _asInt((_asList(hourly['weathercode']) ?? const [0])[0]),
-          timestamp: _asDateTime(times[0]),
-        ));
+        results.add(
+          WeatherCondition(
+            temperature: _asDouble(
+              (_asList(hourly['temperature_2m']) ?? const [0])[0],
+            ),
+            precipitation: _asDouble(
+              (_asList(hourly['precipitation']) ?? const [0])[0],
+            ),
+            windSpeed: _asDouble(
+              (_asList(hourly['windspeed_10m']) ?? const [0])[0],
+            ),
+            windDirection: 0,
+            weatherCode: _asInt(
+              (_asList(hourly['weathercode']) ?? const [0])[0],
+            ),
+            timestamp: _asDateTime(times[0]),
+          ),
+        );
       }
 
       if (results.length == safePoints.length) {
@@ -329,13 +397,21 @@ class OpenMeteoRepository implements WeatherRepository {
         if (times != null && times.isNotEmpty) {
           return [
             WeatherCondition(
-              temperature: _asDouble((_asList(hourly['temperature_2m']) ?? const [0])[0]),
-              precipitation: _asDouble((_asList(hourly['precipitation']) ?? const [0])[0]),
-              windSpeed: _asDouble((_asList(hourly['windspeed_10m']) ?? const [0])[0]),
+              temperature: _asDouble(
+                (_asList(hourly['temperature_2m']) ?? const [0])[0],
+              ),
+              precipitation: _asDouble(
+                (_asList(hourly['precipitation']) ?? const [0])[0],
+              ),
+              windSpeed: _asDouble(
+                (_asList(hourly['windspeed_10m']) ?? const [0])[0],
+              ),
               windDirection: 0,
-              weatherCode: _asInt((_asList(hourly['weathercode']) ?? const [0])[0]),
+              weatherCode: _asInt(
+                (_asList(hourly['weathercode']) ?? const [0])[0],
+              ),
               timestamp: _asDateTime(times[0]),
-            )
+            ),
           ];
         }
       }
@@ -349,7 +425,11 @@ class OpenMeteoRepository implements WeatherRepository {
     } on AppFailure {
       rethrow;
     } catch (e, st) {
-      throw AppFailure('Impossible de récupérer la météo sur le trajet.', cause: e, stackTrace: st);
+      throw AppFailure(
+        'Impossible de récupérer la météo sur le trajet.',
+        cause: e,
+        stackTrace: st,
+      );
     }
   }
 

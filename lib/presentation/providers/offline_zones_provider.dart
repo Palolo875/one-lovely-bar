@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:weathernav/core/logging/app_logger.dart';
@@ -13,7 +14,8 @@ import 'package:weathernav/presentation/providers/offline_zones_repository_provi
 part 'offline_zones_provider.freezed.dart';
 
 @freezed
-class OfflineZonesState with _$OfflineZonesState {
+abstract class OfflineZonesState
+    with _$OfflineZonesState, DiagnosticableTreeMixin {
   const factory OfflineZonesState({
     @Default([]) List<OfflineZone> zones,
     @Default(false) bool isLoading,
@@ -39,6 +41,9 @@ class OfflineZonesNotifier extends AsyncNotifier<OfflineZonesState> {
     try {
       final zones = await _loadInitialZones();
       _setupWatchListener();
+      ref.onDispose(() {
+        _subscription?.cancel();
+      });
       return OfflineZonesState(zones: zones);
     } catch (e, st) {
       AppLogger.error(
@@ -69,11 +74,12 @@ class OfflineZonesNotifier extends AsyncNotifier<OfflineZonesState> {
     _subscription = _repo.watch().listen(
       _handleExternalChange,
       onError: (e, st) {
+        final StackTrace? stackTrace = st is StackTrace ? st : null;
         AppLogger.error(
           'Error in zones watch stream',
           name: 'OfflineZonesNotifier',
           error: e,
-          stackTrace: st,
+          stackTrace: stackTrace,
         );
         state = AsyncValue.data(
           state.value?.copyWith(error: 'Sync error: ${e}') ??
@@ -112,7 +118,8 @@ class OfflineZonesNotifier extends AsyncNotifier<OfflineZonesState> {
 
       try {
         final currentZones = await _loadInitialZones();
-        if (!_same(currentZones, state.value?.zones)) {
+        final previousZones = state.value?.zones ?? const <OfflineZone>[];
+        if (!_same(currentZones, previousZones)) {
           state = AsyncValue.data(
             state.value?.copyWith(
                   zones: currentZones,
@@ -282,8 +289,7 @@ class OfflineZonesNotifier extends AsyncNotifier<OfflineZonesState> {
     }
   }
 
-  @override
-  Future<bool> update(
+  Future<bool> updateZone(
     String id, {
     String? name,
     double? lat,
@@ -398,12 +404,6 @@ class OfflineZonesNotifier extends AsyncNotifier<OfflineZonesState> {
     if (state.value?.hasError ?? false) {
       state = AsyncValue.data(state.value!.copyWith(error: null));
     }
-  }
-
-  @override
-  void dispose() {
-    _subscription?.cancel();
-    super.dispose();
   }
 }
 

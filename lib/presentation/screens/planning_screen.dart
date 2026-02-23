@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:weathernav/domain/models/user_profile.dart';
 import 'package:weathernav/domain/models/place_suggestion.dart';
 import 'package:weathernav/presentation/providers/profile_provider.dart';
 import 'package:weathernav/presentation/providers/route_provider.dart';
@@ -44,7 +45,7 @@ class _PlanningScreenState extends ConsumerState<PlanningScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final profile = ref.watch(profileNotifierProvider);
+    final profile = ref.watch(profileProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -57,7 +58,10 @@ class _PlanningScreenState extends ConsumerState<PlanningScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Quand partez-vous ?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text(
+              'Quand partez-vous ?',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 16),
             GestureDetector(
               onTap: () async {
@@ -107,7 +111,10 @@ class _PlanningScreenState extends ConsumerState<PlanningScreen> {
               ),
             ),
             const SizedBox(height: 32),
-            const Text('Itinéraire', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text(
+              'Itinéraire',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 16),
             _buildCoordinateRow(
               icon: LucideIcons.mapPin,
@@ -127,14 +134,25 @@ class _PlanningScreenState extends ConsumerState<PlanningScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  final startLat = double.tryParse(_startLatController.text.trim());
-                  final startLng = double.tryParse(_startLngController.text.trim());
+                  final startLat = double.tryParse(
+                    _startLatController.text.trim(),
+                  );
+                  final startLng = double.tryParse(
+                    _startLngController.text.trim(),
+                  );
                   final endLat = double.tryParse(_endLatController.text.trim());
                   final endLng = double.tryParse(_endLngController.text.trim());
 
-                  if (startLat == null || startLng == null || endLat == null || endLng == null) {
+                  if (startLat == null ||
+                      startLng == null ||
+                      endLat == null ||
+                      endLng == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Veuillez entrer des coordonnées valides.')),
+                      const SnackBar(
+                        content: Text(
+                          'Veuillez entrer des coordonnées valides.',
+                        ),
+                      ),
                     );
                     return;
                   }
@@ -154,7 +172,9 @@ class _PlanningScreenState extends ConsumerState<PlanningScreen> {
                   backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
                 child: const Text('Simuler la météo sur le trajet'),
               ),
@@ -189,7 +209,9 @@ class _PlanningScreenState extends ConsumerState<PlanningScreen> {
               const Spacer(),
               TextButton(
                 onPressed: () async {
-                  final result = await context.push<PlaceSuggestion>('/search?title=${Uri.encodeComponent(title)}');
+                  final result = await context.push<PlaceSuggestion>(
+                    '/search?title=${Uri.encodeComponent(title)}',
+                  );
                   if (result == null) return;
 
                   latController.text = result.latitude.toStringAsFixed(6);
@@ -205,7 +227,10 @@ class _PlanningScreenState extends ConsumerState<PlanningScreen> {
               Expanded(
                 child: TextField(
                   controller: latController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                    signed: true,
+                  ),
                   decoration: const InputDecoration(
                     labelText: 'Latitude',
                     isDense: true,
@@ -217,7 +242,10 @@ class _PlanningScreenState extends ConsumerState<PlanningScreen> {
               Expanded(
                 child: TextField(
                   controller: lngController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                    signed: true,
+                  ),
                   decoration: const InputDecoration(
                     labelText: 'Longitude',
                     isDense: true,

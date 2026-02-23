@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:weathernav/core/logging/app_logger.dart';
+import 'package:weathernav/domain/models/user_profile.dart';
 import 'package:weathernav/presentation/providers/alert_thresholds_provider.dart';
 import 'package:weathernav/presentation/providers/offline_zones_provider.dart';
 import 'package:weathernav/presentation/providers/settings_provider.dart';
@@ -18,17 +19,31 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(appSettingsProvider);
-    final settingsNotifier = ref.read(appSettingsProvider.notifier);
-    final layers = ref.watch(weatherLayersProvider);
-    final layersNotifier = ref.read(weatherLayersProvider.notifier);
-    final profile = ref.watch(profileNotifierProvider);
-    final alertThresholds = ref.watch(alertThresholdsProvider);
-    final alertThresholdsNotifier = ref.read(alertThresholdsProvider.notifier);
-    final offlineZonesAsync = ref.watch(offlineZonesProvider);
-    final offlineZonesNotifier = ref.read(offlineZonesProvider.notifier);
-    final mapStyle = ref.watch(mapStyleProvider);
-    final mapStyleNotifier = ref.read(mapStyleProvider.notifier);
+    final AppSettingsState settings = ref.watch(appSettingsProvider);
+    final AppSettingsNotifier settingsNotifier = ref.read(
+      appSettingsProvider.notifier,
+    );
+    final WeatherLayersState layers = ref.watch(weatherLayersProvider);
+    final WeatherLayersNotifier layersNotifier = ref.read(
+      weatherLayersProvider.notifier,
+    );
+    final UserProfile profile = ref.watch(profileProvider);
+    final AlertThresholdsState alertThresholds = ref.watch(
+      alertThresholdsProvider,
+    );
+    final AlertThresholdsNotifier alertThresholdsNotifier = ref.read(
+      alertThresholdsProvider.notifier,
+    );
+    final AsyncValue<OfflineZonesState> offlineZonesAsync = ref.watch(
+      offlineZonesProvider,
+    );
+    final OfflineZonesNotifier offlineZonesNotifier = ref.read(
+      offlineZonesProvider.notifier,
+    );
+    final MapStyleState mapStyle = ref.watch(mapStyleProvider);
+    final MapStyleNotifier mapStyleNotifier = ref.read(
+      mapStyleProvider.notifier,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -41,7 +56,9 @@ class ProfileScreen extends ConsumerWidget {
         children: [
           Card(
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
             child: ListTile(
               leading: const Icon(LucideIcons.user),
               title: Text(profile.name),
@@ -55,18 +72,27 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Text('Apparence', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+          Text(
+            'Apparence',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 8),
           Card(
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
             child: Column(
               children: [
                 RadioListTile<ThemeMode>(
                   value: ThemeMode.system,
                   groupValue: settings.themeMode,
                   onChanged: (v) {
-                    unawaited(settingsNotifier.setThemeMode(v ?? ThemeMode.system));
+                    unawaited(
+                      settingsNotifier.setThemeMode(v ?? ThemeMode.system),
+                    );
                   },
                   title: const Text('Automatique'),
                 ),
@@ -74,7 +100,9 @@ class ProfileScreen extends ConsumerWidget {
                   value: ThemeMode.light,
                   groupValue: settings.themeMode,
                   onChanged: (v) {
-                    unawaited(settingsNotifier.setThemeMode(v ?? ThemeMode.system));
+                    unawaited(
+                      settingsNotifier.setThemeMode(v ?? ThemeMode.system),
+                    );
                   },
                   title: const Text('Clair'),
                 ),
@@ -82,7 +110,9 @@ class ProfileScreen extends ConsumerWidget {
                   value: ThemeMode.dark,
                   groupValue: settings.themeMode,
                   onChanged: (v) {
-                    unawaited(settingsNotifier.setThemeMode(v ?? ThemeMode.system));
+                    unawaited(
+                      settingsNotifier.setThemeMode(v ?? ThemeMode.system),
+                    );
                   },
                   title: const Text('Sombre'),
                 ),
@@ -90,11 +120,18 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Text('Unités', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+          Text(
+            'Unités',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 8),
           Card(
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
             child: Column(
               children: [
                 ListTile(
@@ -139,18 +176,29 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Text('Carte', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+          Text(
+            'Carte',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 8),
           Card(
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
             child: Column(
               children: [
                 RadioListTile<MapStyleSource>(
                   value: MapStyleSource.openFreeMap,
                   groupValue: mapStyle.source,
                   onChanged: (v) {
-                    unawaited(mapStyleNotifier.setSource(v ?? MapStyleSource.openFreeMap));
+                    unawaited(
+                      mapStyleNotifier.setSource(
+                        v ?? MapStyleSource.openFreeMap,
+                      ),
+                    );
                   },
                   title: const Text('OpenFreeMap (par défaut)'),
                   subtitle: const Text('Pas de SLA — fallback recommandé'),
@@ -160,7 +208,11 @@ class ProfileScreen extends ConsumerWidget {
                   value: MapStyleSource.cartoPositron,
                   groupValue: mapStyle.source,
                   onChanged: (v) {
-                    unawaited(mapStyleNotifier.setSource(v ?? MapStyleSource.openFreeMap));
+                    unawaited(
+                      mapStyleNotifier.setSource(
+                        v ?? MapStyleSource.openFreeMap,
+                      ),
+                    );
                   },
                   title: const Text('Carto Positron (fallback)'),
                 ),
@@ -169,7 +221,11 @@ class ProfileScreen extends ConsumerWidget {
                   value: MapStyleSource.stamenToner,
                   groupValue: mapStyle.source,
                   onChanged: (v) {
-                    unawaited(mapStyleNotifier.setSource(v ?? MapStyleSource.openFreeMap));
+                    unawaited(
+                      mapStyleNotifier.setSource(
+                        v ?? MapStyleSource.openFreeMap,
+                      ),
+                    );
                   },
                   title: const Text('Stamen Toner (fallback)'),
                 ),
@@ -177,16 +233,28 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Text('Couches météo', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+          Text(
+            'Couches météo',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 8),
           Card(
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
             child: Column(
               children: [
                 if (layers.enabled.isNotEmpty) ...[
                   Padding(
-                    padding: const EdgeInsets.only(left: 16, right: 16, top: 14, bottom: 6),
+                    padding: const EdgeInsets.only(
+                      left: 16,
+                      right: 16,
+                      top: 14,
+                      bottom: 6,
+                    ),
                     child: Row(
                       children: [
                         const Icon(LucideIcons.gripVertical, size: 18),
@@ -194,7 +262,8 @@ class ProfileScreen extends ConsumerWidget {
                         Expanded(
                           child: Text(
                             'Ordre des couches actives',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
                           ),
                         ),
                       ],
@@ -205,18 +274,26 @@ class ProfileScreen extends ConsumerWidget {
                     physics: const NeverScrollableScrollPhysics(),
                     buildDefaultDragHandles: false,
                     onReorder: (oldIndex, newIndex) {
-                      final enabledOrdered = layers.order.where(layers.enabled.contains).toList();
+                      final enabledOrdered = layers.order
+                          .where(layers.enabled.contains)
+                          .toList();
                       if (newIndex > oldIndex) newIndex -= 1;
-                      if (oldIndex < 0 || oldIndex >= enabledOrdered.length) return;
+                      if (oldIndex < 0 || oldIndex >= enabledOrdered.length)
+                        return;
                       final layer = enabledOrdered[oldIndex];
                       layersNotifier.moveLayer(layer, newIndex);
                     },
                     children: [
-                      for (final l in layers.order.where(layers.enabled.contains))
+                      for (final l in layers.order.where(
+                        layers.enabled.contains,
+                      ))
                         ListTile(
                           key: ValueKey('layer-order-${l.name}'),
                           leading: ReorderableDragStartListener(
-                            index: layers.order.where(layers.enabled.contains).toList().indexOf(l),
+                            index: layers.order
+                                .where(layers.enabled.contains)
+                                .toList()
+                                .indexOf(l),
                             child: const Icon(LucideIcons.gripVertical),
                           ),
                           title: Text(l.name),
@@ -231,9 +308,13 @@ class ProfileScreen extends ConsumerWidget {
                     value: layers.enabled.contains(l),
                     onChanged: (_) {
                       final isEnabled = layers.enabled.contains(l);
-                      if (!isEnabled && layers.enabled.length >= WeatherLayersNotifier.maxEnabled) {
+                      if (!isEnabled &&
+                          layers.enabled.length >=
+                              WeatherLayersNotifier.maxEnabled) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Maximum 3 couches actives.')),
+                          const SnackBar(
+                            content: Text('Maximum 3 couches actives.'),
+                          ),
                         );
                         return;
                       }
@@ -241,22 +322,36 @@ class ProfileScreen extends ConsumerWidget {
                       layersNotifier.toggle(l);
                     },
                     title: Text(l.name),
-                    subtitle: l == WeatherLayer.radar ? const Text('Opacité réglable') : null,
+                    subtitle: l == WeatherLayer.radar
+                        ? const Text('Opacité réglable')
+                        : null,
                   ),
-                  if (l == WeatherLayer.radar && layers.enabled.contains(WeatherLayer.radar))
+                  if (l == WeatherLayer.radar &&
+                      layers.enabled.contains(WeatherLayer.radar))
                     Padding(
-                      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+                      padding: const EdgeInsets.only(
+                        left: 16,
+                        right: 16,
+                        bottom: 8,
+                      ),
                       child: Row(
                         children: [
                           const Text('Opacité'),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Slider(
-                              value: (layers.opacity[WeatherLayer.radar] ?? 0.65).clamp(0.0, 1.0),
+                              value:
+                                  (layers.opacity[WeatherLayer.radar] ?? 0.65)
+                                      .clamp(0.0, 1.0)
+                                      .toDouble(),
                               max: WeatherLayersNotifier.maxOpacity,
                               divisions: 10,
-                              label: '${((layers.opacity[WeatherLayer.radar] ?? 0.65) * 100).round()}%',
-                              onChanged: (v) => layersNotifier.setOpacity(WeatherLayer.radar, v),
+                              label:
+                                  '${((layers.opacity[WeatherLayer.radar] ?? 0.65) * 100).round()}%',
+                              onChanged: (v) => layersNotifier.setOpacity(
+                                WeatherLayer.radar,
+                                v,
+                              ),
                             ),
                           ),
                         ],
@@ -268,11 +363,18 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Text('Alertes météo', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+          Text(
+            'Alertes météo',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 8),
           Card(
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -283,7 +385,8 @@ class ProfileScreen extends ConsumerWidget {
                     value: alertThresholds.values['precipitation_mm'] ?? 1.0,
                     min: 0,
                     max: 10,
-                    onChanged: (v) => alertThresholdsNotifier.setValue('precipitation_mm', v),
+                    onChanged: (v) =>
+                        alertThresholdsNotifier.setValue('precipitation_mm', v),
                   ),
                   const SizedBox(height: 10),
                   _ThresholdSlider(
@@ -291,7 +394,8 @@ class ProfileScreen extends ConsumerWidget {
                     value: alertThresholds.values['wind_kmh'] ?? 35.0,
                     min: 0,
                     max: 120,
-                    onChanged: (v) => alertThresholdsNotifier.setValue('wind_kmh', v),
+                    onChanged: (v) =>
+                        alertThresholdsNotifier.setValue('wind_kmh', v),
                   ),
                   const SizedBox(height: 10),
                   _ThresholdSlider(
@@ -299,7 +403,8 @@ class ProfileScreen extends ConsumerWidget {
                     value: alertThresholds.values['temp_low_c'] ?? -2.0,
                     min: -20,
                     max: 10,
-                    onChanged: (v) => alertThresholdsNotifier.setValue('temp_low_c', v),
+                    onChanged: (v) =>
+                        alertThresholdsNotifier.setValue('temp_low_c', v),
                   ),
                   const SizedBox(height: 10),
                   _ThresholdSlider(
@@ -307,7 +412,8 @@ class ProfileScreen extends ConsumerWidget {
                     value: alertThresholds.values['temp_high_c'] ?? 35.0,
                     min: 10,
                     max: 50,
-                    onChanged: (v) => alertThresholdsNotifier.setValue('temp_high_c', v),
+                    onChanged: (v) =>
+                        alertThresholdsNotifier.setValue('temp_high_c', v),
                   ),
                   const SizedBox(height: 12),
                   Align(
@@ -325,11 +431,18 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Text('Zones hors-ligne (MVP)', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+          Text(
+            'Zones hors-ligne (MVP)',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 8),
           Card(
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
             child: Column(
               children: [
                 ListTile(
@@ -339,23 +452,28 @@ class ProfileScreen extends ConsumerWidget {
                   onTap: () async {
                     final pos = await _bestEffortCurrentPosition();
                     if (!context.mounted) return;
-                    final created = await showModalBottomSheet<OfflineZoneCreateRequest>(
-                      context: context,
-                      isScrollControlled: true,
-                      builder: (_) => _AddOfflineZoneSheet(initial: pos),
-                    );
+                    final created =
+                        await showModalBottomSheet<OfflineZoneCreateRequest>(
+                          context: context,
+                          isScrollControlled: true,
+                          builder: (_) => _AddOfflineZoneSheet(initial: pos),
+                        );
                     if (created == null) return;
-                    
+
                     final success = await offlineZonesNotifier.add(
                       name: created.name,
                       lat: created.lat,
                       lng: created.lng,
                       radiusKm: created.radiusKm,
                     );
-                    
+
                     if (!success && context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Paramètres invalides pour la zone hors-ligne.')),
+                        const SnackBar(
+                          content: Text(
+                            'Paramètres invalides pour la zone hors-ligne.',
+                          ),
+                        ),
                       );
                     }
                   },
@@ -371,7 +489,12 @@ class ProfileScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Erreur: ${error}', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.red)),
+                        Text(
+                          'Erreur: ${error}',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.copyWith(color: Colors.red),
+                        ),
                         const SizedBox(height: 8),
                         ElevatedButton(
                           onPressed: () {
@@ -386,7 +509,7 @@ class ProfileScreen extends ConsumerWidget {
                   data: (state) {
                     final offlineZones = state.zones;
                     final isLoading = state.isLoading;
-                    
+
                     return Column(
                       children: [
                         if (offlineZones.isEmpty)
@@ -398,33 +521,49 @@ class ProfileScreen extends ConsumerWidget {
                             ),
                           )
                         else
-                          ...offlineZones.map((z) => Column(
-                            children: [
-                              ListTile(
-                                leading: isLoading 
-                                    ? const SizedBox(
-                                        width: 24,
-                                        height: 24,
-                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                      )
-                                    : const Icon(LucideIcons.map),
-                                title: Text(z.name),
-                                subtitle: Text('${z.radiusKm.toStringAsFixed(1)} km • ${z.lat.toStringAsFixed(3)}, ${z.lng.toStringAsFixed(3)}'),
-                                trailing: IconButton(
-                                  onPressed: isLoading ? null : () async {
-                                    final success = await offlineZonesNotifier.remove(z.id);
-                                    if (!success && context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Échec de la suppression de la zone.')),
-                                      );
-                                    }
-                                  },
-                                  icon: const Icon(LucideIcons.trash2),
+                          ...offlineZones.map(
+                            (z) => Column(
+                              children: [
+                                ListTile(
+                                  leading: isLoading
+                                      ? const SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Icon(LucideIcons.map),
+                                  title: Text(z.name),
+                                  subtitle: Text(
+                                    '${z.radiusKm.toStringAsFixed(1)} km • ${z.lat.toStringAsFixed(3)}, ${z.lng.toStringAsFixed(3)}',
+                                  ),
+                                  trailing: IconButton(
+                                    onPressed: isLoading
+                                        ? null
+                                        : () async {
+                                            final success =
+                                                await offlineZonesNotifier
+                                                    .remove(z.id);
+                                            if (!success && context.mounted) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    'Échec de la suppression de la zone.',
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          },
+                                    icon: const Icon(LucideIcons.trash2),
+                                  ),
                                 ),
-                              ),
-                              const Divider(height: 1),
-                            ],
-                          )),
+                                const Divider(height: 1),
+                              ],
+                            ),
+                          ),
                       ],
                     );
                   },
@@ -441,7 +580,9 @@ class ProfileScreen extends ConsumerWidget {
           const SizedBox(height: 12),
           Card(
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
             child: const ListTile(
               leading: Icon(LucideIcons.shield),
               title: Text('Vie privée'),
@@ -468,7 +609,12 @@ Future<void> _pickOne(
         child: ListView(
           shrinkWrap: true,
           children: [
-            ListTile(title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700))),
+            ListTile(
+              title: Text(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
             for (final v in values)
               RadioListTile<String>(
                 value: v,
@@ -490,7 +636,7 @@ class _ProfilePickerSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final active = ref.watch(profileNotifierProvider);
+    final active = ref.watch(profileProvider);
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -498,7 +644,10 @@ class _ProfilePickerSheet extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Profil principal', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+            const Text(
+              'Profil principal',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
@@ -509,7 +658,7 @@ class _ProfilePickerSheet extends ConsumerWidget {
                   selected: sel,
                   label: Text(t.name),
                   onSelected: (_) {
-                    ref.read(profileNotifierProvider.notifier).setProfileByType(t);
+                    ref.read(profileProvider.notifier).setProfileByType(t);
                     Navigator.of(context).pop();
                   },
                 );
@@ -523,7 +672,6 @@ class _ProfilePickerSheet extends ConsumerWidget {
 }
 
 class _ThresholdSlider extends StatelessWidget {
-
   const _ThresholdSlider({
     required this.title,
     required this.value,
@@ -547,7 +695,7 @@ class _ThresholdSlider extends StatelessWidget {
           children: [
             Expanded(
               child: Slider(
-                value: value.clamp(min, max),
+                value: value.clamp(min, max).toDouble(),
                 min: min,
                 max: max,
                 divisions: 20,
@@ -555,7 +703,10 @@ class _ThresholdSlider extends StatelessWidget {
                 onChanged: onChanged,
               ),
             ),
-            SizedBox(width: 56, child: Text(value.toStringAsFixed(1), textAlign: TextAlign.end)),
+            SizedBox(
+              width: 56,
+              child: Text(value.toStringAsFixed(1), textAlign: TextAlign.end),
+            ),
           ],
         ),
       ],
@@ -564,8 +715,12 @@ class _ThresholdSlider extends StatelessWidget {
 }
 
 class OfflineZoneCreateRequest {
-
-  const OfflineZoneCreateRequest({required this.name, required this.lat, required this.lng, required this.radiusKm});
+  const OfflineZoneCreateRequest({
+    required this.name,
+    required this.lat,
+    required this.lng,
+    required this.radiusKm,
+  });
   final String name;
   final double lat;
   final double lng;
@@ -586,11 +741,20 @@ Future<_InitialPos?> _bestEffortCurrentPosition() async {
     if (perm == LocationPermission.denied) {
       perm = await Geolocator.requestPermission();
     }
-    if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) return null;
-    final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
+    if (perm == LocationPermission.denied ||
+        perm == LocationPermission.deniedForever)
+      return null;
+    final pos = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.medium,
+    );
     return _InitialPos(pos.latitude, pos.longitude);
   } catch (e, st) {
-    AppLogger.warn('Profile: bestEffortCurrentPosition failed', name: 'profile', error: e, stackTrace: st);
+    AppLogger.warn(
+      'Profile: bestEffortCurrentPosition failed',
+      name: 'profile',
+      error: e,
+      stackTrace: st,
+    );
     return null;
   }
 }
@@ -613,8 +777,12 @@ class _AddOfflineZoneSheetState extends State<_AddOfflineZoneSheet> {
   void initState() {
     super.initState();
     _name = TextEditingController(text: 'Zone offline');
-    _lat = TextEditingController(text: (widget.initial?.lat ?? 48.8566).toStringAsFixed(6));
-    _lng = TextEditingController(text: (widget.initial?.lng ?? 2.3522).toStringAsFixed(6));
+    _lat = TextEditingController(
+      text: (widget.initial?.lat ?? 48.8566).toStringAsFixed(6),
+    );
+    _lng = TextEditingController(
+      text: (widget.initial?.lng ?? 2.3522).toStringAsFixed(6),
+    );
   }
 
   @override
@@ -639,9 +807,17 @@ class _AddOfflineZoneSheetState extends State<_AddOfflineZoneSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Nouvelle zone', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+            Text(
+              'Nouvelle zone',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            ),
             const SizedBox(height: 12),
-            TextField(controller: _name, decoration: const InputDecoration(labelText: 'Nom')),
+            TextField(
+              controller: _name,
+              decoration: const InputDecoration(labelText: 'Nom'),
+            ),
             const SizedBox(height: 10),
             Row(
               children: [
@@ -649,7 +825,10 @@ class _AddOfflineZoneSheetState extends State<_AddOfflineZoneSheet> {
                   child: TextField(
                     controller: _lat,
                     decoration: const InputDecoration(labelText: 'Latitude'),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                      signed: true,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -657,13 +836,19 @@ class _AddOfflineZoneSheetState extends State<_AddOfflineZoneSheet> {
                   child: TextField(
                     controller: _lng,
                     decoration: const InputDecoration(labelText: 'Longitude'),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                      signed: true,
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 10),
-            Text('Rayon: ${_radiusKm.toStringAsFixed(0)} km', style: const TextStyle(fontWeight: FontWeight.w700)),
+            Text(
+              'Rayon: ${_radiusKm.toStringAsFixed(0)} km',
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
             Slider(
               value: _radiusKm,
               min: 5,
@@ -675,7 +860,9 @@ class _AddOfflineZoneSheetState extends State<_AddOfflineZoneSheet> {
             const SizedBox(height: 10),
             ElevatedButton.icon(
               onPressed: () {
-                final name = _name.text.trim().isEmpty ? 'Zone offline' : _name.text.trim();
+                final name = _name.text.trim().isEmpty
+                    ? 'Zone offline'
+                    : _name.text.trim();
                 final lat = double.tryParse(_lat.text.trim());
                 final lng = double.tryParse(_lng.text.trim());
                 if (lat == null || lng == null) {
@@ -683,7 +870,12 @@ class _AddOfflineZoneSheetState extends State<_AddOfflineZoneSheet> {
                   return;
                 }
                 Navigator.of(context).pop(
-                  OfflineZoneCreateRequest(name: name, lat: lat, lng: lng, radiusKm: _radiusKm),
+                  OfflineZoneCreateRequest(
+                    name: name,
+                    lat: lat,
+                    lng: lng,
+                    radiusKm: _radiusKm,
+                  ),
                 );
               },
               icon: const Icon(LucideIcons.plus),

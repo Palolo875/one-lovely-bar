@@ -32,6 +32,15 @@ class AppLogger {
     );
   }
 
+  static void warn(
+    String message, {
+    String name = 'app',
+    Object? error,
+    StackTrace? stackTrace,
+  }) {
+    warning(message, name: name, error: error, stackTrace: stackTrace);
+  }
+
   /// Logs potentially harmful situations that don't prevent the application
   /// from continuing to work.
   ///
@@ -149,10 +158,12 @@ class AppLogger {
 
     if (AppConfig.isProd && duration.inMilliseconds > 1000) {
       Sentry.addBreadcrumb(
-        message: 'Slow operation detected',
-        category: 'performance',
-        level: SentryLevel.warning,
-        data: performanceData,
+        Breadcrumb(
+          message: 'Slow operation detected',
+          category: 'performance',
+          level: SentryLevel.warning,
+          data: performanceData,
+        ),
       );
     }
   }

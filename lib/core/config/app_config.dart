@@ -1,12 +1,10 @@
-
-enum Environment {
-  dev,
-  staging,
-  prod,
-}
+enum Environment { dev, staging, prod }
 
 class AppConfig {
-  static const String _envString = String.fromEnvironment('ENV', defaultValue: 'dev');
+  static const String _envString = String.fromEnvironment(
+    'ENV',
+    defaultValue: 'dev',
+  );
 
   static Environment get currentEnvironment {
     switch (_envString) {
@@ -21,7 +19,9 @@ class AppConfig {
   }
 
   static bool get isProd => currentEnvironment == Environment.prod;
-  
+
+  static bool get isDebug => currentEnvironment == Environment.dev;
+
   static const String sentryDsn = String.fromEnvironment('SENTRY_DSN');
 
   static const String openMeteoBaseUrl = String.fromEnvironment(
@@ -61,7 +61,8 @@ class AppConfig {
 
   static const String cartoPositronStyleUrl = String.fromEnvironment(
     'CARTO_POSITRON_STYLE_URL',
-    defaultValue: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+    defaultValue:
+        'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
   );
 
   static const String stamenTonerStyleUrl = String.fromEnvironment(

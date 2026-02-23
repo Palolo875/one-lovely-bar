@@ -8,7 +8,6 @@ import 'package:weathernav/domain/repositories/settings_repository.dart';
 import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
 
 class AlertThresholdsState {
-
   const AlertThresholdsState({required this.values});
   final Map<String, double> values;
 
@@ -17,14 +16,15 @@ class AlertThresholdsState {
   }
 }
 
-class AlertThresholdsNotifier extends StateNotifier<AlertThresholdsState> {
+class AlertThresholdsNotifier extends Notifier<AlertThresholdsState> {
+  late final SettingsRepository _settings;
+  StreamSubscription? _sub;
+  Timer? _persistDebounce;
 
-  AlertThresholdsNotifier(this._settings)
-      : super(
-          AlertThresholdsState(
-            values: _read(_settings),
-          ),
-        ) {
+  @override
+  AlertThresholdsState build() {
+    _settings = ref.watch(settingsRepositoryProvider);
+
     var syncScheduled = false;
     void sync() {
       final next = _read(_settings);
@@ -42,11 +42,17 @@ class AlertThresholdsNotifier extends StateNotifier<AlertThresholdsState> {
       });
     }
 
-    _sub = _settings.watch(SettingsKeys.alertThresholds).listen((_) => scheduleSync());
+    _sub = _settings
+        .watch(SettingsKeys.alertThresholds)
+        .listen((_) => scheduleSync());
+
+    ref.onDispose(() {
+      _persistDebounce?.cancel();
+      _sub?.cancel();
+    });
+
+    return AlertThresholdsState(values: _read(_settings));
   }
-  final SettingsRepository _settings;
-  StreamSubscription? _sub;
-  Timer? _persistDebounce;
 
   static Map<String, double> _read(SettingsRepository settings) {
     final raw = settings.get<Object?>(SettingsKeys.alertThresholds);
@@ -84,7 +90,12 @@ class AlertThresholdsNotifier extends StateNotifier<AlertThresholdsState> {
     try {
       await _settings.put(SettingsKeys.alertThresholds, values);
     } catch (e, st) {
-      AppLogger.error('Failed to persist alert thresholds', name: 'settings', error: e, stackTrace: st);
+      AppLogger.error(
+        'Failed to persist alert thresholds',
+        name: 'settings',
+        error: e,
+        stackTrace: st,
+      );
       final next = _read(_settings);
       if (!_same(next, state.values)) {
         state = state.copyWith(values: next);
@@ -110,20 +121,18 @@ class AlertThresholdsNotifier extends StateNotifier<AlertThresholdsState> {
       await _settings.delete(SettingsKeys.alertThresholds);
       state = state.copyWith(values: _read(_settings));
     } catch (e, st) {
-      AppLogger.error('Failed to reset alert thresholds', name: 'settings', error: e, stackTrace: st);
+      AppLogger.error(
+        'Failed to reset alert thresholds',
+        name: 'settings',
+        error: e,
+        stackTrace: st,
+      );
       state = prev;
     }
   }
-
-  @override
-  void dispose() {
-    _persistDebounce?.cancel();
-    _sub?.cancel();
-    super.dispose();
-  }
 }
 
-final alertThresholdsProvider = StateNotifierProvider<AlertThresholdsNotifier, AlertThresholdsState>((ref) {
-  final settings = ref.watch(settingsRepositoryProvider);
-  return AlertThresholdsNotifier(settings);
-});
+final alertThresholdsProvider =
+    NotifierProvider<AlertThresholdsNotifier, AlertThresholdsState>(
+      AlertThresholdsNotifier.new,
+    );

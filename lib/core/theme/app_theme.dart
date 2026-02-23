@@ -33,47 +33,47 @@ class AppTheme {
           fontWeight: FontWeight.w600,
           color: textPrimary,
         ),
-        bodyLarge: GoogleFonts.inter(
-          fontSize: 16,
-          color: textPrimary,
-        ),
+        bodyLarge: GoogleFonts.inter(fontSize: 16, color: textPrimary),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: cardBg,
         elevation: 1,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       ),
-      listTileTheme: const ListTileThemeData(
-        minVerticalPadding: 12,
-      ),
+      listTileTheme: const ListTileThemeData(minVerticalPadding: 12),
       inputDecorationTheme: InputDecorationTheme(
         isDense: false,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 16,
         ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           minimumSize: const Size(64, 48),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(64, 48),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           minimumSize: const Size(64, 48),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
       ),
       bottomSheetTheme: const BottomSheetThemeData(
@@ -96,58 +96,61 @@ class AppTheme {
         background: backgroundDark,
         surface: cardBgDark,
       ),
-      textTheme: GoogleFonts.interTextTheme(ThemeData(brightness: Brightness.dark).textTheme).copyWith(
-        displayLarge: GoogleFonts.inter(
-          fontSize: 72,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-        titleLarge: GoogleFonts.inter(
-          fontSize: 28,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
-        bodyLarge: GoogleFonts.inter(
-          fontSize: 16,
-          color: Colors.white,
-        ),
-      ),
-      cardTheme: CardTheme(
+      textTheme:
+          GoogleFonts.interTextTheme(
+            ThemeData(brightness: Brightness.dark).textTheme,
+          ).copyWith(
+            displayLarge: GoogleFonts.inter(
+              fontSize: 72,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+            titleLarge: GoogleFonts.inter(
+              fontSize: 28,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+            bodyLarge: GoogleFonts.inter(fontSize: 16, color: Colors.white),
+          ),
+      cardTheme: CardThemeData(
         color: cardBgDark,
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       ),
-      listTileTheme: const ListTileThemeData(
-        minVerticalPadding: 12,
-      ),
+      listTileTheme: const ListTileThemeData(minVerticalPadding: 12),
       inputDecorationTheme: InputDecorationTheme(
         isDense: false,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 16,
         ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           minimumSize: const Size(64, 48),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(64, 48),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           minimumSize: const Size(64, 48),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
       ),
       bottomSheetTheme: const BottomSheetThemeData(

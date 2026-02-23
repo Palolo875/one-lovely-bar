@@ -7,7 +7,9 @@ import 'dart:async';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:weathernav/core/logging/app_logger.dart';
+import 'package:weathernav/domain/models/grid_point_weather.dart';
 import 'package:weathernav/domain/models/poi.dart';
+import 'package:weathernav/domain/models/user_profile.dart';
 import 'package:weathernav/presentation/providers/profile_provider.dart';
 import 'package:weathernav/presentation/providers/current_weather_provider.dart';
 import 'package:weathernav/presentation/providers/forecast_provider.dart';
@@ -283,7 +285,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final activeProfile = ref.watch(profileNotifierProvider);
+    final activeProfile = ref.watch(profileProvider);
     final center = _debouncedCenter;
     final currentWeatherAsync = ref.watch(
       currentWeatherProvider(
@@ -484,7 +486,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           builder: (context, ref, _) {
             final layers = ref.watch(weatherLayersProvider);
             final notifier = ref.read(weatherLayersProvider.notifier);
-            final profile = ref.watch(profileNotifierProvider);
+            final profile = ref.watch(profileProvider);
             return Padding(
               padding: const EdgeInsets.all(16),
               child: Column(

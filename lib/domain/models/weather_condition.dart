@@ -4,7 +4,7 @@ part 'weather_condition.freezed.dart';
 part 'weather_condition.g.dart';
 
 @freezed
-class WeatherCondition with _$WeatherCondition {
+abstract class WeatherCondition with _$WeatherCondition {
   const factory WeatherCondition({
     required double temperature,
     required double precipitation,

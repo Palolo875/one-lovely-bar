@@ -15,12 +15,12 @@ import 'package:weathernav/presentation/providers/settings_provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
-  await Hive.openBox('settings');
+  await Hive.openBox<dynamic>('settings');
 
-  await Hive.openBox('cache');
+  await Hive.openBox<dynamic>('cache');
   await purgeCacheBox(Hive.box('cache'));
 
-  await Hive.openBox('trips');
+  await Hive.openBox<dynamic>('trips');
 
   final scheduler = createBackgroundScheduler();
   await scheduler.init();
@@ -39,7 +39,7 @@ class WeatherNavApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
-    final settings = ref.watch(appSettingsProvider);
+    final AppSettingsState settings = ref.watch(appSettingsProvider);
 
     return MaterialApp.router(
       title: 'WeatherNav',

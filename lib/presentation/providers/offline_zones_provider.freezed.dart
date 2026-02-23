@@ -32,10 +32,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(zones),isLoading,error);
 
-@override
-String toString() {
-  return 'OfflineZonesState(zones: $zones, isLoading: $isLoading, error: $error)';
-}
 
 
 }
@@ -238,10 +234,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_zones),isLoading,error);
 
-@override
-String toString() {
-  return 'OfflineZonesState(zones: $zones, isLoading: $isLoading, error: $error)';
-}
 
 
 }

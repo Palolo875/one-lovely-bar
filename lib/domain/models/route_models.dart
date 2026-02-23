@@ -5,7 +5,7 @@ part 'route_models.freezed.dart';
 part 'route_models.g.dart';
 
 @freezed
-class RoutePoint with _$RoutePoint {
+abstract class RoutePoint with _$RoutePoint {
   const factory RoutePoint({
     required double latitude,
     required double longitude,
@@ -18,7 +18,7 @@ class RoutePoint with _$RoutePoint {
 }
 
 @freezed
-class RouteData with _$RouteData {
+abstract class RouteData with _$RouteData {
   const factory RouteData({
     required List<RoutePoint> points,
     required double distanceKm,

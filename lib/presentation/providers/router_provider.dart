@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:riverpod/riverpod.dart';
 import 'package:weathernav/presentation/providers/route_provider.dart';
 import 'package:weathernav/presentation/providers/settings_provider.dart';
 import 'package:weathernav/presentation/screens/guidance_screen.dart';
@@ -17,7 +18,7 @@ import 'package:weathernav/presentation/widgets/app_shell.dart';
 part 'router_provider.g.dart';
 
 @riverpod
-GoRouter router(RouterRef ref) {
+GoRouter router(Ref ref) {
   ref.keepAlive();
   final refresh = ValueNotifier<int>(0);
   ref.onDispose(refresh.dispose);
@@ -85,7 +86,9 @@ GoRouter router(RouterRef ref) {
       GoRoute(
         path: '/simulation',
         builder: (context, state) {
-          final request = state.extra is RouteRequest ? state.extra! as RouteRequest : null;
+          final request = state.extra is RouteRequest
+              ? state.extra! as RouteRequest
+              : null;
           return RouteSimulationScreen(request: request);
         },
       ),
@@ -99,7 +102,9 @@ GoRouter router(RouterRef ref) {
       GoRoute(
         path: '/guidance',
         builder: (context, state) {
-          final req = state.extra is RouteRequest ? state.extra! as RouteRequest : null;
+          final req = state.extra is RouteRequest
+              ? state.extra! as RouteRequest
+              : null;
           if (req == null) {
             return const PlanningScreen();
           }

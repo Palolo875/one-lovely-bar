@@ -9,7 +9,7 @@ class ProfileSwitcher extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final activeProfile = ref.watch(profileNotifierProvider);
+    final activeProfile = ref.watch(profileProvider);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -21,7 +21,8 @@ class ProfileSwitcher extends ConsumerWidget {
         children: ProfileType.values.map((type) {
           final isActive = activeProfile.type == type;
           return GestureDetector(
-            onTap: () => ref.read(profileNotifierProvider.notifier).setProfileByType(type),
+            onTap: () =>
+                ref.read(profileProvider.notifier).setProfileByType(type),
             child: Column(
               children: [
                 Container(
@@ -54,25 +55,39 @@ class ProfileSwitcher extends ConsumerWidget {
 
   IconData _getIcon(ProfileType type) {
     switch (type) {
-      case ProfileType.universal: return LucideIcons.globe;
-      case ProfileType.cyclist: return LucideIcons.bike;
-      case ProfileType.hiker: return LucideIcons.footprints;
-      case ProfileType.driver: return LucideIcons.car;
-      case ProfileType.nautical: return LucideIcons.ship;
-      case ProfileType.paraglider: return LucideIcons.wind;
-      case ProfileType.camper: return LucideIcons.tent;
+      case ProfileType.universal:
+        return LucideIcons.globe;
+      case ProfileType.cyclist:
+        return LucideIcons.bike;
+      case ProfileType.hiker:
+        return LucideIcons.footprints;
+      case ProfileType.driver:
+        return LucideIcons.car;
+      case ProfileType.nautical:
+        return LucideIcons.ship;
+      case ProfileType.paraglider:
+        return LucideIcons.wind;
+      case ProfileType.camper:
+        return LucideIcons.tent;
     }
   }
 
   String _getName(ProfileType type) {
     switch (type) {
-      case ProfileType.universal: return 'Universel';
-      case ProfileType.cyclist: return 'Cycliste';
-      case ProfileType.hiker: return 'Randonneur';
-      case ProfileType.driver: return 'Conducteur';
-      case ProfileType.nautical: return 'Nautique';
-      case ProfileType.paraglider: return 'Aéro';
-      case ProfileType.camper: return 'Campeur';
+      case ProfileType.universal:
+        return 'Universel';
+      case ProfileType.cyclist:
+        return 'Cycliste';
+      case ProfileType.hiker:
+        return 'Randonneur';
+      case ProfileType.driver:
+        return 'Conducteur';
+      case ProfileType.nautical:
+        return 'Nautique';
+      case ProfileType.paraglider:
+        return 'Aéro';
+      case ProfileType.camper:
+        return 'Campeur';
     }
   }
 }

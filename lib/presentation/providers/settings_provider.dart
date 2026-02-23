@@ -9,7 +9,6 @@ import 'package:weathernav/domain/repositories/settings_repository.dart';
 import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
 
 class AppSettingsState {
-
   const AppSettingsState({
     required this.themeMode,
     required this.speedUnit,
@@ -36,24 +35,27 @@ class AppSettingsState {
   }
 }
 
-class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
+class AppSettingsNotifier extends Notifier<AppSettingsState> {
+  late final SettingsRepository _settings;
+  final List<StreamSubscription> _subs = [];
 
-  AppSettingsNotifier(this._settings)
-      : super(
-          AppSettingsState(
-            themeMode: _readThemeMode(_settings),
-            speedUnit: _settings.getOrDefault<String>(SettingsKeys.unitSpeed, 'km/h'),
-            tempUnit: _settings.getOrDefault<String>(SettingsKeys.unitTemp, '°C'),
-            distanceUnit: _settings.getOrDefault<String>(SettingsKeys.unitDistance, 'km'),
-          ),
-        ) {
+  @override
+  AppSettingsState build() {
+    _settings = ref.watch(settingsRepositoryProvider);
+
     var syncScheduled = false;
     void sync() {
       final next = AppSettingsState(
         themeMode: _readThemeMode(_settings),
-        speedUnit: _settings.getOrDefault<String>(SettingsKeys.unitSpeed, 'km/h'),
+        speedUnit: _settings.getOrDefault<String>(
+          SettingsKeys.unitSpeed,
+          'km/h',
+        ),
         tempUnit: _settings.getOrDefault<String>(SettingsKeys.unitTemp, '°C'),
-        distanceUnit: _settings.getOrDefault<String>(SettingsKeys.unitDistance, 'km'),
+        distanceUnit: _settings.getOrDefault<String>(
+          SettingsKeys.unitDistance,
+          'km',
+        ),
       );
       if (next.themeMode != state.themeMode ||
           next.speedUnit != state.speedUnit ||
@@ -78,13 +80,25 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
       SettingsKeys.unitTemp,
       SettingsKeys.unitDistance,
     ]) {
-      _subs.add(
-        _settings.watch(key).listen((_) => scheduleSync()),
-      );
+      _subs.add(_settings.watch(key).listen((_) => scheduleSync()));
     }
+
+    ref.onDispose(() {
+      for (final s in _subs) {
+        s.cancel();
+      }
+    });
+
+    return AppSettingsState(
+      themeMode: _readThemeMode(_settings),
+      speedUnit: _settings.getOrDefault<String>(SettingsKeys.unitSpeed, 'km/h'),
+      tempUnit: _settings.getOrDefault<String>(SettingsKeys.unitTemp, '°C'),
+      distanceUnit: _settings.getOrDefault<String>(
+        SettingsKeys.unitDistance,
+        'km',
+      ),
+    );
   }
-  final SettingsRepository _settings;
-  final List<StreamSubscription> _subs = [];
 
   static ThemeMode _readThemeMode(SettingsRepository settings) {
     final raw = settings.getOrDefault<String>(SettingsKeys.themeMode, 'system');
@@ -96,14 +110,11 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
   Future<void> setThemeMode(ThemeMode mode) async {
     final prev = state;
     try {
-      await _settings.put(
-        SettingsKeys.themeMode,
-        switch (mode) {
-          ThemeMode.light => 'light',
-          ThemeMode.dark => 'dark',
-          _ => 'system',
-        },
-      );
+      await _settings.put(SettingsKeys.themeMode, switch (mode) {
+        ThemeMode.light => 'light',
+        ThemeMode.dark => 'dark',
+        _ => 'system',
+      });
       state = state.copyWith(themeMode: mode);
     } catch (e, st) {
       AppLogger.error(
@@ -163,33 +174,41 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
       state = prev;
     }
   }
-
-  @override
-  void dispose() {
-    for (final s in _subs) {
-      s.cancel();
-    }
-    super.dispose();
-  }
 }
 
-final appSettingsProvider = StateNotifierProvider<AppSettingsNotifier, AppSettingsState>((ref) {
-  final settings = ref.watch(settingsRepositoryProvider);
-  return AppSettingsNotifier(settings);
-});
+final appSettingsProvider =
+    NotifierProvider<AppSettingsNotifier, AppSettingsState>(
+      AppSettingsNotifier.new,
+    );
 
-class OnboardingStatusNotifier extends StateNotifier<bool> {
+class OnboardingStatusNotifier extends Notifier<bool> {
+  late final SettingsRepository _settings;
+  StreamSubscription? _sub;
 
-  OnboardingStatusNotifier(this._settings)
-      : super(_settings.getOrDefault<bool>(SettingsKeys.onboardingCompleted, false) == true) {
+  @override
+  bool build() {
+    _settings = ref.watch(settingsRepositoryProvider);
+
     _sub = _settings.watch(SettingsKeys.onboardingCompleted).listen((event) {
-      final next = _settings.getOrDefault<bool>(SettingsKeys.onboardingCompleted, false) == true;
+      final next =
+          _settings.getOrDefault<bool>(
+            SettingsKeys.onboardingCompleted,
+            false,
+          ) ==
+          true;
       if (next != state) state = next;
     });
-  }
 
-  final SettingsRepository _settings;
-  StreamSubscription? _sub;
+    ref.onDispose(() {
+      _sub?.cancel();
+    });
+
+    return _settings.getOrDefault<bool>(
+          SettingsKeys.onboardingCompleted,
+          false,
+        ) ==
+        true;
+  }
 
   Future<bool> setCompleted(bool value) async {
     if (value == state) return true;
@@ -209,15 +228,9 @@ class OnboardingStatusNotifier extends StateNotifier<bool> {
       return false;
     }
   }
-
-  @override
-  void dispose() {
-    _sub?.cancel();
-    super.dispose();
-  }
 }
 
-final onboardingCompletedProvider = StateNotifierProvider<OnboardingStatusNotifier, bool>((ref) {
-  final settings = ref.watch(settingsRepositoryProvider);
-  return OnboardingStatusNotifier(settings);
-});
+final onboardingCompletedProvider =
+    NotifierProvider<OnboardingStatusNotifier, bool>(
+      OnboardingStatusNotifier.new,
+    );

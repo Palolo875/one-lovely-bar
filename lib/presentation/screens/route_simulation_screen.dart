@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:weathernav/domain/failures/app_failure.dart';
-import 'package:weathernav/domain/models/route_alert.dart';
 import 'package:weathernav/domain/models/route_models.dart';
 import 'package:weathernav/domain/models/user_profile.dart';
 import 'package:weathernav/domain/usecases/export_route_to_gpx.dart';
@@ -15,12 +14,18 @@ import 'package:weathernav/presentation/providers/weather_timeline_eta_provider.
 import 'package:weathernav/presentation/widgets/weather_timeline.dart';
 
 class RouteSimulationScreen extends ConsumerStatefulWidget {
-
   const RouteSimulationScreen({super.key, this.request});
   final RouteRequest? request;
 
   @override
-  ConsumerState<RouteSimulationScreen> createState() => _RouteSimulationScreenState();
+  ConsumerState<RouteSimulationScreen> createState() =>
+      _RouteSimulationScreenState();
+}
+
+class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
+  // minutes offset from base departure time
+  double _departureOffsetMinutes = 0;
+  String? _lastSavedKey;
 
   String _profileToRoutingCosting(ProfileType type) {
     switch (type) {
@@ -35,23 +40,17 @@ class RouteSimulationScreen extends ConsumerStatefulWidget {
     }
   }
 
-}
-
-class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
-  // minutes offset from base departure time
-  double _departureOffsetMinutes = 0;
-  String? _lastSavedKey;
-
   DateTime _applyOffset(DateTime base) {
     return base.add(Duration(minutes: _departureOffsetMinutes.round()));
   }
 
   @override
   Widget build(BuildContext context) {
-    final profile = ref.watch(profileNotifierProvider);
+    final profile = ref.watch(profileProvider);
 
     final request = widget.request;
-    final effectiveRequest = request ??
+    final effectiveRequest =
+        request ??
         RouteRequest(
           startLat: 48.8566,
           startLng: 2.3522,
@@ -82,7 +81,8 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
         padding: const EdgeInsets.all(24),
         child: routeAsync.when(
           data: (route) {
-            final saveKey = '${effectiveRequest.startLat},${effectiveRequest.startLng}|${effectiveRequest.endLat},${effectiveRequest.endLng}|${effectiveRequest.profile}|${departure.millisecondsSinceEpoch}';
+            final saveKey =
+                '${effectiveRequest.startLat},${effectiveRequest.startLng}|${effectiveRequest.endLat},${effectiveRequest.endLng}|${effectiveRequest.profile}|${departure.millisecondsSinceEpoch}';
             if (_lastSavedKey != saveKey) {
               _lastSavedKey = saveKey;
               final repo = ref.read(tripHistoryRepositoryProvider);
@@ -104,12 +104,18 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
 
             final weatherAsync = ref.watch(
               weatherTimelineEtaProvider(
-                WeatherTimelineEtaRequest(route: route, departureTime: departure),
+                WeatherTimelineEtaRequest(
+                  route: route,
+                  departureTime: departure,
+                ),
               ),
             );
             final alertsAsync = ref.watch(
               routeAlertsProvider(
-                WeatherTimelineEtaRequest(route: route, departureTime: departure),
+                WeatherTimelineEtaRequest(
+                  route: route,
+                  departureTime: departure,
+                ),
               ),
             );
             final pointRows = _buildPointRows(route.points);
@@ -120,7 +126,9 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
                 children: [
                   Card(
                     elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -128,11 +136,18 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
                         children: [
                           Text(
                             profile.name,
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           const SizedBox(height: 8),
-                          Text('Distance: ${route.distanceKm.toStringAsFixed(1)} km'),
-                          Text('Durée: ${route.durationMinutes.toStringAsFixed(0)} min'),
+                          Text(
+                            'Distance: ${route.distanceKm.toStringAsFixed(1)} km',
+                          ),
+                          Text(
+                            'Durée: ${route.durationMinutes.toStringAsFixed(0)} min',
+                          ),
                           Text('Points: ${route.points.length}'),
                           const SizedBox(height: 12),
                           const Text(
@@ -150,7 +165,8 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
                             max: 720,
                             divisions: 48,
                             label: '${(_departureOffsetMinutes / 60).round()}h',
-                            onChanged: (v) => setState(() => _departureOffsetMinutes = v),
+                            onChanged: (v) =>
+                                setState(() => _departureOffsetMinutes = v),
                           ),
                           const SizedBox(height: 12),
                           Text(
@@ -165,10 +181,16 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
                             child: OutlinedButton(
                               onPressed: () async {
                                 final gpx = const ExportRouteToGpx()(route);
-                                await Clipboard.setData(ClipboardData(text: gpx));
+                                await Clipboard.setData(
+                                  ClipboardData(text: gpx),
+                                );
                                 if (!context.mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('GPX copié dans le presse-papiers.')),
+                                  const SnackBar(
+                                    content: Text(
+                                      'GPX copié dans le presse-papiers.',
+                                    ),
+                                  ),
                                 );
                               },
                               child: const Text('Copier GPX'),
@@ -178,7 +200,10 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
                           SizedBox(
                             width: double.infinity,
                             child: OutlinedButton(
-                              onPressed: () => context.push('/guidance', extra: effectiveRequest),
+                              onPressed: () => context.push(
+                                '/guidance',
+                                extra: effectiveRequest,
+                              ),
                               child: const Text('Voir instructions'),
                             ),
                           ),
@@ -197,17 +222,23 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
                       if (alerts.isEmpty) {
                         return Card(
                           elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           child: const Padding(
                             padding: EdgeInsets.all(16),
-                            child: Text('Aucune alerte détectée pour ce départ.'),
+                            child: Text(
+                              'Aucune alerte détectée pour ce départ.',
+                            ),
                           ),
                         );
                       }
 
                       return Card(
                         elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                         child: Column(
                           children: alerts
                               .map(
@@ -220,9 +251,12 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
                         ),
                       );
                     },
-                    loading: () => const Center(child: CircularProgressIndicator()),
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
                     error: (err, st) {
-                      final msg = err is AppFailure ? err.message : err.toString();
+                      final msg = err is AppFailure
+                          ? err.message
+                          : err.toString();
                       return Text('Erreur alertes: $msg');
                     },
                   ),
@@ -233,10 +267,14 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
                   ),
                   const SizedBox(height: 12),
                   weatherAsync.when(
-                    data: (conditions) => WeatherTimeline(conditions: conditions),
-                    loading: () => const Center(child: CircularProgressIndicator()),
+                    data: (conditions) =>
+                        WeatherTimeline(conditions: conditions),
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
                     error: (err, st) {
-                      final msg = err is AppFailure ? err.message : err.toString();
+                      final msg = err is AppFailure
+                          ? err.message
+                          : err.toString();
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -245,7 +283,10 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
                           OutlinedButton(
                             onPressed: () => ref.invalidate(
                               weatherTimelineEtaProvider(
-                                WeatherTimelineEtaRequest(route: route, departureTime: departure),
+                                WeatherTimelineEtaRequest(
+                                  route: route,
+                                  departureTime: departure,
+                                ),
                               ),
                             ),
                             child: const Text('Réessayer'),
@@ -262,7 +303,9 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
                   const SizedBox(height: 12),
                   Card(
                     elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       child: Column(children: pointRows),
@@ -289,7 +332,8 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
                 Text('Erreur routing: $msg'),
                 const SizedBox(height: 12),
                 OutlinedButton(
-                  onPressed: () => ref.invalidate(routeProvider(effectiveRequest)),
+                  onPressed: () =>
+                      ref.invalidate(routeProvider(effectiveRequest)),
                   child: const Text('Réessayer'),
                 ),
                 const SizedBox(height: 12),
@@ -307,12 +351,7 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
 
   List<Widget> _buildPointRows(List<RoutePoint> points) {
     if (points.isEmpty) {
-      return const [
-        ListTile(
-          dense: true,
-          title: Text('Aucun point'),
-        ),
-      ];
+      return const [ListTile(dense: true, title: Text('Aucun point'))];
     }
 
     const headCount = 10;
@@ -362,12 +401,10 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
 }
 
 class _PointRow {
+  const _PointRow({required this.index, required this.point})
+    : skippedCount = null;
 
-  const _PointRow({required this.index, required this.point}) : skippedCount = null;
-
-  const _PointRow.skipped(this.skippedCount)
-      : index = null,
-        point = null;
+  const _PointRow.skipped(this.skippedCount) : index = null, point = null;
   final int? index;
   final RoutePoint? point;
   final int? skippedCount;

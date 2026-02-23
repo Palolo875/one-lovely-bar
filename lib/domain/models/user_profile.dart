@@ -14,7 +14,7 @@ enum ProfileType {
 }
 
 @freezed
-class UserProfile with _$UserProfile {
+abstract class UserProfile with _$UserProfile {
   const factory UserProfile({
     required String id,
     required String name,

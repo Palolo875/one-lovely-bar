@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 class AppShell extends StatelessWidget {
-
   const AppShell({required this.navigationShell, super.key});
   final StatefulNavigationShell navigationShell;
 
@@ -23,8 +22,14 @@ class AppShell extends StatelessWidget {
         onDestinationSelected: (i) => _onTap(context, i),
         destinations: const [
           NavigationDestination(icon: Icon(LucideIcons.map), label: 'Carte'),
-          NavigationDestination(icon: Icon(LucideIcons.route), label: 'Itinéraire'),
-          NavigationDestination(icon: Icon(LucideIcons.calendar), label: 'Planifier'),
+          NavigationDestination(
+            icon: Icon(LucideIcons.navigation),
+            label: 'Itinéraire',
+          ),
+          NavigationDestination(
+            icon: Icon(LucideIcons.calendar),
+            label: 'Planifier',
+          ),
           NavigationDestination(icon: Icon(LucideIcons.user), label: 'Profil'),
         ],
       ),

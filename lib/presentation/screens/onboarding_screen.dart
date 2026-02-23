@@ -132,7 +132,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   void _selectProfile(ProfileType type) {
     setState(() => _selectedProfile = type);
-    ref.read(profileNotifierProvider.notifier).setProfileByType(type);
+    ref.read(profileProvider.notifier).setProfileByType(type);
   }
 
   List<ProfileType> get _profiles => const [
@@ -174,7 +174,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   _Slide(
                     title: 'Votre météo, sur votre chemin',
                     subtitle: 'Découvrez la météo exactement là où vous serez, au bon moment.',
-                    icon: LucideIcons.mapPinned,
+                    icon: LucideIcons.mapPin,
                   ),
                   _ProfileSlide(
                     profiles: _profiles,

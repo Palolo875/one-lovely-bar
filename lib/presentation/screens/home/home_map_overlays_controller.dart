@@ -1,8 +1,10 @@
+import 'dart:ui';
+
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:weathernav/core/config/app_config.dart';
 import 'package:weathernav/core/logging/app_logger.dart';
+import 'package:weathernav/domain/models/grid_point_weather.dart';
 import 'package:weathernav/domain/models/poi.dart';
-import 'package:weathernav/domain/models/weather_condition.dart';
 import 'package:weathernav/presentation/providers/weather_layers_provider.dart';
 
 class HomeMapOverlaysController {
@@ -29,7 +31,12 @@ class HomeMapOverlaysController {
       try {
         await controller.removeSymbol(s);
       } catch (e, st) {
-        AppLogger.warn('Home: remove POI symbol failed', name: 'home', error: e, stackTrace: st);
+        AppLogger.warn(
+          'Home: remove POI symbol failed',
+          name: 'home',
+          error: e,
+          stackTrace: st,
+        );
       }
     }
     _poiSymbols.clear();
@@ -38,7 +45,12 @@ class HomeMapOverlaysController {
       try {
         await controller.removeSymbol(s);
       } catch (e, st) {
-        AppLogger.warn('Home: remove grid symbol failed', name: 'home', error: e, stackTrace: st);
+        AppLogger.warn(
+          'Home: remove grid symbol failed',
+          name: 'home',
+          error: e,
+          stackTrace: st,
+        );
       }
     }
     _gridSymbols.clear();
@@ -46,16 +58,29 @@ class HomeMapOverlaysController {
     try {
       await controller.removeLayer(radarLayerId);
     } catch (e, st) {
-      AppLogger.warn('Home: remove radar layer failed', name: 'home', error: e, stackTrace: st);
+      AppLogger.warn(
+        'Home: remove radar layer failed',
+        name: 'home',
+        error: e,
+        stackTrace: st,
+      );
     }
     try {
       await controller.removeSource(radarSourceId);
     } catch (e, st) {
-      AppLogger.warn('Home: remove radar source failed', name: 'home', error: e, stackTrace: st);
+      AppLogger.warn(
+        'Home: remove radar source failed',
+        name: 'home',
+        error: e,
+        stackTrace: st,
+      );
     }
   }
 
-  Future<void> applyGridSymbols(List<GridPointWeather> grid, WeatherLayersState layers) async {
+  Future<void> applyGridSymbols(
+    List<GridPointWeather> grid,
+    WeatherLayersState layers,
+  ) async {
     final controller = _controller;
     if (controller == null) return;
 
@@ -63,7 +88,12 @@ class HomeMapOverlaysController {
       try {
         await controller.removeSymbol(s);
       } catch (e, st) {
-        AppLogger.warn('Home: remove grid symbol failed', name: 'home', error: e, stackTrace: st);
+        AppLogger.warn(
+          'Home: remove grid symbol failed',
+          name: 'home',
+          error: e,
+          stackTrace: st,
+        );
       }
     }
     _gridSymbols.clear();
@@ -98,7 +128,12 @@ class HomeMapOverlaysController {
         );
         _gridSymbols.add(sym);
       } catch (e, st) {
-        AppLogger.warn('Home: add grid symbol failed', name: 'home', error: e, stackTrace: st);
+        AppLogger.warn(
+          'Home: add grid symbol failed',
+          name: 'home',
+          error: e,
+          stackTrace: st,
+        );
       }
     }
   }
@@ -108,7 +143,8 @@ class HomeMapOverlaysController {
     if (controller == null) return;
 
     final nextIds = pois.map((p) => p.id).toSet();
-    if (nextIds.length == _poiIds.length && nextIds.difference(_poiIds).isEmpty) {
+    if (nextIds.length == _poiIds.length &&
+        nextIds.difference(_poiIds).isEmpty) {
       return;
     }
 
@@ -116,7 +152,12 @@ class HomeMapOverlaysController {
       try {
         await controller.removeSymbol(s);
       } catch (e, st) {
-        AppLogger.warn('Home: remove POI symbol failed', name: 'home', error: e, stackTrace: st);
+        AppLogger.warn(
+          'Home: remove POI symbol failed',
+          name: 'home',
+          error: e,
+          stackTrace: st,
+        );
       }
     }
     _poiSymbols.clear();
@@ -135,14 +176,22 @@ class HomeMapOverlaysController {
         );
         _poiSymbols.add(sym);
       } catch (e, st) {
-        AppLogger.warn('Home: add POI symbol failed', name: 'home', error: e, stackTrace: st);
+        AppLogger.warn(
+          'Home: add POI symbol failed',
+          name: 'home',
+          error: e,
+          stackTrace: st,
+        );
       }
     }
 
     _poiIds = nextIds;
   }
 
-  Future<void> applyRadarLayerIfNeeded(WeatherLayersState layers, int? radarTime) async {
+  Future<void> applyRadarLayerIfNeeded(
+    WeatherLayersState layers,
+    int? radarTime,
+  ) async {
     final controller = _controller;
     if (controller == null) return;
 
@@ -151,44 +200,60 @@ class HomeMapOverlaysController {
       try {
         await controller.removeLayer(radarLayerId);
       } catch (e, st) {
-        AppLogger.warn('Home: remove radar layer failed', name: 'home', error: e, stackTrace: st);
+        AppLogger.warn(
+          'Home: remove radar layer failed',
+          name: 'home',
+          error: e,
+          stackTrace: st,
+        );
       }
       try {
         await controller.removeSource(radarSourceId);
       } catch (e, st) {
-        AppLogger.warn('Home: remove radar source failed', name: 'home', error: e, stackTrace: st);
+        AppLogger.warn(
+          'Home: remove radar source failed',
+          name: 'home',
+          error: e,
+          stackTrace: st,
+        );
       }
       return;
     }
 
-    final tilesUrl = '${AppConfig.rainviewerTileBaseUrl}/v2/radar/$radarTime/256/{z}/{x}/{y}/2/1_1.png';
+    final tilesUrl =
+        '${AppConfig.rainviewerTileBaseUrl}/v2/radar/$radarTime/256/{z}/{x}/{y}/2/1_1.png';
 
     try {
       await controller.removeLayer(radarLayerId);
     } catch (e, st) {
-      AppLogger.warn('Home: cleanup radar layer failed', name: 'home', error: e, stackTrace: st);
+      AppLogger.warn(
+        'Home: cleanup radar layer failed',
+        name: 'home',
+        error: e,
+        stackTrace: st,
+      );
     }
     try {
       await controller.removeSource(radarSourceId);
     } catch (e, st) {
-      AppLogger.warn('Home: cleanup radar source failed', name: 'home', error: e, stackTrace: st);
+      AppLogger.warn(
+        'Home: cleanup radar source failed',
+        name: 'home',
+        error: e,
+        stackTrace: st,
+      );
     }
 
     await controller.addSource(
       radarSourceId,
-      RasterSourceProperties(
-        tiles: [tilesUrl],
-        tileSize: 256,
-      ),
+      RasterSourceProperties(tiles: [tilesUrl], tileSize: 256),
     );
 
     final opacity = layers.opacity[WeatherLayer.radar] ?? 0.65;
     await controller.addLayer(
       radarSourceId,
       radarLayerId,
-      RasterLayerProperties(
-        rasterOpacity: opacity,
-      ),
+      RasterLayerProperties(rasterOpacity: opacity),
     );
   }
 }

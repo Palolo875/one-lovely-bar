@@ -8,19 +8,23 @@ import 'package:weathernav/domain/repositories/settings_repository.dart';
 import 'package:weathernav/presentation/providers/profile_provider.dart';
 import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
 
-enum WeatherLayer {
-  radar,
-  wind,
-  temperature,
-}
+enum WeatherLayer { radar, wind, temperature }
 
 class WeatherLayersState {
-  const WeatherLayersState({required this.enabled, required this.order, required this.opacity});
+  const WeatherLayersState({
+    required this.enabled,
+    required this.order,
+    required this.opacity,
+  });
   final Set<WeatherLayer> enabled;
   final List<WeatherLayer> order;
   final Map<WeatherLayer, double> opacity;
 
-  WeatherLayersState copyWith({Set<WeatherLayer>? enabled, List<WeatherLayer>? order, Map<WeatherLayer, double>? opacity}) {
+  WeatherLayersState copyWith({
+    Set<WeatherLayer>? enabled,
+    List<WeatherLayer>? order,
+    Map<WeatherLayer, double>? opacity,
+  }) {
     return WeatherLayersState(
       enabled: enabled ?? this.enabled,
       order: order ?? this.order,
@@ -29,22 +33,40 @@ class WeatherLayersState {
   }
 }
 
-class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
-  WeatherLayersNotifier(this._settings, Set<WeatherLayer> initial, {required bool hasExplicitSelection})
-      : super(
-          WeatherLayersState(
-            enabled: initial,
-            order: _loadOrder(_settings, initial),
-            opacity: _loadOpacity(_settings),
-          ),
-        ),
-        _hasExplicitSelection = hasExplicitSelection {
+class WeatherLayersNotifier extends Notifier<WeatherLayersState> {
+  late final SettingsRepository _settings;
+  late final bool _hasExplicitSelection;
+
+  final List<StreamSubscription> _subs = [];
+  Timer? _persistDebounce;
+  WeatherLayersState? _pendingPersist;
+
+  static const int maxEnabled = 3;
+  static const double maxOpacity = 0.70;
+
+  @override
+  WeatherLayersState build() {
+    _settings = ref.watch(settingsRepositoryProvider);
+    final profile = ref.watch(profileProvider);
+    final raw = _settings.get<Object?>(SettingsKeys.enabledWeatherLayers);
+    _hasExplicitSelection = raw is List;
+
+    final initial = load(_settings, profile);
+    final initialState = WeatherLayersState(
+      enabled: initial,
+      order: _loadOrder(_settings, initial),
+      opacity: _loadOpacity(_settings),
+    );
+
     var syncScheduled = false;
     void sync() {
       final enabled = _loadEnabled(_settings);
       final next = WeatherLayersState(
         enabled: enabled.isNotEmpty ? enabled : state.enabled,
-        order: _loadOrder(_settings, enabled.isNotEmpty ? enabled : state.enabled),
+        order: _loadOrder(
+          _settings,
+          enabled.isNotEmpty ? enabled : state.enabled,
+        ),
         opacity: _loadOpacity(_settings),
       );
       if (!_same(next, state)) state = next;
@@ -66,17 +88,18 @@ class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
     ]) {
       _subs.add(_settings.watch(key).listen((_) => scheduleSync()));
     }
+
+    ref.onDispose(() {
+      _persistDebounce?.cancel();
+      _persistDebounce = null;
+      for (final sub in _subs) {
+        sub.cancel();
+      }
+      _subs.clear();
+    });
+
+    return initialState;
   }
-  final SettingsRepository _settings;
-
-  final bool _hasExplicitSelection;
-
-  final List<StreamSubscription> _subs = [];
-  Timer? _persistDebounce;
-  WeatherLayersState? _pendingPersist;
-
-  static const int maxEnabled = 3;
-  static const double maxOpacity = 0.70;
 
   void toggle(WeatherLayer layer) {
     final next = Set<WeatherLayer>.from(state.enabled);
@@ -94,7 +117,9 @@ class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
   }
 
   void setEnabled(Set<WeatherLayer> enabled) {
-    final next = enabled.length <= maxEnabled ? enabled : enabled.take(maxEnabled).toSet();
+    final next = enabled.length <= maxEnabled
+        ? enabled
+        : enabled.take(maxEnabled).toSet();
     final nextOrder = _normalizeOrder(state.order, next);
     state = state.copyWith(enabled: next, order: nextOrder);
     _schedulePersist(state);
@@ -146,18 +171,32 @@ class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
 
   Future<void> _persistNow(WeatherLayersState snapshot) async {
     try {
-      await _settings.put(SettingsKeys.enabledWeatherLayers, snapshot.enabled.map((e) => e.name).toList());
-      await _settings.put(SettingsKeys.weatherLayerOrder, snapshot.order.map((e) => e.name).toList());
+      await _settings.put(
+        SettingsKeys.enabledWeatherLayers,
+        snapshot.enabled.map((e) => e.name).toList(),
+      );
+      await _settings.put(
+        SettingsKeys.weatherLayerOrder,
+        snapshot.order.map((e) => e.name).toList(),
+      );
       await _settings.put(
         SettingsKeys.weatherLayerOpacity,
         snapshot.opacity.map((k, v) => MapEntry(k.name, v)),
       );
     } catch (e, st) {
-      AppLogger.error('Failed to persist weather layers settings', name: 'settings', error: e, stackTrace: st);
+      AppLogger.error(
+        'Failed to persist weather layers settings',
+        name: 'settings',
+        error: e,
+        stackTrace: st,
+      );
       final enabled = _loadEnabled(_settings);
       final recovered = WeatherLayersState(
         enabled: enabled.isNotEmpty ? enabled : state.enabled,
-        order: _loadOrder(_settings, enabled.isNotEmpty ? enabled : state.enabled),
+        order: _loadOrder(
+          _settings,
+          enabled.isNotEmpty ? enabled : state.enabled,
+        ),
         opacity: _loadOpacity(_settings),
       );
       if (!_same(recovered, state)) state = recovered;
@@ -182,7 +221,10 @@ class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
     return true;
   }
 
-  static List<WeatherLayer> _normalizeOrder(List<WeatherLayer> existing, Set<WeatherLayer> enabled) {
+  static List<WeatherLayer> _normalizeOrder(
+    List<WeatherLayer> existing,
+    Set<WeatherLayer> enabled,
+  ) {
     final out = <WeatherLayer>[];
     for (final l in existing) {
       if (enabled.contains(l) && !out.contains(l)) out.add(l);
@@ -193,7 +235,10 @@ class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
     return out;
   }
 
-  static List<WeatherLayer> _loadOrder(SettingsRepository settings, Set<WeatherLayer> enabled) {
+  static List<WeatherLayer> _loadOrder(
+    SettingsRepository settings,
+    Set<WeatherLayer> enabled,
+  ) {
     final raw = settings.get<Object?>(SettingsKeys.weatherLayerOrder);
     if (raw is List) {
       final out = <WeatherLayer>[];
@@ -250,16 +295,23 @@ class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
         if (match.isEmpty) continue;
         enabled.add(match.first);
       }
-      return enabled.length <= maxEnabled ? enabled : enabled.take(maxEnabled).toSet();
+      return enabled.length <= maxEnabled
+          ? enabled
+          : enabled.take(maxEnabled).toSet();
     }
 
     return const <WeatherLayer>{};
   }
 
-  static Set<WeatherLayer> load(SettingsRepository settings, UserProfile profile) {
+  static Set<WeatherLayer> load(
+    SettingsRepository settings,
+    UserProfile profile,
+  ) {
     final enabled = _loadEnabled(settings);
     if (enabled.isNotEmpty) {
-      return enabled.length <= maxEnabled ? enabled : enabled.take(maxEnabled).toSet();
+      return enabled.length <= maxEnabled
+          ? enabled
+          : enabled.take(maxEnabled).toSet();
     }
 
     // fallback to profile defaults
@@ -268,7 +320,9 @@ class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
       final mapped = _fromProfileLayerKey(l);
       if (mapped != null) defaults.add(mapped);
     }
-    return defaults.length <= maxEnabled ? defaults : defaults.take(maxEnabled).toSet();
+    return defaults.length <= maxEnabled
+        ? defaults
+        : defaults.take(maxEnabled).toSet();
   }
 
   static WeatherLayer? _fromProfileLayerKey(String key) {
@@ -288,31 +342,9 @@ class WeatherLayersNotifier extends StateNotifier<WeatherLayersState> {
     }
     return out.length <= maxEnabled ? out : out.take(maxEnabled).toSet();
   }
-
-  @override
-  void dispose() {
-    _persistDebounce?.cancel();
-    _persistDebounce = null;
-    for (final sub in _subs) {
-      sub.cancel();
-    }
-    _subs.clear();
-    super.dispose();
-  }
 }
 
-final weatherLayersProvider = StateNotifierProvider<WeatherLayersNotifier, WeatherLayersState>((ref) {
-  final settings = ref.watch(settingsRepositoryProvider);
-  final profile = ref.watch(profileNotifierProvider);
-  final raw = settings.get<Object?>(SettingsKeys.enabledWeatherLayers);
-  final hasExplicitSelection = raw is List;
-  final initial = WeatherLayersNotifier.load(settings, profile);
-  final notifier = WeatherLayersNotifier(settings, initial, hasExplicitSelection: hasExplicitSelection);
-
-  ref.listen<UserProfile>(profileNotifierProvider, (prev, next) {
-    if (prev?.id == next.id) return;
-    notifier.applyProfileDefaultsIfUnset(next);
-  });
-
-  return notifier;
-});
+final weatherLayersProvider =
+    NotifierProvider<WeatherLayersNotifier, WeatherLayersState>(
+      WeatherLayersNotifier.new,
+    );

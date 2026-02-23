@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:riverpod/riverpod.dart';
 import 'package:weathernav/core/config/app_config.dart';
 import 'package:weathernav/core/network/dio_factory.dart';
 import 'package:weathernav/data/repositories/geocoding_repository_impl.dart';
@@ -14,12 +15,12 @@ import 'package:weathernav/presentation/providers/settings_repository_provider.d
 part 'repository_providers.g.dart';
 
 @riverpod
-Dio dio(DioRef ref) {
+Dio dio(Ref ref) {
   return createAppDio(enableLogging: !AppConfig.isProd);
 }
 
 @riverpod
-WeatherRepository weatherRepository(WeatherRepositoryRef ref) {
+WeatherRepository weatherRepository(Ref ref) {
   return OpenMeteoRepository(
     ref.watch(dioProvider),
     ref.watch(cacheRepositoryProvider),
@@ -28,11 +29,11 @@ WeatherRepository weatherRepository(WeatherRepositoryRef ref) {
 }
 
 @riverpod
-RoutingRepository routingRepository(RoutingRepositoryRef ref) {
+RoutingRepository routingRepository(Ref ref) {
   return ValhallaRoutingRepository(ref.watch(dioProvider));
 }
 
 @riverpod
-GeocodingRepository geocodingRepository(GeocodingRepositoryRef ref) {
+GeocodingRepository geocodingRepository(Ref ref) {
   return PhotonGeocodingRepository(ref.watch(dioProvider));
 }
