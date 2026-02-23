@@ -1,13 +1,15 @@
 /// Represents an offline geographical zone with weather monitoring capabilities.
-/// 
+///
 /// This immutable model defines a circular area on Earth's surface
 /// where weather data can be cached for offline access.
-/// 
+///
 /// The zone is defined by a center point (latitude/longitude) and a radius.
 /// Each zone has a unique identifier and creation timestamp for tracking.
+import 'dart:math' as math;
+
 class OfflineZone {
   /// Creates a new [OfflineZone] with the specified parameters.
-  /// 
+  ///
   /// All parameters are required and validated:
   /// - [id]: Unique identifier for the zone
   /// - [name]: Human-readable name (max 100 characters)
@@ -62,7 +64,7 @@ class OfflineZone {
   final bool _validated;
 
   /// Validates the zone data and returns a new instance if valid
-  /// 
+  ///
   /// Returns null if any validation fails
   static OfflineZone? validated({
     required String id,
@@ -79,7 +81,7 @@ class OfflineZone {
     if (lat < -90 || lat > 90) return null;
     if (lng < -180 || lng > 180) return null;
     if (radiusKm <= 0 || radiusKm > 1000) return null;
-    
+
     return OfflineZone(
       id: id,
       name: name.trim(),
@@ -91,7 +93,7 @@ class OfflineZone {
   }
 
   /// Creates a copy of this zone with updated values
-  /// 
+  ///
   /// Any parameter that is null will use the current value
   OfflineZone copyWith({
     String? id,
@@ -112,28 +114,33 @@ class OfflineZone {
   }
 
   /// Calculates the approximate area of this zone in square kilometers
-  /// 
+  ///
   /// Uses the formula: π × r² where r is the radius
   double get areaKm2 => 3.14159 * radiusKm * radiusKm;
 
   /// Returns true if this zone contains the specified coordinates
-  /// 
+  ///
   /// Uses the Haversine formula to calculate great-circle distance
   /// between the zone center and the specified point
   bool contains(double lat, double lng) {
     const earthRadiusKm = 6371;
-    
+
     final dLat = _toRadians(this.lat - lat);
     final dLng = _toRadians(this.lng - lng);
-    
-    final double a = 
-        (dLat / 2).sin() * (dLat / 2).sin() +
-        _toRadians(lat).cos() * _toRadians(this.lat).cos() *
-        (dLng / 2).sin() * (dLng / 2).sin();
-    
-    final c = 2 * a.sqrt().asin();
+
+    final halfDLat = dLat / 2;
+    final halfDLng = dLng / 2;
+
+    final double a =
+        math.sin(halfDLat) * math.sin(halfDLat) +
+        math.cos(_toRadians(lat)) *
+            math.cos(_toRadians(this.lat)) *
+            math.sin(halfDLng) *
+            math.sin(halfDLng);
+
+    final c = 2 * math.asin(math.sqrt(a));
     final distance = earthRadiusKm * c;
-    
+
     return distance <= radiusKm;
   }
 
@@ -173,7 +180,7 @@ class OfflineZone {
   }
 
   /// Creates an [OfflineZone] from a JSON map
-  /// 
+  ///
   /// Returns null if the data is invalid
   static OfflineZone? fromJson(Map<String, Object?> json) {
     final id = json['id']?.toString();
@@ -182,12 +189,16 @@ class OfflineZone {
     final lng = json['lng'];
     final radiusKm = json['radiusKm'];
     final createdAtMs = json['createdAtMs'];
-    
-    if (id == null || name == null || lat is! num || lng is! num || 
-        radiusKm is! num || createdAtMs is! num) {
+
+    if (id == null ||
+        name == null ||
+        lat is! num ||
+        lng is! num ||
+        radiusKm is! num ||
+        createdAtMs is! num) {
       return null;
     }
-    
+
     return OfflineZone.validated(
       id: id,
       name: name,

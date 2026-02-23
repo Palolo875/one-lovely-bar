@@ -1,0 +1,27 @@
+Running build hooks...Running build hooks...  0s riverpod_generator on 121 inputs; integration_test/app_test.dart
+  0s riverpod_generator on 121 inputs: 1 skipped; lib/core/background/background_scheduler.dart
+  0s riverpod_generator on 121 inputs: 121 skipped
+  0s freezed on 121 inputs; integration_test/app_test.dart
+  0s freezed on 121 inputs: 121 skipped
+  0s json_serializable on 242 inputs; integration_test/app_test.dart
+  0s json_serializable on 242 inputs: 242 skipped
+  0s hive_ce_generator:hive_type_adapter_generator on 242 inputs; integration_test/app_test.dart
+  0s hive_ce_generator:hive_type_adapter_generator on 242 inputs: 242 skipped
+  0s hive_ce_generator:hive_adapters_generator on 242 inputs; integration_test/app_test.dart
+  0s hive_ce_generator:hive_adapters_generator on 242 inputs: 242 skipped
+  0s source_gen:combining_builder on 242 inputs; integration_test/app_test.dart
+  0s source_gen:combining_builder on 242 inputs: 223 skipped; test/golden_widget_test.freezed.dart
+  0s source_gen:combining_builder on 242 inputs: 242 skipped
+  0s hive_ce_generator:hive_registrar_intermediate_generator on 484 inputs; integration_test/app_test.dart
+  0s hive_ce_generator:hive_registrar_intermediate_generator on 484 inputs: 484 skipped
+  0s hive_ce_generator:hive_registrar_generator on 1 input; lib/$lib$
+  0s hive_ce_generator:hive_registrar_generator on 1 input: 1 skipped
+E riverpod_generator on lib/presentation/screens/guidance_screen.dart:
+  
+E freezed on lib/presentation/screens/guidance_screen.dart:
+  
+E hive_ce_generator:hive_type_adapter_generator on lib/presentation/screens/guidance_screen.dart:
+  
+E hive_ce_generator:hive_adapters_generator on lib/presentation/screens/guidance_screen.dart:
+  
+  Failed to build with build_runner/jit in 21s; wrote 0 outputs.

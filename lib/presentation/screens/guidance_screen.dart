@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
 import 'package:geolocator/geolocator.dart';
-import 'package:go_router/go_router.dart';
+import 'package:go_router/go_router.dart' hide RouteData;
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -23,7 +23,6 @@ import 'package:weathernav/presentation/providers/weather_timeline_eta_provider.
 import 'package:weathernav/presentation/providers/map_style_provider.dart';
 
 class GuidanceScreen extends ConsumerStatefulWidget {
-
   const GuidanceScreen({required this.request, super.key});
   final RouteRequest request;
 
@@ -66,59 +65,83 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
       if (perm == LocationPermission.denied) {
         perm = await Geolocator.requestPermission();
       }
-      if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) {
+      if (perm == LocationPermission.denied ||
+          perm == LocationPermission.deniedForever) {
         return;
       }
 
       _posSub?.cancel();
-      _posSub = Geolocator.getPositionStream(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          distanceFilter: 10,
-        ),
-      ).listen((pos) {
-        if (!mounted) return;
-        final next = LatLng(pos.latitude, pos.longitude);
+      _posSub =
+          Geolocator.getPositionStream(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.high,
+              distanceFilter: 10,
+            ),
+          ).listen(
+            (pos) async {
+              if (!mounted) return;
+              final next = LatLng(pos.latitude, pos.longitude);
 
-        final lastUi = _lastUserUiUpdate;
-        final now = DateTime.now();
-        final shouldUpdateUi = lastUi == null || now.difference(lastUi).inMilliseconds >= 650;
-        if (shouldUpdateUi) {
-          _lastUserUiUpdate = now;
-          setState(() => _user = next);
-        } else {
-          _user = next;
-        }
-
-        if (_followUser && _map != null) {
-          final lastManualMove = _lastManualMove;
-          final sinceManual = lastManualMove == null ? null : DateTime.now().difference(lastManualMove);
-          if (sinceManual == null || sinceManual.inSeconds > 8) {
-            try {
-              final controller = _map;
-              if (controller != null) {
-                await MapLibreCameraUtils.animateCameraCompat(
-                  controller,
-                  CameraUpdate.newLatLng(next),
-                );
+              final lastUi = _lastUserUiUpdate;
+              final now = DateTime.now();
+              final shouldUpdateUi =
+                  lastUi == null ||
+                  now.difference(lastUi).inMilliseconds >= 650;
+              if (shouldUpdateUi) {
+                _lastUserUiUpdate = now;
+                setState(() => _user = next);
+              } else {
+                _user = next;
               }
-            } catch (e, st) {
-              AppLogger.warn('Guidance: animateCamera failed', name: 'guidance', error: e, stackTrace: st);
-            }
-          }
-        }
 
-        if (shouldUpdateUi) {
-          final changed = _progress.updateUserPosition(next);
-          if (changed && mounted) {
-            setState(() {});
-          }
-        }
-      }, onError: (Object e, StackTrace st) {
-        AppLogger.warn('Guidance: position stream error', name: 'guidance', error: e, stackTrace: st);
-      });
+              if (_followUser && _map != null) {
+                final lastManualMove = _lastManualMove;
+                final sinceManual = lastManualMove == null
+                    ? null
+                    : DateTime.now().difference(lastManualMove);
+                if (sinceManual == null || sinceManual.inSeconds > 8) {
+                  try {
+                    final controller = _map;
+                    if (controller != null) {
+                      await MapLibreCameraUtils.animateCameraCompat(
+                        controller,
+                        CameraUpdate.newLatLng(next),
+                      );
+                    }
+                  } catch (e, st) {
+                    AppLogger.warn(
+                      'Guidance: animateCamera failed',
+                      name: 'guidance',
+                      error: e,
+                      stackTrace: st,
+                    );
+                  }
+                }
+              }
+
+              if (shouldUpdateUi) {
+                final changed = _progress.updateUserPosition(next);
+                if (changed && mounted) {
+                  setState(() {});
+                }
+              }
+            },
+            onError: (Object e, StackTrace st) {
+              AppLogger.warn(
+                'Guidance: position stream error',
+                name: 'guidance',
+                error: e,
+                stackTrace: st,
+              );
+            },
+          );
     } catch (e, st) {
-      AppLogger.warn('Guidance: startLocationStream failed', name: 'guidance', error: e, stackTrace: st);
+      AppLogger.warn(
+        'Guidance: startLocationStream failed',
+        name: 'guidance',
+        error: e,
+        stackTrace: st,
+      );
     }
   }
 
@@ -135,7 +158,12 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
     try {
       await _tts.speakLines(lines);
     } catch (e, st) {
-      AppLogger.warn('Guidance: TTS speak failed', name: 'guidance', error: e, stackTrace: st);
+      AppLogger.warn(
+        'Guidance: TTS speak failed',
+        name: 'guidance',
+        error: e,
+        stackTrace: st,
+      );
     }
     if (mounted) setState(() => _speaking = false);
   }
@@ -145,7 +173,12 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
     try {
       await _tts.stop();
     } catch (e, st) {
-      AppLogger.warn('Guidance: TTS stop failed', name: 'guidance', error: e, stackTrace: st);
+      AppLogger.warn(
+        'Guidance: TTS stop failed',
+        name: 'guidance',
+        error: e,
+        stackTrace: st,
+      );
     }
   }
 
@@ -158,14 +191,22 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
       if (perm == LocationPermission.denied) {
         perm = await Geolocator.requestPermission();
       }
-      if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) {
+      if (perm == LocationPermission.denied ||
+          perm == LocationPermission.deniedForever) {
         return null;
       }
 
-      final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
       return LatLng(pos.latitude, pos.longitude);
     } catch (e, st) {
-      AppLogger.warn('Guidance: getUserLatLng failed', name: 'guidance', error: e, stackTrace: st);
+      AppLogger.warn(
+        'Guidance: getUserLatLng failed',
+        name: 'guidance',
+        error: e,
+        stackTrace: st,
+      );
       return null;
     }
   }
@@ -184,11 +225,21 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
             CameraUpdate.newLatLng(user),
           );
         } catch (e, st) {
-          AppLogger.warn('Guidance: animateCamera failed', name: 'guidance', error: e, stackTrace: st);
+          AppLogger.warn(
+            'Guidance: animateCamera failed',
+            name: 'guidance',
+            error: e,
+            stackTrace: st,
+          );
         }
       }
     } catch (e, st) {
-      AppLogger.warn('Guidance: centerOnUser failed', name: 'guidance', error: e, stackTrace: st);
+      AppLogger.warn(
+        'Guidance: centerOnUser failed',
+        name: 'guidance',
+        error: e,
+        stackTrace: st,
+      );
     }
     if (mounted) setState(() => _centering = false);
   }
@@ -197,7 +248,8 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
     final controller = _map;
     if (controller == null) return;
 
-    final key = '${route.points.length}:${route.points.first.latitude},${route.points.first.longitude}:${route.points.last.latitude},${route.points.last.longitude}:${route.distanceKm}:${route.durationMinutes}';
+    final key =
+        '${route.points.length}:${route.points.first.latitude},${route.points.first.longitude}:${route.points.last.latitude},${route.points.last.longitude}:${route.distanceKm}:${route.durationMinutes}';
     if (_routeKey == key && _routeLine != null) return;
     _routeKey = key;
 
@@ -213,20 +265,32 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
         }
       }
     } catch (e, st) {
-      AppLogger.warn('Guidance: removeLine failed', name: 'guidance', error: e, stackTrace: st);
+      AppLogger.warn(
+        'Guidance: removeLine failed',
+        name: 'guidance',
+        error: e,
+        stackTrace: st,
+      );
     }
 
     try {
       _routeLine = await controller.addLine(
         LineOptions(
-          geometry: route.points.map((p) => LatLng(p.latitude, p.longitude)).toList(),
+          geometry: route.points
+              .map((p) => LatLng(p.latitude, p.longitude))
+              .toList(),
           lineColor: '#2563EB',
           lineWidth: 6,
           lineOpacity: 0.9,
         ),
       );
     } catch (e, st) {
-      AppLogger.warn('Guidance: addLine failed', name: 'guidance', error: e, stackTrace: st);
+      AppLogger.warn(
+        'Guidance: addLine failed',
+        name: 'guidance',
+        error: e,
+        stackTrace: st,
+      );
     }
   }
 
@@ -293,11 +357,19 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
                             if (controller != null) {
                               await MapLibreCameraUtils.animateCameraCompat(
                                 controller,
-                                CameraUpdate.newLatLngZoom(LatLng(p.latitude, p.longitude), 15),
+                                CameraUpdate.newLatLngZoom(
+                                  LatLng(p.latitude, p.longitude),
+                                  15,
+                                ),
                               );
                             }
                           } catch (e, st) {
-                            AppLogger.warn('Guidance: animateCamera to shelter failed', name: 'guidance', error: e, stackTrace: st);
+                            AppLogger.warn(
+                              'Guidance: animateCamera to shelter failed',
+                              name: 'guidance',
+                              error: e,
+                              stackTrace: st,
+                            );
                           }
 
                           if (!mounted) return;
@@ -309,11 +381,22 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
                                   padding: const EdgeInsets.all(16),
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
                                     children: [
-                                      Text(p.name, style: Theme.of(context).textTheme.titleMedium),
+                                      Text(
+                                        p.name,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.titleMedium,
+                                      ),
                                       const SizedBox(height: 6),
-                                      Text('Abri • rayon 2.5 km', style: Theme.of(context).textTheme.bodySmall),
+                                      Text(
+                                        'Abri • rayon 2.5 km',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodySmall,
+                                      ),
                                       const SizedBox(height: 12),
                                       ElevatedButton.icon(
                                         onPressed: () {
@@ -329,11 +412,19 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
                                             departureTime: DateTime.now(),
                                           );
                                           Future.microtask(() {
-                                            if (mounted) context.pushReplacement('/guidance', extra: nextReq);
+                                            if (mounted)
+                                              context.pushReplacement(
+                                                '/guidance',
+                                                extra: nextReq,
+                                              );
                                           });
                                         },
-                                        icon: const Icon(LucideIcons.navigation),
-                                        label: const Text('Remplacer le guidage vers cet abri'),
+                                        icon: const Icon(
+                                          LucideIcons.navigation,
+                                        ),
+                                        label: const Text(
+                                          'Remplacer le guidage vers cet abri',
+                                        ),
                                       ),
                                       const SizedBox(height: 8),
                                       OutlinedButton.icon(
@@ -350,15 +441,22 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
                                             departureTime: DateTime.now(),
                                           );
                                           Future.microtask(() {
-                                            if (mounted) context.push('/guidance', extra: nextReq);
+                                            if (mounted)
+                                              context.push(
+                                                '/guidance',
+                                                extra: nextReq,
+                                              );
                                           });
                                         },
                                         icon: const Icon(LucideIcons.layers),
-                                        label: const Text('Empiler un nouveau guidage'),
+                                        label: const Text(
+                                          'Empiler un nouveau guidage',
+                                        ),
                                       ),
                                       const SizedBox(height: 8),
                                       OutlinedButton.icon(
-                                        onPressed: () => Navigator.of(ctx).pop(),
+                                        onPressed: () =>
+                                            Navigator.of(ctx).pop(),
                                         icon: const Icon(LucideIcons.x),
                                         label: const Text('Fermer'),
                                       ),
@@ -394,13 +492,19 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final instructionsAsync = ref.watch(routeInstructionsProvider(widget.request));
+    final instructionsAsync = ref.watch(
+      routeInstructionsProvider(widget.request),
+    );
     final routeAsync = ref.watch(routeProvider(widget.request));
-    final mapStyle = ref.watch(mapStyleProvider);
+    final MapStyleState mapStyle = ref.watch(mapStyleProvider);
     final departure = widget.request.departureTime ?? DateTime.now();
 
     final alertsAsync = routeAsync.when(
-      data: (route) => ref.watch(routeAlertsProvider(WeatherTimelineEtaRequest(route: route, departureTime: departure))),
+      data: (route) => ref.watch(
+        routeAlertsProvider(
+          WeatherTimelineEtaRequest(route: route, departureTime: departure),
+        ),
+      ),
       loading: () => const AsyncValue<List<RouteAlert>>.loading(),
       error: AsyncValue<List<RouteAlert>>.error,
     );
@@ -459,8 +563,18 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
                       IconButton.filledTonal(
                         onPressed: _centering ? null : _centerOnUser,
                         icon: _centering
-                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                            : Icon(_followUser ? LucideIcons.locateFixed : LucideIcons.locateOff),
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Icon(
+                                _followUser
+                                    ? LucideIcons.locateFixed
+                                    : LucideIcons.locateOff,
+                              ),
                       ),
                     ],
                   ),
@@ -471,7 +585,7 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
                     data: (items) {
                       if (items.isEmpty) {
                         return _InfoBanner(
-                          icon: LucideIcons.route,
+                          icon: LucideIcons.navigation,
                           title: 'Guidage',
                           subtitle: 'Aucune instruction disponible.',
                         );
@@ -488,7 +602,9 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
                         for (var i = 0; i < items.length; i++) {
                           final d = items[i].distanceKm;
                           if (d == null) {
-                            idx = (progressedM / totalM * items.length).floor().clamp(0, items.length - 1);
+                            idx = (progressedM / totalM * items.length)
+                                .floor()
+                                .clamp(0, items.length - 1);
                             break;
                           }
                           accKm += d;
@@ -501,7 +617,9 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
                       }
 
                       final next = items[idx];
-                      final dist = next.distanceKm != null ? '${(next.distanceKm! * 1000).round()} m' : null;
+                      final dist = next.distanceKm != null
+                          ? '${(next.distanceKm! * 1000).round()} m'
+                          : null;
                       return _InfoBanner(
                         icon: LucideIcons.navigation,
                         title: next.instruction,
@@ -514,7 +632,9 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
                       subtitle: null,
                     ),
                     error: (err, st) {
-                      final msg = err is AppFailure ? err.message : err.toString();
+                      final msg = err is AppFailure
+                          ? err.message
+                          : err.toString();
                       return _InfoBanner(
                         icon: LucideIcons.alertTriangle,
                         title: 'Erreur',
@@ -543,16 +663,25 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
                           ? _progress.totalMeters
                           : (route.distanceKm * 1000);
                       final progressedM = _progress.progressedMeters;
-                      final remainingM = (totalM - progressedM).clamp(0.0, totalM);
-                      final remainingRatio = totalM > 0 ? (remainingM / totalM) : 1.0;
+                      final remainingM = (totalM - progressedM).clamp(
+                        0.0,
+                        totalM,
+                      );
+                      final remainingRatio = totalM > 0
+                          ? (remainingM / totalM)
+                          : 1.0;
 
-                      final remaining = Duration(minutes: (route.durationMinutes * remainingRatio).round());
+                      final remaining = Duration(
+                        minutes: (route.durationMinutes * remainingRatio)
+                            .round(),
+                      );
                       final eta = DateTime.now().add(remaining);
                       final km = remainingM / 1000.0;
                       return _BottomStatsBar(
                         left: 'Restant: ${_formatDuration(remaining)}',
                         center: 'Distance: ${km.toStringAsFixed(1)} km',
-                        right: 'Arrivée: ${eta.hour.toString().padLeft(2, '0')}:${eta.minute.toString().padLeft(2, '0')}',
+                        right:
+                            'Arrivée: ${eta.hour.toString().padLeft(2, '0')}:${eta.minute.toString().padLeft(2, '0')}',
                       );
                     },
                     loading: () => const _BottomStatsBar(
@@ -561,7 +690,9 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
                       right: 'Arrivée: —',
                     ),
                     error: (err, st) {
-                      final msg = err is AppFailure ? err.message : err.toString();
+                      final msg = err is AppFailure
+                          ? err.message
+                          : err.toString();
                       return _BottomStatsBar(
                         left: 'Route: erreur',
                         center: msg,
@@ -583,7 +714,9 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
                 final lines = items.map((e) => e.instruction).toList();
                 return FloatingActionButton(
                   onPressed: _speaking ? _stop : () => _speakAll(lines),
-                  child: Icon(_speaking ? LucideIcons.volumeX : LucideIcons.volume2),
+                  child: Icon(
+                    _speaking ? LucideIcons.volumeX : LucideIcons.volume2,
+                  ),
                 );
               },
               orElse: () => const SizedBox.shrink(),
@@ -596,8 +729,11 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
 }
 
 class _InfoBanner extends StatelessWidget {
-
-  const _InfoBanner({required this.icon, required this.title, required this.subtitle});
+  const _InfoBanner({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
   final IconData icon;
   final String title;
   final String? subtitle;
@@ -620,9 +756,14 @@ class _InfoBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(title, style: Theme.of(context).textTheme.titleMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 if (subtitle != null) ...[
-                  Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+                  Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
                 ],
               ],
             ),
@@ -653,7 +794,9 @@ class _AlertBanner extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.black87),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.black87),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -665,8 +808,11 @@ class _AlertBanner extends StatelessWidget {
 }
 
 class _BottomStatsBar extends StatelessWidget {
-
-  const _BottomStatsBar({required this.left, required this.center, required this.right});
+  const _BottomStatsBar({
+    required this.left,
+    required this.center,
+    required this.right,
+  });
   final String left;
   final String center;
   final String right;
@@ -682,9 +828,23 @@ class _BottomStatsBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(child: Text(left, style: Theme.of(context).textTheme.bodyMedium)),
-          Expanded(child: Text(center, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium)),
-          Expanded(child: Text(right, textAlign: TextAlign.end, style: Theme.of(context).textTheme.bodyMedium)),
+          Expanded(
+            child: Text(left, style: Theme.of(context).textTheme.bodyMedium),
+          ),
+          Expanded(
+            child: Text(
+              center,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              right,
+              textAlign: TextAlign.end,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
         ],
       ),
     );

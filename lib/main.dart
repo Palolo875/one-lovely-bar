@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 // Import generated localizations once flutter gen-l10n is run
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:weathernav/l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
@@ -25,19 +25,12 @@ void main() async {
   final scheduler = createBackgroundScheduler();
   await scheduler.init();
 
-  await SentryFlutter.init(
-    (options) {
-      options.dsn = AppConfig.sentryDsn;
-      // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
-      options.tracesSampleRate = AppConfig.isProd ? 0.2 : 0.0;
-      options.environment = AppConfig.currentEnvironment.name;
-    },
-    appRunner: () => runApp(
-      const ProviderScope(
-        child: WeatherNavApp(),
-      ),
-    ),
-  );
+  await SentryFlutter.init((options) {
+    options.dsn = AppConfig.sentryDsn;
+    // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
+    options.tracesSampleRate = AppConfig.isProd ? 0.2 : 0.0;
+    options.environment = AppConfig.currentEnvironment.name;
+  }, appRunner: () => runApp(const ProviderScope(child: WeatherNavApp())));
 }
 
 class WeatherNavApp extends ConsumerWidget {
@@ -61,10 +54,7 @@ class WeatherNavApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('fr', ''),
-        Locale('en', ''),
-      ],
+      supportedLocales: const [Locale('fr', ''), Locale('en', '')],
     );
   }
 }

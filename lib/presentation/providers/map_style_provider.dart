@@ -8,14 +8,9 @@ import 'package:weathernav/core/storage/settings_keys.dart';
 import 'package:weathernav/domain/repositories/settings_repository.dart';
 import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
 
-enum MapStyleSource {
-  openFreeMap,
-  cartoPositron,
-  stamenToner,
-}
+enum MapStyleSource { openFreeMap, cartoPositron, stamenToner }
 
 class MapStyleState {
-
   const MapStyleState({required this.source});
   final MapStyleSource source;
 
@@ -35,12 +30,14 @@ class MapStyleState {
   }
 }
 
-class MapStyleNotifier extends StateNotifier<MapStyleState> {
+class MapStyleNotifier extends Notifier<MapStyleState> {
+  late final SettingsRepository _settings;
+  StreamSubscription? _sub;
 
-  MapStyleNotifier(this._settings)
-      : super(
-          MapStyleState(source: _read(_settings)),
-        ) {
+  @override
+  MapStyleState build() {
+    _settings = ref.watch(settingsRepositoryProvider);
+
     var syncScheduled = false;
     void sync() {
       final next = MapStyleState(source: _read(_settings));
@@ -56,13 +53,21 @@ class MapStyleNotifier extends StateNotifier<MapStyleState> {
       });
     }
 
-    _sub = _settings.watch(SettingsKeys.mapStyleSource).listen((_) => scheduleSync());
+    _sub = _settings
+        .watch(SettingsKeys.mapStyleSource)
+        .listen((_) => scheduleSync());
+    ref.onDispose(() {
+      _sub?.cancel();
+    });
+
+    return MapStyleState(source: _read(_settings));
   }
-  final SettingsRepository _settings;
-  StreamSubscription? _sub;
 
   static MapStyleSource _read(SettingsRepository settings) {
-    final raw = settings.getOrDefault<String>(SettingsKeys.mapStyleSource, 'openfreemap');
+    final raw = settings.getOrDefault<String>(
+      SettingsKeys.mapStyleSource,
+      'openfreemap',
+    );
     if (raw == 'carto') return MapStyleSource.cartoPositron;
     if (raw == 'stamen') return MapStyleSource.stamenToner;
     return MapStyleSource.openFreeMap;
@@ -71,29 +76,24 @@ class MapStyleNotifier extends StateNotifier<MapStyleState> {
   Future<void> setSource(MapStyleSource src) async {
     final prev = state;
     try {
-      await _settings.put(
-        SettingsKeys.mapStyleSource,
-        switch (src) {
-          MapStyleSource.cartoPositron => 'carto',
-          MapStyleSource.stamenToner => 'stamen',
-          _ => 'openfreemap',
-        },
-      );
+      await _settings.put(SettingsKeys.mapStyleSource, switch (src) {
+        MapStyleSource.cartoPositron => 'carto',
+        MapStyleSource.stamenToner => 'stamen',
+        _ => 'openfreemap',
+      });
       state = state.copyWith(source: src);
     } catch (e, st) {
-      AppLogger.error('Failed to persist map style source', name: 'settings', error: e, stackTrace: st);
+      AppLogger.error(
+        'Failed to persist map style source',
+        name: 'settings',
+        error: e,
+        stackTrace: st,
+      );
       state = prev;
     }
   }
-
-  @override
-  void dispose() {
-    _sub?.cancel();
-    super.dispose();
-  }
 }
 
-final mapStyleProvider = StateNotifierProvider<MapStyleNotifier, MapStyleState>((ref) {
-  final settings = ref.watch(settingsRepositoryProvider);
-  return MapStyleNotifier(settings);
-});
+final mapStyleProvider = NotifierProvider<MapStyleNotifier, MapStyleState>(
+  MapStyleNotifier.new,
+);

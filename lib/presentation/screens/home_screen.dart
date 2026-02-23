@@ -20,7 +20,7 @@ import 'package:weathernav/presentation/widgets/profile_switcher.dart';
 import 'package:weathernav/presentation/screens/home/home_weather_sheet.dart';
 import 'package:weathernav/presentation/screens/home/home_map_overlays_controller.dart';
 import 'package:weathernav/presentation/map/maplibre_camera_utils.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:weathernav/l10n/app_localizations.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -54,23 +54,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
 
-    _layersSub = ref.listenManual<WeatherLayersState>(weatherLayersProvider, (prev, next) {
+    _layersSub = ref.listenManual<WeatherLayersState>(weatherLayersProvider, (
+      prev,
+      next,
+    ) {
       _overlays.applyGridSymbols(_lastGrid, next);
       _overlays.applyRadarLayerIfNeeded(next, _latestRadarTime);
       _syncGridSubscription(layers: next);
     });
 
-    _poiFilterSub = ref.listenManual<PoiFilterState>(poiFilterProvider, (prev, next) {
+    _poiFilterSub = ref.listenManual<PoiFilterState>(poiFilterProvider, (
+      prev,
+      next,
+    ) {
       _syncPoiSubscription(poiFilter: next);
     });
 
-    _radarTimeSub = ref.listenManual<AsyncValue<int?>>(rainViewerLatestTimeProvider, (prev, next) {
-      next.whenData((t) {
-        _latestRadarTime = t;
-        final layers = ref.read(weatherLayersProvider);
-        _overlays.applyRadarLayerIfNeeded(layers, t);
-      });
-    });
+    _radarTimeSub = ref.listenManual<AsyncValue<int?>>(
+      rainViewerLatestTimeProvider,
+      (prev, next) {
+        next.whenData((t) {
+          _latestRadarTime = t;
+          final layers = ref.read(weatherLayersProvider);
+          _overlays.applyRadarLayerIfNeeded(layers, t);
+        });
+      },
+    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -81,8 +90,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _syncGridSubscription({required WeatherLayersState layers}) {
     final center = _debouncedCenter;
-    final showGrid = layers.enabled.contains(WeatherLayer.wind) || layers.enabled.contains(WeatherLayer.temperature);
-    final nextGridKey = '${center.latitude},${center.longitude}|${showGrid ? '1' : '0'}';
+    final showGrid =
+        layers.enabled.contains(WeatherLayer.wind) ||
+        layers.enabled.contains(WeatherLayer.temperature);
+    final nextGridKey =
+        '${center.latitude},${center.longitude}|${showGrid ? '1' : '0'}';
     if (_gridRequestKey == nextGridKey) return;
     _gridRequestKey = nextGridKey;
 
@@ -113,7 +125,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _syncPoiSubscription({required PoiFilterState poiFilter}) {
     final center = _debouncedCenter;
-    final nextPoiKey = '${center.latitude},${center.longitude}|${poiFilter.radiusMeters}|${poiFilter.categories.map((c) => c.name).join(',')}|${poiFilter.enabled ? '1' : '0'}';
+    final nextPoiKey =
+        '${center.latitude},${center.longitude}|${poiFilter.radiusMeters}|${poiFilter.categories.map((c) => c.name).join(',')}|${poiFilter.enabled ? '1' : '0'}';
     if (_poiRequestKey == nextPoiKey) return;
     _poiRequestKey = nextPoiKey;
 
@@ -132,15 +145,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       radiusMeters: poiFilter.radiusMeters,
       categories: poiFilter.categories,
     );
-    _poiSub = ref.listenManual<AsyncValue<List<Poi>>>(
-      poiSearchProvider(req),
-      (prev, next) {
-        next.whenData((items) {
-          _lastPois = items;
-          _overlays.applyPois(items);
-        });
-      },
-    );
+    _poiSub = ref.listenManual<AsyncValue<List<Poi>>>(poiSearchProvider(req), (
+      prev,
+      next,
+    ) {
+      next.whenData((items) {
+        _lastPois = items;
+        _overlays.applyPois(items);
+      });
+    });
   }
 
   void _onMapCreated(MapLibreMapController controller) {
@@ -156,7 +169,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         await Permission.locationWhenInUse.request();
       }
     } catch (e, st) {
-      AppLogger.warn('Home: location permission check/request failed', name: 'home', error: e, stackTrace: st);
+      AppLogger.warn(
+        'Home: location permission check/request failed',
+        name: 'home',
+        error: e,
+        stackTrace: st,
+      );
     }
   }
 
@@ -174,7 +192,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         await Geolocator.requestPermission();
       }
 
-      final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.medium,
+      );
       final target = LatLng(pos.latitude, pos.longitude);
 
       // Best-effort camera movement (dynamic to avoid compilation issues across maplibre_gl versions)
@@ -186,14 +206,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             CameraUpdate.newLatLngZoom(target, 13.5),
           );
         } catch (e, st) {
-          AppLogger.warn('Home: animateCamera failed', name: 'home', error: e, stackTrace: st);
+          AppLogger.warn(
+            'Home: animateCamera failed',
+            name: 'home',
+            error: e,
+            stackTrace: st,
+          );
           try {
             await MapLibreCameraUtils.moveCameraCompat(
               controller,
               CameraUpdate.newLatLngZoom(target, 13.5),
             );
           } catch (e2, st2) {
-            AppLogger.warn('Home: moveCamera failed', name: 'home', error: e2, stackTrace: st2);
+            AppLogger.warn(
+              'Home: moveCamera failed',
+              name: 'home',
+              error: e2,
+              stackTrace: st2,
+            );
           }
         }
       }
@@ -204,7 +234,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _debouncedCenter = _roundCenter(target);
       });
     } catch (e, st) {
-      AppLogger.warn('Home: centerOnUser failed', name: 'home', error: e, stackTrace: st);
+      AppLogger.warn(
+        'Home: centerOnUser failed',
+        name: 'home',
+        error: e,
+        stackTrace: st,
+      );
     }
     if (mounted) setState(() => _centering = false);
   }
@@ -251,10 +286,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final activeProfile = ref.watch(profileNotifierProvider);
     final center = _debouncedCenter;
     final currentWeatherAsync = ref.watch(
-      currentWeatherProvider(LatLngRequest(lat: center.latitude, lng: center.longitude)),
+      currentWeatherProvider(
+        LatLngRequest(lat: center.latitude, lng: center.longitude),
+      ),
     );
     final forecastAsync = ref.watch(
-      forecastProvider(ForecastRequest(lat: center.latitude, lng: center.longitude)),
+      forecastProvider(
+        ForecastRequest(lat: center.latitude, lng: center.longitude),
+      ),
     );
 
     final layers = ref.watch(weatherLayersProvider);
@@ -277,14 +316,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             trackCameraPosition: true,
           ),
 
-          if (layers.enabled.contains(WeatherLayer.wind) || layers.enabled.contains(WeatherLayer.temperature))
+          if (layers.enabled.contains(WeatherLayer.wind) ||
+              layers.enabled.contains(WeatherLayer.temperature))
             Positioned(
               left: 16,
               right: 16,
               top: 110,
               child: IgnorePointer(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.92),
                     borderRadius: BorderRadius.circular(16),
@@ -310,7 +353,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 onTap: () => context.go('/planning'),
                 borderRadius: BorderRadius.circular(30),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(30),
@@ -328,8 +374,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          AppLocalizations.of(context)?.searchDestination ?? 'Rechercher',
-                          style: const TextStyle(color: Colors.grey, fontSize: 16),
+                          AppLocalizations.of(context)?.searchDestination ??
+                              'Rechercher',
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 16,
+                          ),
                         ),
                       ),
                       GestureDetector(
@@ -368,14 +418,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             bottom: 120,
             child: Column(
               children: [
-                _buildFloatingButton(LucideIcons.layers, () => _showLayersSheet(context)),
-                const SizedBox(height: 12),
-                _buildFloatingButton(LucideIcons.mapPin, () => _showPoiSheet(context)),
+                _buildFloatingButton(
+                  LucideIcons.layers,
+                  () => _showLayersSheet(context),
+                ),
                 const SizedBox(height: 12),
                 _buildFloatingButton(
-                  LucideIcons.crosshair,
-                  _centerOnUser,
+                  LucideIcons.mapPin,
+                  () => _showPoiSheet(context),
                 ),
+                const SizedBox(height: 12),
+                _buildFloatingButton(LucideIcons.crosshair, _centerOnUser),
               ],
             ),
           ),
@@ -405,10 +458,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   IconData _getProfileIcon(ProfileType type) {
     switch (type) {
-      case ProfileType.cyclist: return LucideIcons.bike;
-      case ProfileType.hiker: return LucideIcons.footprints;
-      case ProfileType.driver: return LucideIcons.car;
-      default: return LucideIcons.user;
+      case ProfileType.cyclist:
+        return LucideIcons.bike;
+      case ProfileType.hiker:
+        return LucideIcons.footprints;
+      case ProfileType.driver:
+        return LucideIcons.car;
+      default:
+        return LucideIcons.user;
     }
   }
 
@@ -434,7 +491,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Couches météo', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Couches météo',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 12),
                   Text(
                     'Max 3 couches actives pour garder la carte lisible.',
@@ -456,17 +516,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   if (layers.enabled.contains(WeatherLayer.radar))
                     Padding(
-                      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+                      padding: const EdgeInsets.only(
+                        left: 16,
+                        right: 16,
+                        bottom: 8,
+                      ),
                       child: Row(
                         children: [
                           const Text('Opacité'),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Slider(
-                              value: (layers.opacity[WeatherLayer.radar] ?? 0.65).clamp(0.0, 1.0),
+                              value:
+                                  (layers.opacity[WeatherLayer.radar] ?? 0.65)
+                                      .clamp(0.0, 1.0),
                               divisions: 10,
-                              label: '${((layers.opacity[WeatherLayer.radar] ?? 0.65) * 100).round()}%',
-                              onChanged: (v) => notifier.setOpacity(WeatherLayer.radar, v),
+                              label:
+                                  '${((layers.opacity[WeatherLayer.radar] ?? 0.65) * 100).round()}%',
+                              onChanged: (v) =>
+                                  notifier.setOpacity(WeatherLayer.radar, v),
                             ),
                           ),
                         ],
@@ -496,7 +564,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _buildOverlayStatusText(WeatherLayersState layers) {
     final parts = <String>[];
     if (layers.enabled.contains(WeatherLayer.wind)) parts.add('Vent');
-    if (layers.enabled.contains(WeatherLayer.temperature)) parts.add('Température');
+    if (layers.enabled.contains(WeatherLayer.temperature))
+      parts.add('Température');
     return 'Overlays actifs: ${parts.join(' + ')}';
   }
 
@@ -515,7 +584,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Points d’intérêt', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Points d’intérêt',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 12),
                   SwitchListTile(
                     value: filter.enabled,
@@ -544,7 +616,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Slider(
-                            value: filter.radiusMeters.toDouble().clamp(500, 10000),
+                            value: filter.radiusMeters.toDouble().clamp(
+                              500,
+                              10000,
+                            ),
                             min: 500,
                             max: 10000,
                             divisions: 19,
@@ -584,7 +659,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 }
 
 class _ActiveLayerChips extends StatelessWidget {
-
   const _ActiveLayerChips({required this.layers, required this.onToggle});
   final WeatherLayersState layers;
   final void Function(WeatherLayer layer) onToggle;
