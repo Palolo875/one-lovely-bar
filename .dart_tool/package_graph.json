@@ -8,8 +8,6 @@
       "version": "1.0.0+1",
       "dependencies": [
         "dio",
-        "drift",
-        "drift_flutter",
         "flutter",
         "flutter_localizations",
         "flutter_riverpod",
@@ -223,34 +221,6 @@
       "version": "0.5.41",
       "dependencies": [
         "flutter"
-      ]
-    },
-    {
-      "name": "drift_flutter",
-      "version": "0.2.8",
-      "dependencies": [
-        "drift",
-        "flutter",
-        "meta",
-        "path",
-        "path_provider",
-        "sqlite3",
-        "sqlite3_flutter_libs"
-      ]
-    },
-    {
-      "name": "drift",
-      "version": "2.31.0",
-      "dependencies": [
-        "async",
-        "collection",
-        "convert",
-        "meta",
-        "path",
-        "sqlite3",
-        "stack_trace",
-        "stream_channel",
-        "web"
       ]
     },
     {
