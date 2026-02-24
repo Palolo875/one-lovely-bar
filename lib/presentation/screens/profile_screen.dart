@@ -516,10 +516,11 @@ class ProfileScreen extends ConsumerWidget {
                         if (offlineZones.isEmpty)
                           const AppStateMessage(
                             icon: LucideIcons.map,
+                            illustrationAssetName:
+                                'assets/illustrations/empty_offline.svg',
                             title: 'Aucune zone configurée',
                             message:
-                                'Ajoute une zone hors-ligne pour préparer ton trajet sans réseau.',
-                            dense: true,
+                                'Ajoutez une zone pour utiliser l’app hors-ligne (tuiles + météo).',
                           )
                         else
                           ...offlineZones.map(

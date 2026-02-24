@@ -22,9 +22,10 @@ class HistoryScreen extends ConsumerWidget {
             return AppStateMessage(
               icon: Icons.history,
               iconColor: scheme.primary,
+              illustrationAssetName: 'assets/illustrations/empty_history.svg',
               title: 'Aucun trajet enregistré',
               message:
-                  'Sauvegarde un trajet depuis l’onglet Itinéraire ou la simulation pour le retrouver ici.',
+                  'Les trajets sauvegardés apparaîtront ici (GPX, distance, durée).',
             );
           }
 
@@ -60,6 +61,7 @@ class HistoryScreen extends ConsumerWidget {
           return AppStateMessage(
             icon: Icons.error_outline,
             iconColor: scheme.error,
+            illustrationAssetName: 'assets/illustrations/error_state.svg',
             title: 'Erreur',
             message: msg,
             action: OutlinedButton(

@@ -10,6 +10,7 @@ import 'package:weathernav/presentation/providers/cache_repository_provider.dart
 import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
 import 'package:weathernav/core/theme/app_tokens.dart';
 import 'package:weathernav/presentation/widgets/app_state_message.dart';
+import 'package:weathernav/presentation/widgets/app_illustration_kind.dart';
 import 'package:weathernav/presentation/widgets/app_card.dart';
 import 'package:weathernav/presentation/widgets/app_pill.dart';
 
@@ -259,9 +260,9 @@ class HomePersistentWeatherSheet extends ConsumerWidget {
                   return AppStateMessage(
                     icon: LucideIcons.alertTriangle,
                     iconColor: scheme.error,
+                    illustrationKind: AppIllustrationKind.weather,
                     title: 'Météo indisponible',
                     message: msg,
-                    dense: true,
                   );
                 },
               ),
@@ -285,10 +286,10 @@ class HomePersistentWeatherSheet extends ConsumerWidget {
                   if (hours.isEmpty) {
                     return const AppStateMessage(
                       icon: LucideIcons.cloud,
+                      illustrationKind: AppIllustrationKind.weather,
                       title: 'Prévisions indisponibles',
                       message:
-                          'Aucune donnée disponible pour les prochaines heures.',
-                      dense: true,
+                          'Impossible de charger les prévisions horaires actuellement.',
                     );
                   }
                   return SizedBox(
@@ -342,9 +343,9 @@ class HomePersistentWeatherSheet extends ConsumerWidget {
                   return AppStateMessage(
                     icon: LucideIcons.alertTriangle,
                     iconColor: scheme.error,
+                    illustrationKind: AppIllustrationKind.weather,
                     title: 'Prévisions indisponibles',
                     message: msg,
-                    dense: true,
                   );
                 },
               ),
@@ -362,10 +363,10 @@ class HomePersistentWeatherSheet extends ConsumerWidget {
                   if (daily.isEmpty) {
                     return const AppStateMessage(
                       icon: LucideIcons.cloud,
+                      illustrationKind: AppIllustrationKind.weather,
                       title: 'Prévisions indisponibles',
                       message:
-                          'Aucune donnée disponible pour les prochains jours.',
-                      dense: true,
+                          'Impossible de charger les prévisions journalières actuellement.',
                     );
                   }
                   return Column(

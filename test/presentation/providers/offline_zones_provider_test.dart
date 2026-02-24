@@ -65,7 +65,7 @@ void main() {
         when(mockRepository.watch()).thenAnswer((_) => Stream.error(error));
 
         // Act
-        final state = await notifier.build();
+        final state = await container.read(offlineZonesProvider.future);
 
         // Assert
         expect(state.zones, isEmpty);
@@ -126,7 +126,7 @@ void main() {
         ).thenAnswer((_) => Stream.value(initialZones));
 
         // Initialize notifier
-        await notifier.build();
+        await container.read(offlineZonesProvider.future);
 
         // Act
         final result = await notifier.add(
@@ -150,7 +150,7 @@ void main() {
         ).thenAnswer((_) => Stream.value(initialZones));
 
         // Initialize notifier
-        await notifier.build();
+        await container.read(offlineZonesProvider.future);
 
         // Act
         final result = await notifier.add(
@@ -175,7 +175,7 @@ void main() {
         when(mockRepository.save(any)).thenThrow(Exception('Save failed'));
 
         // Initialize notifier
-        await notifier.build();
+        await container.read(offlineZonesProvider.future);
 
         // Act
         final result = await notifier.add(
@@ -211,7 +211,7 @@ void main() {
         when(mockRepository.save(any)).thenAnswer((_) async {});
 
         // Initialize notifier
-        await notifier.build();
+        await container.read(offlineZonesProvider.future);
 
         // Act
         final result = await notifier.remove(zone.id);
@@ -233,7 +233,7 @@ void main() {
         when(mockRepository.watch()).thenAnswer((_) => Stream.value(zones));
 
         // Initialize notifier
-        await notifier.build();
+        await container.read(offlineZonesProvider.future);
 
         // Act
         final result = await notifier.remove('non-existent');
@@ -261,7 +261,7 @@ void main() {
         when(mockRepository.save(any)).thenAnswer((_) async {});
 
         // Initialize notifier
-        await notifier.build();
+        await container.read(offlineZonesProvider.future);
 
         // Act
         final result = await notifier.updateZone(
@@ -290,7 +290,7 @@ void main() {
         when(mockRepository.watch()).thenAnswer((_) => Stream.value(zones));
 
         // Initialize notifier
-        await notifier.build();
+        await container.read(offlineZonesProvider.future);
 
         // Act
         final result = await notifier.updateZone(
@@ -329,7 +329,7 @@ void main() {
         ).thenAnswer((_) => Stream.value(initialZones));
 
         // Initialize notifier
-        await notifier.build();
+        await container.read(offlineZonesProvider.future);
 
         // Act
         await notifier.refresh();
@@ -351,7 +351,7 @@ void main() {
         ).thenAnswer((_) => Stream.error(Exception('Test error')));
 
         // Initialize notifier with error
-        await notifier.build();
+        await container.read(offlineZonesProvider.future);
 
         // Verify error state
         var currentState = container.read(offlineZonesProvider);

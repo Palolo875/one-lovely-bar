@@ -1,17 +1,26 @@
 import 'package:flutter/material.dart';
 
 import 'package:weathernav/core/theme/app_tokens.dart';
+import 'package:weathernav/presentation/widgets/app_illustration.dart';
+import 'package:weathernav/presentation/widgets/app_illustration_kind.dart';
 
 class AppStateMessage extends StatelessWidget {
   const AppStateMessage({
-    required this.icon, required this.title, required this.message, super.key,
+    required this.icon,
+    required this.title,
+    required this.message,
+    super.key,
     this.iconColor,
+    this.illustrationAssetName,
+    this.illustrationKind,
     this.action,
     this.dense = false,
   });
 
   final IconData icon;
   final Color? iconColor;
+  final String? illustrationAssetName;
+  final AppIllustrationKind? illustrationKind;
   final String title;
   final String message;
   final Widget? action;
@@ -32,11 +41,20 @@ class AppStateMessage extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: iconSize,
-              color: iconColor ?? scheme.onSurfaceVariant,
-            ),
+            if (illustrationAssetName != null || illustrationKind != null)
+              AppIllustration(
+                assetName: illustrationAssetName,
+                kind: illustrationKind,
+                width: dense ? 120 : 160,
+                height: dense ? 120 : 160,
+                semanticLabel: title,
+              )
+            else
+              Icon(
+                icon,
+                size: iconSize,
+                color: iconColor ?? scheme.onSurfaceVariant,
+              ),
             SizedBox(height: dense ? AppSpacing.md : AppSpacing.lg),
             Text(title, style: titleStyle, textAlign: TextAlign.center),
             const SizedBox(height: AppSpacing.sm),

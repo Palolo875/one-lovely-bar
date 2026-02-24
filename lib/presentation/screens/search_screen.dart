@@ -85,6 +85,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   if (_query.isEmpty) {
                     return const AppStateMessage(
                       icon: LucideIcons.search,
+                      illustrationAssetName:
+                          'assets/illustrations/empty_search.svg',
                       title: 'Recherche de destination',
                       message: 'Tape un lieu (ex: “Paris”, “Gare de Lyon”).',
                     );
@@ -92,9 +94,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   if (items.isEmpty) {
                     return const AppStateMessage(
                       icon: LucideIcons.mapPinOff,
+                      illustrationAssetName:
+                          'assets/illustrations/empty_search.svg',
                       title: 'Aucun résultat',
-                      message:
-                          'Essaie avec une autre orthographe ou ajoute une ville/pays.',
+                      message: 'Aucun lieu trouvé. Essaie un nom plus précis.',
                     );
                   }
 
@@ -132,6 +135,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   return AppStateMessage(
                     icon: LucideIcons.alertTriangle,
                     iconColor: scheme.error,
+                    illustrationAssetName:
+                        'assets/illustrations/error_state.svg',
                     title: 'Erreur de recherche',
                     message: msg,
                   );

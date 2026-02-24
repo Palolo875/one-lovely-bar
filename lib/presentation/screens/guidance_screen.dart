@@ -25,6 +25,7 @@ import 'package:weathernav/presentation/providers/map_style_provider.dart';
 import 'package:weathernav/core/theme/app_tokens.dart';
 import 'package:weathernav/presentation/widgets/app_loading_indicator.dart';
 import 'package:weathernav/presentation/widgets/app_state_message.dart';
+import 'package:weathernav/presentation/widgets/app_illustration_kind.dart';
 import 'package:weathernav/presentation/widgets/app_snackbar.dart';
 
 class GuidanceScreen extends ConsumerStatefulWidget {
@@ -343,6 +344,7 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
                   if (pois.isEmpty) {
                     return const AppStateMessage(
                       icon: LucideIcons.umbrella,
+                      illustrationKind: AppIllustrationKind.alerts,
                       title: 'Aucun abri',
                       message: 'Aucun abri trouvé autour de vous.',
                       dense: true,
@@ -489,6 +491,7 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
                   final msg = err is AppFailure ? err.message : err.toString();
                   return AppStateMessage(
                     icon: LucideIcons.alertTriangle,
+                    illustrationKind: AppIllustrationKind.error,
                     title: 'Erreur',
                     message: msg,
                     dense: true,

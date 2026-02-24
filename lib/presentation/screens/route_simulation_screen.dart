@@ -15,6 +15,7 @@ import 'package:weathernav/presentation/widgets/weather_timeline.dart';
 import 'package:weathernav/core/theme/app_tokens.dart';
 import 'package:weathernav/presentation/widgets/app_loading_indicator.dart';
 import 'package:weathernav/presentation/widgets/app_state_message.dart';
+import 'package:weathernav/presentation/widgets/app_illustration_kind.dart';
 import 'package:weathernav/presentation/widgets/app_card.dart';
 import 'package:weathernav/presentation/widgets/app_snackbar.dart';
 
@@ -239,6 +240,7 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
                       if (alerts.isEmpty) {
                         return const AppStateMessage(
                           icon: Icons.shield_outlined,
+                          illustrationKind: AppIllustrationKind.alerts,
                           title: 'Aucune alerte',
                           message: 'Aucune alerte détectée pour ce départ.',
                           dense: true,
@@ -268,6 +270,7 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
                       return AppStateMessage(
                         icon: Icons.error_outline,
                         iconColor: scheme.error,
+                        illustrationKind: AppIllustrationKind.error,
                         title: 'Erreur alertes',
                         message: msg,
                         dense: true,
@@ -304,6 +307,7 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
                       return AppStateMessage(
                         icon: Icons.cloud_off,
                         iconColor: scheme.error,
+                        illustrationKind: AppIllustrationKind.weather,
                         title: 'Erreur météo',
                         message: msg,
                         dense: true,
@@ -352,6 +356,7 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
             return AppStateMessage(
               icon: Icons.error_outline,
               iconColor: scheme.error,
+              illustrationKind: AppIllustrationKind.error,
               title: 'Erreur routing',
               message: msg,
               action: Column(
@@ -381,6 +386,7 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
       return const [
         AppStateMessage(
           icon: Icons.route_outlined,
+          illustrationKind: AppIllustrationKind.weather,
           title: 'Aucun point',
           message: 'Le trajet ne contient aucun point à afficher.',
           dense: true,

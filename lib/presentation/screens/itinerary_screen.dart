@@ -23,6 +23,7 @@ import 'package:weathernav/presentation/providers/weather_timeline_eta_provider.
 import 'package:weathernav/presentation/widgets/weather_timeline.dart';
 import 'package:weathernav/presentation/widgets/app_loading_indicator.dart';
 import 'package:weathernav/presentation/widgets/app_state_message.dart';
+import 'package:weathernav/presentation/widgets/app_illustration_kind.dart';
 import 'package:weathernav/presentation/widgets/app_card.dart';
 import 'package:weathernav/presentation/widgets/app_snackbar.dart';
 
@@ -366,6 +367,7 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
                         if (alerts.isEmpty) {
                           return const AppStateMessage(
                             icon: LucideIcons.shieldCheck,
+                            illustrationKind: AppIllustrationKind.alerts,
                             title: 'Aucune alerte',
                             message: 'Aucune alerte détectée pour ce départ.',
                             dense: true,
@@ -395,6 +397,7 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
                         return AppStateMessage(
                           icon: LucideIcons.alertTriangle,
                           iconColor: scheme.error,
+                          illustrationKind: AppIllustrationKind.error,
                           title: 'Erreur alertes',
                           message: msg,
                           dense: true,
@@ -436,6 +439,7 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
                         return AppStateMessage(
                           icon: LucideIcons.cloudOff,
                           iconColor: scheme.error,
+                          illustrationKind: AppIllustrationKind.weather,
                           title: 'Erreur météo',
                           message: msg,
                           dense: true,
@@ -529,6 +533,7 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
                 return AppStateMessage(
                   icon: LucideIcons.alertTriangle,
                   iconColor: scheme.error,
+                  illustrationKind: AppIllustrationKind.error,
                   title: 'Erreur',
                   message: msg,
                   action: OutlinedButton(
