@@ -15,6 +15,8 @@ import 'package:weathernav/presentation/providers/weather_layers_provider.dart';
 import 'package:weathernav/presentation/providers/profile_provider.dart';
 import 'package:weathernav/presentation/providers/map_style_provider.dart';
 import 'package:weathernav/presentation/widgets/app_loading_indicator.dart';
+import 'package:weathernav/presentation/widgets/app_state_message.dart';
+import 'package:weathernav/presentation/widgets/app_snackbar.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -313,10 +315,9 @@ class ProfileScreen extends ConsumerWidget {
                       if (!isEnabled &&
                           layers.enabled.length >=
                               WeatherLayersNotifier.maxEnabled) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Maximum 3 couches actives.'),
-                          ),
+                        AppSnackbar.error(
+                          context,
+                          'Maximum 3 couches actives.',
                         );
                         return;
                       }
@@ -470,12 +471,9 @@ class ProfileScreen extends ConsumerWidget {
                     );
 
                     if (!success && context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Paramètres invalides pour la zone hors-ligne.',
-                          ),
-                        ),
+                      AppSnackbar.error(
+                        context,
+                        'Paramètres invalides pour la zone hors-ligne.',
                       );
                     }
                   },
@@ -516,12 +514,12 @@ class ProfileScreen extends ConsumerWidget {
                     return Column(
                       children: [
                         if (offlineZones.isEmpty)
-                          const Padding(
-                            padding: EdgeInsets.all(16),
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text('Aucune zone configurée.'),
-                            ),
+                          const AppStateMessage(
+                            icon: LucideIcons.map,
+                            title: 'Aucune zone configurée',
+                            message:
+                                'Ajoute une zone hors-ligne pour préparer ton trajet sans réseau.',
+                            dense: true,
                           )
                         else
                           ...offlineZones.map(
@@ -550,14 +548,9 @@ class ProfileScreen extends ConsumerWidget {
                                                 await offlineZonesNotifier
                                                     .remove(z.id);
                                             if (!success && context.mounted) {
-                                              ScaffoldMessenger.of(
+                                              AppSnackbar.error(
                                                 context,
-                                              ).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text(
-                                                    'Échec de la suppression de la zone.',
-                                                  ),
-                                                ),
+                                                'Échec de la suppression de la zone.',
                                               );
                                             }
                                           },

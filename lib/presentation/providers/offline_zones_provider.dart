@@ -30,7 +30,7 @@ abstract class OfflineZonesState
 }
 
 class OfflineZonesNotifier extends AsyncNotifier<OfflineZonesState> {
-  late final OfflineZonesRepository _repo;
+  late OfflineZonesRepository _repo;
   StreamSubscription<List<OfflineZone>>? _subscription;
   static final Random _rng = Random.secure();
 

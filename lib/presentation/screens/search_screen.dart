@@ -6,10 +6,12 @@ import 'package:weathernav/domain/failures/app_failure.dart';
 import 'package:weathernav/domain/models/place_suggestion.dart';
 import 'package:weathernav/presentation/providers/place_search_provider.dart';
 import 'package:weathernav/presentation/widgets/app_loading_indicator.dart';
+import 'package:weathernav/presentation/widgets/app_state_message.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
-  const SearchScreen({required this.title, super.key});
+  const SearchScreen({required this.title, this.initialQuery, super.key});
   final String title;
+  final String? initialQuery;
 
   @override
   ConsumerState<SearchScreen> createState() => _SearchScreenState();
@@ -17,13 +19,28 @@ class SearchScreen extends ConsumerStatefulWidget {
 
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   final _controller = TextEditingController();
+  final _focusNode = FocusNode();
   Timer? _debounce;
   String _query = '';
+
+  @override
+  void initState() {
+    super.initState();
+    final q = widget.initialQuery?.trim();
+    if (q != null && q.isNotEmpty) {
+      _controller.text = q;
+      _query = q;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focusNode.requestFocus();
+    });
+  }
 
   @override
   void dispose() {
     _debounce?.cancel();
     _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -49,6 +66,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           children: [
             TextField(
               controller: _controller,
+              focusNode: _focusNode,
+              autofocus: true,
               onChanged: _onChanged,
               textInputAction: TextInputAction.search,
               decoration: InputDecoration(
@@ -64,65 +83,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               child: resultsAsync.when(
                 data: (items) {
                   if (_query.isEmpty) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              LucideIcons.search,
-                              size: 44,
-                              color: scheme.onSurfaceVariant,
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Recherche de destination',
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.w800),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              'Tape un lieu (ex: “Paris”, “Gare de Lyon”).',
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(color: scheme.onSurfaceVariant),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
+                    return const AppStateMessage(
+                      icon: LucideIcons.search,
+                      title: 'Recherche de destination',
+                      message: 'Tape un lieu (ex: “Paris”, “Gare de Lyon”).',
                     );
                   }
                   if (items.isEmpty) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              LucideIcons.mapPinOff,
-                              size: 44,
-                              color: scheme.onSurfaceVariant,
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Aucun résultat',
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.w800),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              'Essaie avec une autre orthographe ou ajoute une ville/pays.',
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(color: scheme.onSurfaceVariant),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
+                    return const AppStateMessage(
+                      icon: LucideIcons.mapPinOff,
+                      title: 'Aucun résultat',
+                      message:
+                          'Essaie avec une autre orthographe ou ajoute une ville/pays.',
                     );
                   }
 
@@ -157,34 +129,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 loading: () => const Center(child: AppLoadingIndicator()),
                 error: (err, st) {
                   final msg = err is AppFailure ? err.message : err.toString();
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            LucideIcons.alertTriangle,
-                            size: 44,
-                            color: scheme.error,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Erreur de recherche',
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w800),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            msg,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: scheme.onSurfaceVariant),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
+                  return AppStateMessage(
+                    icon: LucideIcons.alertTriangle,
+                    iconColor: scheme.error,
+                    title: 'Erreur de recherche',
+                    message: msg,
                   );
                 },
               ),

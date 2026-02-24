@@ -22,9 +22,25 @@ import 'package:weathernav/presentation/providers/trip_history_provider.dart';
 import 'package:weathernav/presentation/providers/weather_timeline_eta_provider.dart';
 import 'package:weathernav/presentation/widgets/weather_timeline.dart';
 import 'package:weathernav/presentation/widgets/app_loading_indicator.dart';
+import 'package:weathernav/presentation/widgets/app_state_message.dart';
+import 'package:weathernav/presentation/widgets/app_card.dart';
+import 'package:weathernav/presentation/widgets/app_snackbar.dart';
 
 class ItineraryScreen extends ConsumerStatefulWidget {
-  const ItineraryScreen({super.key});
+  const ItineraryScreen({
+    super.key,
+    this.from,
+    this.initialStartLat,
+    this.initialStartLng,
+    this.initialEndLat,
+    this.initialEndLng,
+  });
+
+  final String? from;
+  final double? initialStartLat;
+  final double? initialStartLng;
+  final double? initialEndLat;
+  final double? initialEndLng;
 
   @override
   ConsumerState<ItineraryScreen> createState() => _ItineraryScreenState();
@@ -36,13 +52,39 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
   final _endLatController = TextEditingController(text: '48.8049');
   final _endLngController = TextEditingController(text: '2.1204');
 
-  DateTime _departureTime = DateTime.now();
+  final DateTime _departureTime = DateTime.now();
   double _departureOffsetMinutes = 0;
 
   MapLibreMapController? _map;
   Line? _routeLine;
   Timer? _drawDebounce;
   String? _routeKey;
+
+  @override
+  void initState() {
+    super.initState();
+    final slat = widget.initialStartLat;
+    final slng = widget.initialStartLng;
+    final elat = widget.initialEndLat;
+    final elng = widget.initialEndLng;
+
+    if (slat != null && slng != null) {
+      _startLatController.text = slat.toStringAsFixed(6);
+      _startLngController.text = slng.toStringAsFixed(6);
+    }
+    if (elat != null && elng != null) {
+      _endLatController.text = elat.toStringAsFixed(6);
+      _endLngController.text = elng.toStringAsFixed(6);
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final hasStart =
+          widget.initialStartLat != null && widget.initialStartLng != null;
+      if (!hasStart && widget.from == 'home') {
+        _useCurrentLocationForStart();
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -84,8 +126,11 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
     required TextEditingController lat,
     required TextEditingController lng,
   }) async {
+    final q = (lat.text.trim().isNotEmpty && lng.text.trim().isNotEmpty)
+        ? '${lat.text.trim()},${lng.text.trim()}'
+        : '';
     final result = await context.push<PlaceSuggestion>(
-      '/search?title=${Uri.encodeComponent(title)}',
+      '/search?title=${Uri.encodeComponent(title)}&q=${Uri.encodeComponent(q)}',
     );
     if (result == null) return;
     lat.text = result.latitude.toStringAsFixed(6);
@@ -319,15 +364,16 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
                     alertsAsync.when(
                       data: (alerts) {
                         if (alerts.isEmpty) {
-                          return const Text(
-                            'Aucune alerte détectée pour ce départ.',
+                          return const AppStateMessage(
+                            icon: LucideIcons.shieldCheck,
+                            title: 'Aucune alerte',
+                            message: 'Aucune alerte détectée pour ce départ.',
+                            dense: true,
                           );
                         }
-                        return Card(
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppRadii.md),
-                          ),
+                        return AppCard(
+                          borderRadius: AppRadii.md,
+                          padding: EdgeInsets.zero,
                           child: Column(
                             children: alerts
                                 .map(
@@ -346,11 +392,23 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
                         final msg = err is AppFailure
                             ? err.message
                             : err.toString();
-                        return Text(
-                          msg,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium?.copyWith(color: scheme.error),
+                        return AppStateMessage(
+                          icon: LucideIcons.alertTriangle,
+                          iconColor: scheme.error,
+                          title: 'Erreur alertes',
+                          message: msg,
+                          dense: true,
+                          action: OutlinedButton(
+                            onPressed: () => ref.invalidate(
+                              routeAlertsProvider(
+                                WeatherTimelineEtaRequest(
+                                  route: route,
+                                  departureTime: departure,
+                                ),
+                              ),
+                            ),
+                            child: const Text('Réessayer'),
+                          ),
                         );
                       },
                     ),
@@ -375,11 +433,23 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
                         final msg = err is AppFailure
                             ? err.message
                             : err.toString();
-                        return Text(
-                          msg,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium?.copyWith(color: scheme.error),
+                        return AppStateMessage(
+                          icon: LucideIcons.cloudOff,
+                          iconColor: scheme.error,
+                          title: 'Erreur météo',
+                          message: msg,
+                          dense: true,
+                          action: OutlinedButton(
+                            onPressed: () => ref.invalidate(
+                              weatherTimelineEtaProvider(
+                                WeatherTimelineEtaRequest(
+                                  route: route,
+                                  departureTime: departure,
+                                ),
+                              ),
+                            ),
+                            child: const Text('Réessayer'),
+                          ),
                         );
                       },
                     ),
@@ -391,7 +461,7 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
                             onPressed: routeAsync.isLoading
                                 ? null
                                 : () => context.push(
-                                    '/guidance',
+                                    '/guidance?from=${widget.from ?? 'itinerary'}',
                                     extra: routeReq,
                                   ),
                             icon: const Icon(LucideIcons.navigation),
@@ -420,12 +490,9 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
                                       durationMinutes: route.durationMinutes,
                                       gpx: gpx,
                                     );
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Trajet sauvegardé dans l’historique.',
-                                        ),
-                                      ),
+                                    AppSnackbar.success(
+                                      context,
+                                      'Trajet sauvegardé dans l’historique.',
                                     );
                                   },
                             icon: const Icon(LucideIcons.save),
@@ -440,8 +507,10 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
                       child: OutlinedButton.icon(
                         onPressed: routeAsync.isLoading
                             ? null
-                            : () =>
-                                  context.push('/simulation', extra: routeReq),
+                            : () => context.push(
+                                '/simulation?from=${widget.from ?? 'itinerary'}',
+                                extra: routeReq,
+                              ),
                         icon: const Icon(LucideIcons.slidersHorizontal),
                         label: const Text('Ouvrir la simulation avancée'),
                       ),
@@ -457,21 +526,15 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
               ),
               error: (err, st) {
                 final msg = err is AppFailure ? err.message : err.toString();
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      msg,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(color: scheme.error),
-                    ),
-                    const SizedBox(height: 8),
-                    OutlinedButton(
-                      onPressed: () => ref.invalidate(routeProvider(routeReq)),
-                      child: const Text('Réessayer'),
-                    ),
-                  ],
+                return AppStateMessage(
+                  icon: LucideIcons.alertTriangle,
+                  iconColor: scheme.error,
+                  title: 'Erreur',
+                  message: msg,
+                  action: OutlinedButton(
+                    onPressed: () => ref.invalidate(routeProvider(routeReq)),
+                    child: const Text('Réessayer'),
+                  ),
                 );
               },
             ),
@@ -481,141 +544,104 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
   }
 
   Widget _buildPlacesCard(UserProfile profile) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadii.lg),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  LucideIcons.navigation,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Départ / Arrivée',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+    return AppCard(
+      borderRadius: AppRadii.lg,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                LucideIcons.navigation,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Départ / Arrivée',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                IconButton(
-                  onPressed: _useCurrentLocationForStart,
-                  tooltip: 'Utiliser ma position',
-                  icon: const Icon(LucideIcons.locateFixed),
-                ),
-                IconButton(
-                  onPressed: _swapStartEnd,
-                  tooltip: 'Inverser',
-                  icon: const Icon(LucideIcons.arrowLeftRight),
-                ),
-                Text(
-                  profile.name,
-                  style: Theme.of(context).textTheme.bodySmall,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _buildCoordinateRow(
-              icon: LucideIcons.mapPin,
-              title: 'Départ',
-              latController: _startLatController,
-              lngController: _startLngController,
-            ),
-            const SizedBox(height: 10),
-            _buildCoordinateRow(
-              icon: LucideIcons.navigation,
-              title: 'Arrivée',
-              latController: _endLatController,
-              lngController: _endLngController,
-            ),
-          ],
-        ),
+              ),
+              IconButton(
+                onPressed: _useCurrentLocationForStart,
+                tooltip: 'Utiliser ma position',
+                icon: const Icon(LucideIcons.locateFixed),
+              ),
+              IconButton(
+                onPressed: _swapStartEnd,
+                tooltip: 'Inverser',
+                icon: const Icon(LucideIcons.arrowLeftRight),
+              ),
+              Text(
+                profile.name,
+                style: Theme.of(context).textTheme.bodySmall,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildCoordinateRow(
+            icon: LucideIcons.mapPin,
+            title: 'Départ',
+            latController: _startLatController,
+            lngController: _startLngController,
+          ),
+          const SizedBox(height: 10),
+          _buildCoordinateRow(
+            icon: LucideIcons.navigation,
+            title: 'Arrivée',
+            latController: _endLatController,
+            lngController: _endLngController,
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildDepartureCard() {
     final dep = _effectiveDeparture();
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadii.lg),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  LucideIcons.clock,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  'Heure de départ',
+    return AppCard(
+      borderRadius: AppRadii.lg,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                LucideIcons.clock,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Départ',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const Spacer(),
-                TextButton(
-                  onPressed: () async {
-                    final pickedDate = await showDatePicker(
-                      context: context,
-                      initialDate: _departureTime,
-                      firstDate: DateTime.now().subtract(
-                        const Duration(days: 1),
-                      ),
-                      lastDate: DateTime.now().add(const Duration(days: 14)),
-                    );
-                    if (pickedDate == null) return;
-                    if (!context.mounted) return;
-                    final pickedTime = await showTimePicker(
-                      context: context,
-                      initialTime: TimeOfDay.fromDateTime(_departureTime),
-                    );
-                    if (pickedTime == null) return;
-                    setState(() {
-                      _departureTime = DateTime(
-                        pickedDate.year,
-                        pickedDate.month,
-                        pickedDate.day,
-                        pickedTime.hour,
-                        pickedTime.minute,
-                      );
-                      _departureOffsetMinutes = 0;
-                    });
-                  },
-                  child: const Text('Modifier'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '${dep.day.toString().padLeft(2, '0')}/${dep.month.toString().padLeft(2, '0')}/${dep.year} '
-              '${dep.hour.toString().padLeft(2, '0')}:${dep.minute.toString().padLeft(2, '0')}',
-            ),
-            Slider(
-              value: _departureOffsetMinutes.clamp(-720, 720),
-              min: -720,
-              max: 720,
-              divisions: 48,
-              label: '${(_departureOffsetMinutes / 60).round()}h',
-              onChanged: (v) => setState(() => _departureOffsetMinutes = v),
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '${dep.day.toString().padLeft(2, '0')}/${dep.month.toString().padLeft(2, '0')}/${dep.year} '
+            '${dep.hour.toString().padLeft(2, '0')}:${dep.minute.toString().padLeft(2, '0')}',
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+          const SizedBox(height: 12),
+          Slider(
+            value: _departureOffsetMinutes.clamp(-720, 720),
+            min: -720,
+            max: 720,
+            divisions: 48,
+            label: '${(_departureOffsetMinutes / 60).round()}h',
+            onChanged: (v) => setState(() => _departureOffsetMinutes = v),
+          ),
+        ],
       ),
     );
   }
@@ -628,31 +654,26 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
     final eta =
         '${arrivingAt.hour.toString().padLeft(2, '0')}:${arrivingAt.minute.toString().padLeft(2, '0')}';
     Widget card({required String title, required String value}) {
-      return Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.lg),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+      return AppCard(
+        borderRadius: AppRadii.lg,
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-              const SizedBox(height: 6),
-              Text(
-                value,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              value,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+            ),
+          ],
         ),
       );
     }

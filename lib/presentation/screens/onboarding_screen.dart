@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -11,6 +12,7 @@ import 'package:weathernav/presentation/providers/settings_repository_provider.d
 import 'package:weathernav/domain/models/user_profile.dart';
 import 'package:weathernav/core/theme/app_tokens.dart';
 import 'package:weathernav/presentation/widgets/app_surface.dart';
+import 'package:weathernav/presentation/widgets/app_snackbar.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -35,9 +37,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Future<void> _setCompletedAndExit() async {
     if (_finishing) return;
     if (_selectedProfile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Choisissez un profil pour continuer.')),
-      );
+      AppSnackbar.error(context, 'Choisissez un profil pour continuer.');
       return;
     }
 
@@ -46,10 +46,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       final profileOk = await _persistProfile(_selectedProfile!);
       if (!profileOk) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Impossible d'enregistrer votre profil. Réessayez."),
-          ),
+        AppSnackbar.error(
+          context,
+          "Impossible d'enregistrer votre profil. Réessayez.",
         );
         return;
       }
@@ -59,12 +58,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           .setCompleted(true);
       if (!ok) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              "Impossible d'enregistrer votre progression. Réessayez.",
-            ),
-          ),
+        AppSnackbar.error(
+          context,
+          "Impossible d'enregistrer votre progression. Réessayez.",
         );
         return;
       }
@@ -95,9 +91,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Future<void> _next() async {
     if (_finishing) return;
     if (_index == 1 && _selectedProfile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Choisissez un profil pour continuer.')),
-      );
+      AppSnackbar.error(context, 'Choisissez un profil pour continuer.');
       return;
     }
 
@@ -121,6 +115,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     if (_requestingPermissions) return;
     setState(() => _requestingPermissions = true);
     try {
+      if (kIsWeb) {
+        if (!mounted) return;
+        AppSnackbar.show(
+          context,
+          'Sur Web, le navigateur gère les permissions. Lance une action (centrer la carte) pour déclencher la demande. ',
+        );
+        return;
+      }
+
       await Permission.locationWhenInUse.request();
       await Permission.notification.request();
 
@@ -129,20 +132,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
       if (!mounted) return;
       if (location.isGranted && notif.isGranted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Permissions accordées.')));
+        AppSnackbar.success(context, 'Permissions accordées.');
       } else if (location.isPermanentlyDenied || notif.isPermanentlyDenied) {
-        final snackBar = SnackBar(
-          content: const Text(
-            'Permissions refusées. Vous pouvez les activer dans les paramètres.',
-          ),
-          action: SnackBarAction(
-            label: 'Paramètres',
-            onPressed: openAppSettings,
-          ),
+        AppSnackbar.errorAction(
+          context,
+          'Permissions refusées. Ouvre les réglages pour les activer.',
+          action: SnackBarAction(label: 'Réglages', onPressed: openAppSettings),
         );
-        ScaffoldMessenger.of(context).showSnackBar(snackBar);
       }
     } catch (e, st) {
       AppLogger.warn(

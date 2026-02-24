@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
@@ -20,7 +21,9 @@ import 'package:weathernav/presentation/providers/poi_provider.dart';
 import 'package:weathernav/presentation/providers/weather_grid_provider.dart';
 import 'package:weathernav/presentation/providers/map_style_provider.dart';
 import 'package:weathernav/presentation/widgets/profile_switcher.dart';
-import 'package:weathernav/presentation/widgets/app_surface.dart';
+import 'package:weathernav/presentation/widgets/app_card.dart';
+import 'package:weathernav/presentation/widgets/app_pill.dart';
+import 'package:weathernav/presentation/widgets/app_toggle_pill.dart';
 import 'package:weathernav/presentation/screens/home/home_weather_sheet.dart';
 import 'package:weathernav/presentation/screens/home/home_map_overlays_controller.dart';
 import 'package:weathernav/presentation/map/maplibre_camera_utils.dart';
@@ -52,6 +55,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   List<GridPointWeather> _lastGrid = const <GridPointWeather>[];
   List<Poi> _lastPois = const <Poi>[];
   int? _latestRadarTime;
+
+  PlaceSuggestion? _lastSearch;
 
   bool _centering = false;
 
@@ -98,6 +103,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       '/search?title=Destination',
     );
     if (result == null) return;
+
+    _lastSearch = result;
 
     final target = LatLng(result.latitude, result.longitude);
     final controller = mapController;
@@ -204,6 +211,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Future<void> _ensureLocationPermission() async {
     try {
+      if (kIsWeb) return;
       final status = await Permission.locationWhenInUse.status;
       if (status.isDenied || status.isRestricted) {
         await Permission.locationWhenInUse.request();
@@ -364,16 +372,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               right: 16,
               top: 110,
               child: IgnorePointer(
-                child: AppSurface(
+                child: AppCard(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 10,
                   ),
-                  color: scheme.surface.withOpacity(0.92),
-                  borderRadius: BorderRadius.circular(AppRadii.md),
-                  border: Border.all(
-                    color: Theme.of(context).dividerColor.withOpacity(0.35),
-                  ),
+                  backgroundColor: scheme.surface.withOpacity(0.92),
+                  borderColor: scheme.outlineVariant.withOpacity(0.6),
                   child: Text(
                     _buildOverlayStatusText(layers),
                     style: Theme.of(
@@ -392,49 +397,65 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             right: 16,
             child: Material(
               color: Colors.transparent,
-              child: InkWell(
-                onTap: _openSearch,
-                borderRadius: BorderRadius.circular(30),
-                child: AppSurface(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  color: scheme.surface,
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Theme.of(context).shadowColor.withOpacity(0.10),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                  child: Row(
-                    children: [
-                      Icon(LucideIcons.search, color: scheme.onSurfaceVariant),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          AppLocalizations.of(context)?.searchDestination ??
-                              'Rechercher',
-                          style: Theme.of(context).textTheme.bodyLarge
-                              ?.copyWith(color: scheme.onSurfaceVariant),
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () => _showProfileSwitcher(context),
-                        child: CircleAvatar(
-                          backgroundColor: scheme.primary.withOpacity(0.12),
-                          radius: 18,
-                          child: Icon(
-                            _getProfileIcon(activeProfile.type),
-                            size: 18,
-                            color: scheme.primary,
+              child: AppCard(
+                borderRadius: 30,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                backgroundColor: scheme.surface,
+                borderColor: scheme.outlineVariant.withOpacity(0.6),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: _openSearch,
+                        borderRadius: BorderRadius.circular(30),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: Row(
+                            children: [
+                              Icon(
+                                LucideIcons.search,
+                                color: scheme.onSurfaceVariant,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  AppLocalizations.of(
+                                        context,
+                                      )?.searchDestination ??
+                                      'Rechercher',
+                                  style: Theme.of(context).textTheme.bodyLarge
+                                      ?.copyWith(
+                                        color: scheme.onSurfaceVariant,
+                                      ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 12),
+                    InkWell(
+                      onTap: () => _showProfileSwitcher(context),
+                      borderRadius: BorderRadius.circular(999),
+                      child: AppPill(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
+                        backgroundColor: scheme.primary.withOpacity(0.10),
+                        borderColor: scheme.primary.withOpacity(0.18),
+                        child: Icon(
+                          _getProfileIcon(activeProfile.type),
+                          size: 18,
+                          color: scheme.primary,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -448,6 +469,52 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: _ActiveLayerChips(
               layers: layers,
               onToggle: (l) => layersNotifier.toggle(l),
+            ),
+          ),
+
+          Positioned(
+            top: 154,
+            left: 16,
+            right: 16,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  AppTogglePill(
+                    selected: false,
+                    onPressed: () {
+                      final d = _lastSearch;
+                      final end = d == null
+                          ? _debouncedCenter
+                          : LatLng(d.latitude, d.longitude);
+                      context.go(
+                        '/itinerary?from=home&endLat=${end.latitude}&endLng=${end.longitude}',
+                      );
+                    },
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(LucideIcons.navigation),
+                        SizedBox(width: 6),
+                        Text('Itinéraire'),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  AppTogglePill(
+                    selected: false,
+                    onPressed: () => context.go('/history'),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(LucideIcons.history),
+                        SizedBox(width: 6),
+                        Text('Historique'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -497,11 +564,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     required String tooltip,
     required VoidCallback onPressed,
   }) {
+    final scheme = Theme.of(context).colorScheme;
     return FloatingActionButton.small(
       tooltip: tooltip,
       onPressed: onPressed,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      foregroundColor: Theme.of(context).colorScheme.onSurface,
+      backgroundColor: scheme.surface,
+      foregroundColor: scheme.onSurface,
+      elevation: 0,
+      highlightElevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(999),
+        side: BorderSide(color: scheme.outlineVariant),
+      ),
       child: Icon(icon),
     );
   }
@@ -657,10 +731,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       runSpacing: 8,
                       children: PoiCategory.values.map((c) {
                         final selected = filter.categories.contains(c);
-                        return FilterChip(
+                        return AppTogglePill(
                           selected: selected,
-                          onSelected: (_) => notifier.toggleCategory(c),
-                          label: Text(_poiLabel(c)),
+                          onPressed: () => notifier.toggleCategory(c),
+                          child: Text(_poiLabel(c)),
                         );
                       }).toList(),
                     ),
@@ -754,11 +828,17 @@ class _ActiveLayerChips extends StatelessWidget {
         child: Row(
           children: [
             for (final l in enabled) ...[
-              FilterChip(
+              AppTogglePill(
                 selected: true,
-                onSelected: (_) => onToggle(l),
-                avatar: Icon(_icon(l), size: 16),
-                label: Text(_label(l)),
+                onPressed: () => onToggle(l),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(_icon(l)),
+                    const SizedBox(width: 6),
+                    Text(_label(l)),
+                  ],
+                ),
               ),
               const SizedBox(width: 8),
             ],

@@ -3,27 +3,100 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:weathernav/core/theme/app_tokens.dart';
 
 class AppTheme {
-  static const Color background = Color(0xFFF5F3EF);
-  static const Color backgroundDark = Color(0xFF1A1A1F);
-  static const Color primary = Color(0xFF2563EB);
-  static const Color secondary = Color(0xFF059669);
-  static const Color warning = Color(0xFFD97706);
+  static const Color ink = Color(0xFF101015);
+  static const Color blackInk = Color(0xFF1C1C1C);
+  static const Color paleAsh = Color(0xFFE5E5E5);
+  static const Color cream = Color(0xFFF1F0E1);
+  static const Color slateBlue = Color(0xFF506385);
+
+  static const Color accentBlue = Color(0xFFB9CBE4);
+  static const Color accentPink = Color(0xFFE7B9D6);
+
+  static const Color primary = slateBlue;
+  static const Color background = cream;
+  static const Color backgroundDark = ink;
+  static const Color cardBg = paleAsh;
+  static const Color cardBgDark = blackInk;
   static const Color danger = Color(0xFFDC2626);
-  static const Color textPrimary = Color(0xFF1C1C1E);
-  static const Color textSecondary = Color(0xFF6B7280);
-  static const Color cardBg = Color(0xFFFFFFFF);
-  static const Color cardBgDark = Color(0xFF1F1F24);
+
+  static ColorScheme _schemeLight() {
+    return const ColorScheme(
+      brightness: Brightness.light,
+      primary: primary,
+      onPrimary: ink,
+      primaryContainer: accentBlue,
+      onPrimaryContainer: ink,
+      secondary: accentPink,
+      onSecondary: ink,
+      secondaryContainer: accentPink,
+      onSecondaryContainer: ink,
+      tertiary: accentBlue,
+      onTertiary: ink,
+      tertiaryContainer: accentBlue,
+      onTertiaryContainer: ink,
+      error: danger,
+      onError: cream,
+      errorContainer: Color(0xFFFFDAD6),
+      onErrorContainer: Color(0xFF410002),
+      background: background,
+      onBackground: ink,
+      surface: cardBg,
+      onSurface: ink,
+      surfaceVariant: Color(0xFFD9D7CC),
+      onSurfaceVariant: Color(0xFF2C2C33),
+      outline: Color(0xFFB8B6AC),
+      outlineVariant: Color(0xFFD1CFC5),
+      shadow: Colors.black,
+      scrim: Colors.black,
+      inverseSurface: ink,
+      onInverseSurface: cream,
+      inversePrimary: accentBlue,
+      surfaceTint: primary,
+    );
+  }
+
+  static ColorScheme _schemeDark() {
+    return const ColorScheme(
+      brightness: Brightness.dark,
+      primary: primary,
+      onPrimary: cream,
+      primaryContainer: Color(0xFF2F3A4F),
+      onPrimaryContainer: cream,
+      secondary: accentPink,
+      onSecondary: ink,
+      secondaryContainer: Color(0xFF6A4C61),
+      onSecondaryContainer: cream,
+      tertiary: accentBlue,
+      onTertiary: ink,
+      tertiaryContainer: Color(0xFF3F5066),
+      onTertiaryContainer: cream,
+      error: danger,
+      onError: cream,
+      errorContainer: Color(0xFF93000A),
+      onErrorContainer: Color(0xFFFFDAD6),
+      background: backgroundDark,
+      onBackground: cream,
+      surface: cardBgDark,
+      onSurface: cream,
+      surfaceVariant: Color(0xFF22222A),
+      onSurfaceVariant: Color(0xFFC9C7BD),
+      outline: Color(0xFF8C8C96),
+      outlineVariant: Color(0xFF2E2E36),
+      shadow: Colors.black,
+      scrim: Colors.black,
+      inverseSurface: cream,
+      onInverseSurface: ink,
+      inversePrimary: accentBlue,
+      surfaceTint: primary,
+    );
+  }
 
   static ThemeData get light {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: primary,
-      background: background,
-      surface: cardBg,
-    );
+    final scheme = _schemeLight();
     return ThemeData(
       useMaterial3: true,
       materialTapTargetSize: MaterialTapTargetSize.padded,
-      scaffoldBackgroundColor: background,
+      scaffoldBackgroundColor: scheme.background,
       colorScheme: scheme,
       appBarTheme: const AppBarTheme(
         backgroundColor: Color(0x00000000),
@@ -35,7 +108,7 @@ class AppTheme {
         displayColor: scheme.onSurface,
       ),
       cardTheme: CardThemeData(
-        color: cardBg,
+        color: scheme.surface,
         elevation: 1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.xl),
@@ -88,28 +161,19 @@ class AppTheme {
         ),
       ),
       dividerTheme: DividerThemeData(
-        color: ColorScheme.fromSeed(
-          seedColor: primary,
-          background: background,
-          surface: cardBg,
-        ).outlineVariant,
+        color: scheme.outlineVariant,
         thickness: 1,
       ),
     );
   }
 
   static ThemeData get dark {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: primary,
-      brightness: Brightness.dark,
-      background: backgroundDark,
-      surface: cardBgDark,
-    );
+    final scheme = _schemeDark();
     return ThemeData(
       brightness: Brightness.dark,
       useMaterial3: true,
       materialTapTargetSize: MaterialTapTargetSize.padded,
-      scaffoldBackgroundColor: backgroundDark,
+      scaffoldBackgroundColor: scheme.background,
       colorScheme: scheme,
       appBarTheme: const AppBarTheme(
         backgroundColor: Color(0x00000000),
@@ -120,7 +184,7 @@ class AppTheme {
         ThemeData(brightness: Brightness.dark).textTheme,
       ).apply(bodyColor: scheme.onSurface, displayColor: scheme.onSurface),
       cardTheme: CardThemeData(
-        color: cardBgDark,
+        color: scheme.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.xl),

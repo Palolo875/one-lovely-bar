@@ -59,7 +59,18 @@ GoRouter router(Ref ref) {
             routes: [
               GoRoute(
                 path: '/itinerary',
-                builder: (context, state) => const ItineraryScreen(),
+                builder: (context, state) {
+                  final qp = state.uri.queryParameters;
+                  double? d(String k) => double.tryParse(qp[k] ?? '');
+
+                  return ItineraryScreen(
+                    from: qp['from'],
+                    initialStartLat: d('startLat'),
+                    initialStartLng: d('startLng'),
+                    initialEndLat: d('endLat'),
+                    initialEndLng: d('endLng'),
+                  );
+                },
               ),
             ],
           ),
@@ -84,30 +95,54 @@ GoRouter router(Ref ref) {
       GoRoute(path: '/planning', redirect: (context, state) => '/itinerary'),
       GoRoute(
         path: '/simulation',
-        builder: (context, state) {
+        redirect: (context, state) {
           final request = state.extra is RouteRequest
               ? state.extra! as RouteRequest
               : null;
-          return RouteSimulationScreen(request: request);
+          if (request == null) return '/itinerary';
+          return null;
+        },
+        pageBuilder: (context, state) {
+          final request = state.extra is RouteRequest
+              ? state.extra! as RouteRequest
+              : null;
+          final from = state.uri.queryParameters['from'];
+          return MaterialPage<void>(
+            key: state.pageKey,
+            child: RouteSimulationScreen(request: request, from: from),
+          );
         },
       ),
       GoRoute(
         path: '/search',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final title = state.uri.queryParameters['title'] ?? 'Rechercher';
-          return SearchScreen(title: title);
+          final q = state.uri.queryParameters['q'];
+          return MaterialPage<void>(
+            key: state.pageKey,
+            fullscreenDialog: true,
+            child: SearchScreen(title: title, initialQuery: q),
+          );
         },
       ),
       GoRoute(
         path: '/guidance',
-        builder: (context, state) {
+        redirect: (context, state) {
           final req = state.extra is RouteRequest
               ? state.extra! as RouteRequest
               : null;
-          if (req == null) {
-            return const ItineraryScreen();
-          }
-          return GuidanceScreen(request: req);
+          if (req == null) return '/itinerary';
+          return null;
+        },
+        pageBuilder: (context, state) {
+          final req = state.extra is RouteRequest
+              ? state.extra! as RouteRequest
+              : null;
+          final from = state.uri.queryParameters['from'];
+          return MaterialPage<void>(
+            key: state.pageKey,
+            child: GuidanceScreen(request: req!, from: from),
+          );
         },
       ),
     ],

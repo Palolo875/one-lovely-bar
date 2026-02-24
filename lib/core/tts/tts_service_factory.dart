@@ -1,3 +1,4 @@
 import 'package:weathernav/core/tts/tts_service.dart';
+import 'package:weathernav/core/tts/tts_service_factory_impl.dart' as impl;
 
-TtsService createTtsService() => throw UnsupportedError('Cannot create TtsService without dart:html or dart:io');
+TtsService createTtsService() => impl.createTtsService();

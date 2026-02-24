@@ -48,7 +48,7 @@ void main() {
         when(mockRepository.watch()).thenAnswer((_) => Stream.value(zones));
 
         // Act
-        final state = await notifier.build();
+        final state = await container.read(offlineZonesProvider.future);
 
         // Assert
         expect(state.zones, zones);
@@ -93,7 +93,7 @@ void main() {
         ).thenAnswer((_) => Stream.value(initialZones));
 
         // Initialize notifier
-        await notifier.build();
+        await container.read(offlineZonesProvider.future);
 
         // Act
         final result = await notifier.add(

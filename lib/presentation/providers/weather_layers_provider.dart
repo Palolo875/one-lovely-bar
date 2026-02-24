@@ -35,7 +35,7 @@ class WeatherLayersState {
 
 class WeatherLayersNotifier extends Notifier<WeatherLayersState> {
   late final SettingsRepository _settings;
-  late final bool _hasExplicitSelection;
+  bool _hasExplicitSelection = false;
 
   final List<StreamSubscription<void>> _subs = [];
   Timer? _persistDebounce;
@@ -102,6 +102,7 @@ class WeatherLayersNotifier extends Notifier<WeatherLayersState> {
   }
 
   void toggle(WeatherLayer layer) {
+    _hasExplicitSelection = true;
     final next = Set<WeatherLayer>.from(state.enabled);
     if (next.contains(layer)) {
       next.remove(layer);
@@ -117,6 +118,7 @@ class WeatherLayersNotifier extends Notifier<WeatherLayersState> {
   }
 
   void setEnabled(Set<WeatherLayer> enabled) {
+    _hasExplicitSelection = true;
     final next = enabled.length <= maxEnabled
         ? enabled
         : enabled.take(maxEnabled).toSet();
@@ -126,6 +128,7 @@ class WeatherLayersNotifier extends Notifier<WeatherLayersState> {
   }
 
   void moveLayer(WeatherLayer layer, int newIndex) {
+    _hasExplicitSelection = true;
     final enabled = state.enabled;
     if (!enabled.contains(layer)) return;
     final order = _normalizeOrder(state.order, enabled);
@@ -140,6 +143,7 @@ class WeatherLayersNotifier extends Notifier<WeatherLayersState> {
   }
 
   void setOpacity(WeatherLayer layer, double value) {
+    _hasExplicitSelection = true;
     final next = Map<WeatherLayer, double>.from(state.opacity);
     next[layer] = value.clamp(0.0, maxOpacity);
     state = state.copyWith(opacity: next);
@@ -147,6 +151,7 @@ class WeatherLayersNotifier extends Notifier<WeatherLayersState> {
   }
 
   void resetToProfile(UserProfile profile) {
+    _hasExplicitSelection = true;
     setEnabled(_layersFromProfile(profile));
   }
 

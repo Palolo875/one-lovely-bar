@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart' hide RouteData;
 import 'package:lucide_icons/lucide_icons.dart';
@@ -23,10 +24,13 @@ import 'package:weathernav/presentation/providers/weather_timeline_eta_provider.
 import 'package:weathernav/presentation/providers/map_style_provider.dart';
 import 'package:weathernav/core/theme/app_tokens.dart';
 import 'package:weathernav/presentation/widgets/app_loading_indicator.dart';
+import 'package:weathernav/presentation/widgets/app_state_message.dart';
+import 'package:weathernav/presentation/widgets/app_snackbar.dart';
 
 class GuidanceScreen extends ConsumerStatefulWidget {
-  const GuidanceScreen({required this.request, super.key});
+  const GuidanceScreen({required this.request, this.from, super.key});
   final RouteRequest request;
+  final String? from;
 
   @override
   ConsumerState<GuidanceScreen> createState() => _GuidanceScreenState();
@@ -54,7 +58,9 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
   void initState() {
     super.initState();
     _tts = createTtsService();
-    WakelockPlus.enable();
+    if (!kIsWeb) {
+      WakelockPlus.enable();
+    }
     _startLocationStream();
   }
 
@@ -151,7 +157,9 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
   void dispose() {
     _tts.dispose();
     _posSub?.cancel();
-    WakelockPlus.disable();
+    if (!kIsWeb) {
+      WakelockPlus.disable();
+    }
     super.dispose();
   }
 
@@ -308,9 +316,7 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
     final user = await _getUserLatLng();
     if (!mounted) return;
     if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Localisation indisponible.')),
-      );
+      AppSnackbar.error(context, 'Localisation indisponible.');
       return;
     }
 
@@ -335,9 +341,11 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
               return async.when(
                 data: (pois) {
                   if (pois.isEmpty) {
-                    return const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Text('Aucun abri trouvé autour de vous.'),
+                    return const AppStateMessage(
+                      icon: LucideIcons.umbrella,
+                      title: 'Aucun abri',
+                      message: 'Aucun abri trouvé autour de vous.',
+                      dense: true,
                     );
                   }
 
@@ -416,7 +424,7 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
                                           Future.microtask(() {
                                             if (mounted)
                                               context.pushReplacement(
-                                                '/guidance',
+                                                '/guidance?from=${widget.from ?? 'guidance'}',
                                                 extra: nextReq,
                                               );
                                           });
@@ -445,7 +453,7 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
                                           Future.microtask(() {
                                             if (mounted)
                                               context.push(
-                                                '/guidance',
+                                                '/guidance?from=${widget.from ?? 'guidance'}',
                                                 extra: nextReq,
                                               );
                                           });
@@ -479,9 +487,11 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
                 ),
                 error: (err, st) {
                   final msg = err is AppFailure ? err.message : err.toString();
-                  return Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(msg),
+                  return AppStateMessage(
+                    icon: LucideIcons.alertTriangle,
+                    title: 'Erreur',
+                    message: msg,
+                    dense: true,
                   );
                 },
               );
@@ -553,7 +563,14 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
                   Row(
                     children: [
                       IconButton.filledTonal(
-                        onPressed: () => Navigator.of(context).maybePop(),
+                        onPressed: () {
+                          final from = widget.from;
+                          if (from == 'home') {
+                            context.go('/');
+                            return;
+                          }
+                          context.go('/itinerary');
+                        },
                         tooltip: 'Fermer',
                         icon: const Icon(LucideIcons.x),
                       ),
