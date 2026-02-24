@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart' hide RouteData;
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:weathernav/core/logging/app_logger.dart';
+import 'package:weathernav/core/theme/app_tokens.dart';
 import 'package:weathernav/domain/failures/app_failure.dart';
 import 'package:weathernav/domain/models/place_suggestion.dart';
 import 'package:weathernav/domain/models/route_models.dart';
@@ -20,6 +21,7 @@ import 'package:weathernav/presentation/providers/route_provider.dart';
 import 'package:weathernav/presentation/providers/trip_history_provider.dart';
 import 'package:weathernav/presentation/providers/weather_timeline_eta_provider.dart';
 import 'package:weathernav/presentation/widgets/weather_timeline.dart';
+import 'package:weathernav/presentation/widgets/app_loading_indicator.dart';
 
 class ItineraryScreen extends ConsumerStatefulWidget {
   const ItineraryScreen({super.key});
@@ -203,6 +205,7 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final profile = ref.watch(profileProvider);
     final mapStyle = ref.watch(mapStyleProvider);
     final startLat = double.tryParse(_startLatController.text.trim());
@@ -232,11 +235,7 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
         : ref.watch(routeProvider(routeReq));
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Itinéraire'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Itinéraire')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -247,7 +246,7 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
           SizedBox(
             height: 220,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(AppRadii.lg),
               child: MapLibreMap(
                 onMapCreated: (c) => _map = c,
                 initialCameraPosition: const CameraPosition(
@@ -263,8 +262,17 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
           ),
           const SizedBox(height: 12),
           if (routeReq == null || routeAsync == null)
-            const Text(
-              'Renseignez un départ et une arrivée pour calculer un itinéraire.',
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Center(
+                child: Text(
+                  'Renseignez un départ et une arrivée pour calculer un itinéraire.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
             )
           else
             routeAsync.when(
@@ -318,7 +326,7 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
                         return Card(
                           elevation: 0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(AppRadii.md),
                           ),
                           child: Column(
                             children: alerts
@@ -338,7 +346,12 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
                         final msg = err is AppFailure
                             ? err.message
                             : err.toString();
-                        return Text(msg);
+                        return Text(
+                          msg,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.copyWith(color: scheme.error),
+                        );
                       },
                     ),
                     const SizedBox(height: 12),
@@ -355,14 +368,19 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
                       loading: () => const Center(
                         child: Padding(
                           padding: EdgeInsets.all(12),
-                          child: CircularProgressIndicator(),
+                          child: AppLoadingIndicator(),
                         ),
                       ),
                       error: (err, st) {
                         final msg = err is AppFailure
                             ? err.message
                             : err.toString();
-                        return Text(msg);
+                        return Text(
+                          msg,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.copyWith(color: scheme.error),
+                        );
                       },
                     ),
                     const SizedBox(height: 12),
@@ -434,7 +452,7 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
               loading: () => const Center(
                 child: Padding(
                   padding: EdgeInsets.all(16),
-                  child: CircularProgressIndicator(),
+                  child: AppLoadingIndicator(size: 32),
                 ),
               ),
               error: (err, st) {
@@ -442,7 +460,12 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(msg),
+                    Text(
+                      msg,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: scheme.error),
+                    ),
                     const SizedBox(height: 8),
                     OutlinedButton(
                       onPressed: () => ref.invalidate(routeProvider(routeReq)),
@@ -460,7 +483,9 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
   Widget _buildPlacesCard(UserProfile profile) {
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -522,7 +547,9 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
     final dep = _effectiveDeparture();
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -603,20 +630,26 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
     Widget card({required String title, required String value}) {
       return Card(
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+        ),
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+              Text(
+                title,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+              ),
               const SizedBox(height: 6),
               Text(
                 value,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
               ),
             ],
           ),
@@ -669,7 +702,7 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadii.md),
         border: Border.all(
           color: Theme.of(context).dividerColor.withOpacity(0.25),
         ),
@@ -681,7 +714,12 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> {
             children: [
               Icon(icon, size: 18),
               const SizedBox(width: 10),
-              Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+              Text(
+                title,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
+              ),
               const Spacer(),
               TextButton(
                 onPressed: () => _selectPlace(

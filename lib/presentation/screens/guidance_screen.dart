@@ -21,6 +21,8 @@ import 'package:weathernav/presentation/providers/poi_provider.dart';
 import 'package:weathernav/presentation/providers/route_alerts_provider.dart';
 import 'package:weathernav/presentation/providers/weather_timeline_eta_provider.dart';
 import 'package:weathernav/presentation/providers/map_style_provider.dart';
+import 'package:weathernav/core/theme/app_tokens.dart';
+import 'package:weathernav/presentation/widgets/app_loading_indicator.dart';
 
 class GuidanceScreen extends ConsumerStatefulWidget {
   const GuidanceScreen({required this.request, super.key});
@@ -473,7 +475,7 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
                 },
                 loading: () => const Padding(
                   padding: EdgeInsets.all(16),
-                  child: Center(child: CircularProgressIndicator()),
+                  child: Center(child: AppLoadingIndicator(size: 32)),
                 ),
                 error: (err, st) {
                   final msg = err is AppFailure ? err.message : err.toString();
@@ -552,21 +554,27 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
                     children: [
                       IconButton.filledTonal(
                         onPressed: () => Navigator.of(context).maybePop(),
+                        tooltip: 'Fermer',
                         icon: const Icon(LucideIcons.x),
                       ),
                       const Spacer(),
                       IconButton.filledTonal(
                         onPressed: _showShelters,
+                        tooltip: 'Trouver des abris',
                         icon: const Icon(LucideIcons.umbrella),
                       ),
                       const SizedBox(width: 8),
                       IconButton.filledTonal(
                         onPressed: _centering ? null : _centerOnUser,
+                        tooltip: _followUser
+                            ? 'Suivi activé'
+                            : 'Centrer sur ma position',
                         icon: _centering
                             ? const SizedBox(
                                 width: 18,
                                 height: 18,
-                                child: CircularProgressIndicator(
+                                child: AppLoadingIndicator(
+                                  size: 18,
                                   strokeWidth: 2,
                                 ),
                               )
@@ -714,6 +722,9 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> {
                 final lines = items.map((e) => e.instruction).toList();
                 return FloatingActionButton(
                   onPressed: _speaking ? _stop : () => _speakAll(lines),
+                  tooltip: _speaking
+                      ? 'Arrêter la lecture'
+                      : 'Lire les instructions',
                   child: Icon(
                     _speaking ? LucideIcons.volumeX : LucideIcons.volume2,
                   ),
@@ -740,12 +751,13 @@ class _InfoBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface.withOpacity(0.92),
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: const [BoxShadow(blurRadius: 12, color: Colors.black26)],
+        color: scheme.surface.withOpacity(0.94),
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        boxShadow: AppShadows.soft(Theme.of(context).shadowColor),
       ),
       child: Row(
         children: [
@@ -780,23 +792,24 @@ class _AlertBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.orange.withOpacity(0.92),
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: const [BoxShadow(blurRadius: 12, color: Colors.black26)],
+        color: scheme.tertiaryContainer.withOpacity(0.96),
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        boxShadow: AppShadows.soft(Theme.of(context).shadowColor),
       ),
       child: Row(
         children: [
-          const Icon(LucideIcons.alertTriangle, color: Colors.black87),
+          Icon(LucideIcons.alertTriangle, color: scheme.onTertiaryContainer),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               text,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: Colors.black87),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: scheme.onTertiaryContainer,
+              ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -819,12 +832,13 @@ class _BottomStatsBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface.withOpacity(0.94),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [BoxShadow(blurRadius: 12, color: Colors.black26)],
+        color: scheme.surface.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        boxShadow: AppShadows.soft(Theme.of(context).shadowColor),
       ),
       child: Row(
         children: [

@@ -9,6 +9,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:weathernav/core/logging/app_logger.dart';
 import 'package:weathernav/domain/models/grid_point_weather.dart';
 import 'package:weathernav/domain/models/poi.dart';
+import 'package:weathernav/domain/models/place_suggestion.dart';
 import 'package:weathernav/domain/models/user_profile.dart';
 import 'package:weathernav/presentation/providers/profile_provider.dart';
 import 'package:weathernav/presentation/providers/current_weather_provider.dart';
@@ -19,9 +20,11 @@ import 'package:weathernav/presentation/providers/poi_provider.dart';
 import 'package:weathernav/presentation/providers/weather_grid_provider.dart';
 import 'package:weathernav/presentation/providers/map_style_provider.dart';
 import 'package:weathernav/presentation/widgets/profile_switcher.dart';
+import 'package:weathernav/presentation/widgets/app_surface.dart';
 import 'package:weathernav/presentation/screens/home/home_weather_sheet.dart';
 import 'package:weathernav/presentation/screens/home/home_map_overlays_controller.dart';
 import 'package:weathernav/presentation/map/maplibre_camera_utils.dart';
+import 'package:weathernav/core/theme/app_tokens.dart';
 import 'package:weathernav/l10n/app_localizations.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -88,6 +91,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _syncGridSubscription(layers: ref.read(weatherLayersProvider));
       _syncPoiSubscription(poiFilter: ref.read(poiFilterProvider));
     });
+  }
+
+  Future<void> _openSearch() async {
+    final result = await context.push<PlaceSuggestion>(
+      '/search?title=Destination',
+    );
+    if (result == null) return;
+
+    final target = LatLng(result.latitude, result.longitude);
+    final controller = mapController;
+    if (controller != null) {
+      try {
+        await MapLibreCameraUtils.animateCameraCompat(
+          controller,
+          CameraUpdate.newLatLngZoom(target, 13.5),
+        );
+      } catch (e, st) {
+        AppLogger.warn(
+          'Home: animateCamera to search result failed',
+          name: 'home',
+          error: e,
+          stackTrace: st,
+        );
+      }
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _mapCenter = target;
+      _debouncedCenter = _roundCenter(target);
+    });
+
+    final layers = ref.read(weatherLayersProvider);
+    _syncGridSubscription(layers: layers);
+    _syncPoiSubscription(poiFilter: ref.read(poiFilterProvider));
   }
 
   void _syncGridSubscription({required WeatherLayersState layers}) {
@@ -285,6 +323,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final activeProfile = ref.watch(profileProvider);
     final center = _debouncedCenter;
     final currentWeatherAsync = ref.watch(
@@ -325,19 +364,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               right: 16,
               top: 110,
               child: IgnorePointer(
-                child: Container(
+                child: AppSurface(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 10,
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.92),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.shade200),
+                  color: scheme.surface.withOpacity(0.92),
+                  borderRadius: BorderRadius.circular(AppRadii.md),
+                  border: Border.all(
+                    color: Theme.of(context).dividerColor.withOpacity(0.35),
                   ),
                   child: Text(
                     _buildOverlayStatusText(layers),
-                    style: const TextStyle(color: Colors.black87),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: scheme.onSurface),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -352,47 +393,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: () => context.go('/planning'),
+                onTap: _openSearch,
                 borderRadius: BorderRadius.circular(30),
-                child: Container(
+                child: AppSurface(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 8,
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(30),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
+                  color: scheme.surface,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(context).shadowColor.withOpacity(0.10),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                   child: Row(
                     children: [
-                      const Icon(LucideIcons.search, color: Colors.grey),
+                      Icon(LucideIcons.search, color: scheme.onSurfaceVariant),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           AppLocalizations.of(context)?.searchDestination ??
                               'Rechercher',
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 16,
-                          ),
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(color: scheme.onSurfaceVariant),
                         ),
                       ),
                       GestureDetector(
                         onTap: () => _showProfileSwitcher(context),
                         child: CircleAvatar(
-                          backgroundColor: Colors.blue.withOpacity(0.1),
+                          backgroundColor: scheme.primary.withOpacity(0.12),
                           radius: 18,
                           child: Icon(
                             _getProfileIcon(activeProfile.type),
                             size: 18,
-                            color: Colors.blue,
+                            color: scheme.primary,
                           ),
                         ),
                       ),
@@ -421,16 +458,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Column(
               children: [
                 _buildFloatingButton(
-                  LucideIcons.layers,
-                  () => _showLayersSheet(context),
+                  icon: LucideIcons.layers,
+                  tooltip: 'Couches météo',
+                  onPressed: () => _showLayersSheet(context),
                 ),
                 const SizedBox(height: 12),
                 _buildFloatingButton(
-                  LucideIcons.mapPin,
-                  () => _showPoiSheet(context),
+                  icon: LucideIcons.mapPin,
+                  tooltip: 'Points d’intérêt',
+                  onPressed: () => _showPoiSheet(context),
                 ),
                 const SizedBox(height: 12),
-                _buildFloatingButton(LucideIcons.crosshair, _centerOnUser),
+                _buildFloatingButton(
+                  icon: LucideIcons.crosshair,
+                  tooltip: 'Centrer sur ma position',
+                  onPressed: _centerOnUser,
+                ),
               ],
             ),
           ),
@@ -449,11 +492,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildFloatingButton(IconData icon, VoidCallback onPressed) {
+  Widget _buildFloatingButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onPressed,
+  }) {
     return FloatingActionButton.small(
+      tooltip: tooltip,
       onPressed: onPressed,
-      backgroundColor: Colors.white,
-      foregroundColor: Colors.black87,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      foregroundColor: Theme.of(context).colorScheme.onSurface,
       child: Icon(icon),
     );
   }
@@ -492,14 +540,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Couches météo',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     'Max 3 couches actives pour garder la carte lisible.',
-                    style: TextStyle(color: Colors.grey[700]),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Align(
@@ -585,9 +637,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Points d’intérêt',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   SwitchListTile(
@@ -633,7 +687,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(height: 8),
                     Text(
                       'Centre: ${_debouncedCenter.latitude.toStringAsFixed(4)}, ${_debouncedCenter.longitude.toStringAsFixed(4)}',
-                      style: const TextStyle(color: Colors.grey),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ],

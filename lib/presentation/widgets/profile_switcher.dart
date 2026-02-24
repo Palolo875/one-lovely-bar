@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:weathernav/core/theme/app_tokens.dart';
 import 'package:weathernav/domain/models/user_profile.dart';
 import 'package:weathernav/presentation/providers/profile_provider.dart';
 
@@ -10,6 +11,7 @@ class ProfileSwitcher extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final activeProfile = ref.watch(profileProvider);
+    final scheme = Theme.of(context).colorScheme;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -25,23 +27,27 @@ class ProfileSwitcher extends ConsumerWidget {
                 ref.read(profileProvider.notifier).setProfileByType(type),
             child: Column(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: isActive ? Colors.blue : Colors.grey[100],
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Icon(
-                    _getIcon(type),
-                    color: isActive ? Colors.white : Colors.black87,
+                Tooltip(
+                  message: _getName(type),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? scheme.primary
+                          : scheme.surfaceVariant.withOpacity(0.55),
+                      borderRadius: BorderRadius.circular(AppRadii.md),
+                    ),
+                    child: Icon(
+                      _getIcon(type),
+                      color: isActive ? scheme.onPrimary : scheme.onSurface,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   _getName(type),
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
                   ),
                   textAlign: TextAlign.center,
                 ),

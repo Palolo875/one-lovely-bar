@@ -8,7 +8,6 @@ import 'package:weathernav/presentation/screens/history_screen.dart';
 import 'package:weathernav/presentation/screens/home_screen.dart';
 import 'package:weathernav/presentation/screens/itinerary_screen.dart';
 import 'package:weathernav/presentation/screens/onboarding_screen.dart';
-import 'package:weathernav/presentation/screens/planning_screen.dart';
 import 'package:weathernav/presentation/screens/profile_screen.dart';
 import 'package:weathernav/presentation/screens/route_simulation_screen.dart';
 import 'package:weathernav/presentation/screens/search_screen.dart';
@@ -67,8 +66,8 @@ GoRouter router(Ref ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/planning',
-                builder: (context, state) => const PlanningScreen(),
+                path: '/history',
+                builder: (context, state) => const HistoryScreen(),
               ),
             ],
           ),
@@ -82,6 +81,7 @@ GoRouter router(Ref ref) {
           ),
         ],
       ),
+      GoRoute(path: '/planning', redirect: (context, state) => '/itinerary'),
       GoRoute(
         path: '/simulation',
         builder: (context, state) {
@@ -105,14 +105,10 @@ GoRouter router(Ref ref) {
               ? state.extra! as RouteRequest
               : null;
           if (req == null) {
-            return const PlanningScreen();
+            return const ItineraryScreen();
           }
           return GuidanceScreen(request: req);
         },
-      ),
-      GoRoute(
-        path: '/history',
-        builder: (context, state) => const HistoryScreen(),
       ),
     ],
   );

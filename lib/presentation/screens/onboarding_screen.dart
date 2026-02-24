@@ -9,6 +9,8 @@ import 'package:weathernav/presentation/providers/settings_provider.dart';
 import 'package:weathernav/presentation/providers/profile_provider.dart';
 import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
 import 'package:weathernav/domain/models/user_profile.dart';
+import 'package:weathernav/core/theme/app_tokens.dart';
+import 'package:weathernav/presentation/widgets/app_surface.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -45,16 +47,24 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       if (!profileOk) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Impossible d'enregistrer votre profil. Réessayez.")),
+          const SnackBar(
+            content: Text("Impossible d'enregistrer votre profil. Réessayez."),
+          ),
         );
         return;
       }
 
-      final ok = await ref.read(onboardingCompletedProvider.notifier).setCompleted(true);
+      final ok = await ref
+          .read(onboardingCompletedProvider.notifier)
+          .setCompleted(true);
       if (!ok) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Impossible d'enregistrer votre progression. Réessayez.")),
+          const SnackBar(
+            content: Text(
+              "Impossible d'enregistrer votre progression. Réessayez.",
+            ),
+          ),
         );
         return;
       }
@@ -72,7 +82,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       await settings.put(SettingsKeys.primaryProfileType, type.name);
       return true;
     } catch (e, st) {
-      AppLogger.warn('Onboarding: failed to persist profile type', name: 'onboarding', error: e, stackTrace: st);
+      AppLogger.warn(
+        'Onboarding: failed to persist profile type',
+        name: 'onboarding',
+        error: e,
+        stackTrace: st,
+      );
       return false;
     }
   }
@@ -87,7 +102,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
 
     if (_index < 2) {
-      await _controller.nextPage(duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
+      await _controller.nextPage(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
       return;
     }
 
@@ -111,12 +129,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
       if (!mounted) return;
       if (location.isGranted && notif.isGranted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Permissions accordées.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Permissions accordées.')));
       } else if (location.isPermanentlyDenied || notif.isPermanentlyDenied) {
         final snackBar = SnackBar(
-          content: const Text('Permissions refusées. Vous pouvez les activer dans les paramètres.'),
+          content: const Text(
+            'Permissions refusées. Vous pouvez les activer dans les paramètres.',
+          ),
           action: SnackBarAction(
             label: 'Paramètres',
             onPressed: openAppSettings,
@@ -125,7 +145,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ScaffoldMessenger.of(context).showSnackBar(snackBar);
       }
     } catch (e, st) {
-      AppLogger.warn('Onboarding: permission request failed', name: 'onboarding', error: e, stackTrace: st);
+      AppLogger.warn(
+        'Onboarding: permission request failed',
+        name: 'onboarding',
+        error: e,
+        stackTrace: st,
+      );
     }
     if (mounted) setState(() => _requestingPermissions = false);
   }
@@ -136,13 +161,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   List<ProfileType> get _profiles => const [
-        ProfileType.cyclist,
-        ProfileType.hiker,
-        ProfileType.driver,
-        ProfileType.nautical,
-        ProfileType.paraglider,
-        ProfileType.camper,
-      ];
+    ProfileType.cyclist,
+    ProfileType.hiker,
+    ProfileType.driver,
+    ProfileType.nautical,
+    ProfileType.paraglider,
+    ProfileType.camper,
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -173,7 +198,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 children: [
                   _Slide(
                     title: 'Votre météo, sur votre chemin',
-                    subtitle: 'Découvrez la météo exactement là où vous serez, au bon moment.',
+                    subtitle:
+                        'Découvrez la météo exactement là où vous serez, au bon moment.',
                     icon: LucideIcons.mapPin,
                   ),
                   _ProfileSlide(
@@ -209,8 +235,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 }
 
 class _Slide extends StatelessWidget {
-
-  const _Slide({required this.title, required this.subtitle, required this.icon});
+  const _Slide({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+  });
   final String title;
   final String subtitle;
   final IconData icon;
@@ -227,24 +256,28 @@ class _Slide extends StatelessWidget {
           const SizedBox(height: 24),
           Text(
             title,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 12),
-          Text(
-            subtitle,
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
+          Text(subtitle, style: Theme.of(context).textTheme.bodyLarge),
           const Spacer(),
-          Container(
+          SizedBox(
             height: 200,
             width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              color: Theme.of(context).colorScheme.surface,
-              border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
-            ),
-            child: Center(
-              child: Icon(LucideIcons.cloudRain, size: 48, color: Theme.of(context).colorScheme.primary),
+            child: AppSurface(
+              borderRadius: BorderRadius.circular(AppRadii.xl),
+              border: Border.all(
+                color: Theme.of(context).dividerColor.withOpacity(0.2),
+              ),
+              child: Center(
+                child: Icon(
+                  LucideIcons.cloudRain,
+                  size: 48,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
             ),
           ),
         ],
@@ -254,8 +287,11 @@ class _Slide extends StatelessWidget {
 }
 
 class _ProfileSlide extends StatelessWidget {
-
-  const _ProfileSlide({required this.profiles, required this.selected, required this.onSelect});
+  const _ProfileSlide({
+    required this.profiles,
+    required this.selected,
+    required this.onSelect,
+  });
   final List<ProfileType> profiles;
   final ProfileType? selected;
   final ValueChanged<ProfileType> onSelect;
@@ -308,7 +344,9 @@ class _ProfileSlide extends StatelessWidget {
           const SizedBox(height: 24),
           Text(
             'Choisissez votre profil',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 12),
           Text(
@@ -326,25 +364,38 @@ class _ProfileSlide extends StatelessWidget {
                 final isSelected = selected == p;
                 return InkWell(
                   onTap: () => onSelect(p),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(AppRadii.lg),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      color: isSelected ? Theme.of(context).colorScheme.primary.withOpacity(0.12) : Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(AppRadii.lg),
+                      color: isSelected
+                          ? Theme.of(
+                              context,
+                            ).colorScheme.primary.withOpacity(0.12)
+                          : Theme.of(context).colorScheme.surface,
                       border: Border.all(
-                        color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).dividerColor.withOpacity(0.25),
+                        color: isSelected
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).dividerColor.withOpacity(0.25),
                       ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(_icon(p), size: 28, color: isSelected ? Theme.of(context).colorScheme.primary : null),
+                        Icon(
+                          _icon(p),
+                          size: 28,
+                          color: isSelected
+                              ? Theme.of(context).colorScheme.primary
+                              : null,
+                        ),
                         const Spacer(),
                         Text(
                           _label(p),
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -365,7 +416,6 @@ class _ProfileSlide extends StatelessWidget {
 }
 
 class _PermissionsSlide extends StatelessWidget {
-
   const _PermissionsSlide({required this.requesting, required this.onRequest});
   final bool requesting;
   final VoidCallback onRequest;
@@ -380,7 +430,9 @@ class _PermissionsSlide extends StatelessWidget {
           const SizedBox(height: 24),
           Text(
             'Permissions',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 12),
           Text(
@@ -396,16 +448,21 @@ class _PermissionsSlide extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          Container(
+          SizedBox(
             height: 200,
             width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              color: Theme.of(context).colorScheme.surface,
-              border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
-            ),
-            child: Center(
-              child: Icon(LucideIcons.bell, size: 48, color: Theme.of(context).colorScheme.primary),
+            child: AppSurface(
+              borderRadius: BorderRadius.circular(AppRadii.xl),
+              border: Border.all(
+                color: Theme.of(context).dividerColor.withOpacity(0.2),
+              ),
+              child: Center(
+                child: Icon(
+                  LucideIcons.bell,
+                  size: 48,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
             ),
           ),
         ],

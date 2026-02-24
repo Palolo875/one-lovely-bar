@@ -12,6 +12,8 @@ import 'package:weathernav/presentation/providers/route_provider.dart';
 import 'package:weathernav/presentation/providers/trip_history_provider.dart';
 import 'package:weathernav/presentation/providers/weather_timeline_eta_provider.dart';
 import 'package:weathernav/presentation/widgets/weather_timeline.dart';
+import 'package:weathernav/core/theme/app_tokens.dart';
+import 'package:weathernav/presentation/widgets/app_loading_indicator.dart';
 
 class RouteSimulationScreen extends ConsumerStatefulWidget {
   const RouteSimulationScreen({super.key, this.request});
@@ -52,6 +54,7 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final profile = ref.watch(profileProvider);
 
     final request = widget.request;
@@ -74,11 +77,9 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Météo sur le trajet'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         actions: [
           TextButton(
-            onPressed: () => context.go('/planning'),
+            onPressed: () => context.go('/itinerary'),
             child: const Text('Replanifier'),
           ),
         ],
@@ -133,7 +134,7 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
                   Card(
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(AppRadii.md),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -142,28 +143,33 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
                         children: [
                           Text(
                             profile.name,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w800),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             'Distance: ${route.distanceKm.toStringAsFixed(1)} km',
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
                           Text(
                             'Durée: ${route.durationMinutes.toStringAsFixed(0)} min',
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
-                          Text('Points: ${route.points.length}'),
+                          Text(
+                            'Points: ${route.points.length}',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
                           const SizedBox(height: 12),
-                          const Text(
+                          Text(
                             'Heure de départ',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             '${departure.day.toString().padLeft(2, '0')}/${departure.month.toString().padLeft(2, '0')}/${departure.year} '
                             '${departure.hour.toString().padLeft(2, '0')}:${departure.minute.toString().padLeft(2, '0')}',
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
                           Slider(
                             value: _departureOffsetMinutes.clamp(-720, 720),
@@ -177,9 +183,11 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
                           const SizedBox(height: 12),
                           Text(
                             'Départ: ${effectiveRequest.startLat.toStringAsFixed(5)}, ${effectiveRequest.startLng.toStringAsFixed(5)}',
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
                           Text(
                             'Arrivée: ${effectiveRequest.endLat.toStringAsFixed(5)}, ${effectiveRequest.endLng.toStringAsFixed(5)}',
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
                           const SizedBox(height: 12),
                           SizedBox(
@@ -218,9 +226,11 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'Alertes',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   alertsAsync.when(
@@ -229,7 +239,7 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
                         return Card(
                           elevation: 0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(AppRadii.md),
                           ),
                           child: const Padding(
                             padding: EdgeInsets.all(16),
@@ -243,7 +253,7 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
                       return Card(
                         elevation: 0,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(AppRadii.md),
                         ),
                         child: Column(
                           children: alerts
@@ -257,26 +267,31 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
                         ),
                       );
                     },
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
+                    loading: () => const Center(child: AppLoadingIndicator()),
                     error: (err, st) {
                       final msg = err is AppFailure
                           ? err.message
                           : err.toString();
-                      return Text('Erreur alertes: $msg');
+                      return Text(
+                        'Erreur alertes: $msg',
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.copyWith(color: scheme.error),
+                      );
                     },
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'Timeline météo (échantillonnage du trajet)',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   weatherAsync.when(
                     data: (conditions) =>
                         WeatherTimeline(conditions: conditions),
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
+                    loading: () => const Center(child: AppLoadingIndicator()),
                     error: (err, st) {
                       final msg = err is AppFailure
                           ? err.message
@@ -284,7 +299,11 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Erreur météo: $msg'),
+                          Text(
+                            'Erreur météo: $msg',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: scheme.error),
+                          ),
                           const SizedBox(height: 8),
                           OutlinedButton(
                             onPressed: () => ref.invalidate(
@@ -302,15 +321,17 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
                     },
                   ),
                   const SizedBox(height: 24),
-                  const Text(
+                  Text(
                     'Aperçu des points',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Card(
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(AppRadii.md),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -321,7 +342,7 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton(
-                      onPressed: () => context.go('/planning'),
+                      onPressed: () => context.go('/itinerary'),
                       child: const Text('Modifier le trajet'),
                     ),
                   ),
@@ -329,13 +350,18 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
               ),
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const Center(child: AppLoadingIndicator(size: 32)),
           error: (err, st) {
             final msg = err is AppFailure ? err.message : err.toString();
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Erreur routing: $msg'),
+                Text(
+                  'Erreur routing: $msg',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: scheme.error),
+                ),
                 const SizedBox(height: 12),
                 OutlinedButton(
                   onPressed: () =>
@@ -344,8 +370,8 @@ class _RouteSimulationScreenState extends ConsumerState<RouteSimulationScreen> {
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton(
-                  onPressed: () => context.go('/planning'),
-                  child: const Text('Retour à la planification'),
+                  onPressed: () => context.go('/itinerary'),
+                  child: const Text('Retour à l’itinéraire'),
                 ),
               ],
             );

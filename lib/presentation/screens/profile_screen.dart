@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:weathernav/core/logging/app_logger.dart';
+import 'package:weathernav/core/theme/app_tokens.dart';
 import 'package:weathernav/domain/models/user_profile.dart';
 import 'package:weathernav/presentation/providers/alert_thresholds_provider.dart';
 import 'package:weathernav/presentation/providers/offline_zones_provider.dart';
@@ -13,6 +14,7 @@ import 'package:weathernav/presentation/providers/settings_provider.dart';
 import 'package:weathernav/presentation/providers/weather_layers_provider.dart';
 import 'package:weathernav/presentation/providers/profile_provider.dart';
 import 'package:weathernav/presentation/providers/map_style_provider.dart';
+import 'package:weathernav/presentation/widgets/app_loading_indicator.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -46,18 +48,14 @@ class ProfileScreen extends ConsumerWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profil & paramètres'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Profil & paramètres')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Card(
             elevation: 0,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(AppRadii.lg),
             ),
             child: ListTile(
               leading: const Icon(LucideIcons.user),
@@ -82,7 +80,7 @@ class ProfileScreen extends ConsumerWidget {
           Card(
             elevation: 0,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(AppRadii.lg),
             ),
             child: Column(
               children: [
@@ -130,7 +128,7 @@ class ProfileScreen extends ConsumerWidget {
           Card(
             elevation: 0,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(AppRadii.lg),
             ),
             child: Column(
               children: [
@@ -186,7 +184,7 @@ class ProfileScreen extends ConsumerWidget {
           Card(
             elevation: 0,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(AppRadii.lg),
             ),
             child: Column(
               children: [
@@ -243,7 +241,7 @@ class ProfileScreen extends ConsumerWidget {
           Card(
             elevation: 0,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(AppRadii.lg),
             ),
             child: Column(
               children: [
@@ -377,7 +375,7 @@ class ProfileScreen extends ConsumerWidget {
           Card(
             elevation: 0,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(AppRadii.lg),
             ),
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -445,7 +443,7 @@ class ProfileScreen extends ConsumerWidget {
           Card(
             elevation: 0,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(AppRadii.lg),
             ),
             child: Column(
               children: [
@@ -486,7 +484,7 @@ class ProfileScreen extends ConsumerWidget {
                 offlineZonesAsync.when(
                   loading: () => const Padding(
                     padding: EdgeInsets.all(16),
-                    child: Center(child: CircularProgressIndicator()),
+                    child: Center(child: AppLoadingIndicator(size: 32)),
                   ),
                   error: (error, stack) => Padding(
                     padding: const EdgeInsets.all(16),
@@ -495,9 +493,10 @@ class ProfileScreen extends ConsumerWidget {
                       children: [
                         Text(
                           'Erreur: ${error}',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium?.copyWith(color: Colors.red),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.error,
+                              ),
                         ),
                         const SizedBox(height: 8),
                         ElevatedButton(
@@ -533,7 +532,8 @@ class ProfileScreen extends ConsumerWidget {
                                       ? const SizedBox(
                                           width: 24,
                                           height: 24,
-                                          child: CircularProgressIndicator(
+                                          child: AppLoadingIndicator(
+                                            size: 24,
                                             strokeWidth: 2,
                                           ),
                                         )
@@ -585,7 +585,7 @@ class ProfileScreen extends ConsumerWidget {
           Card(
             elevation: 0,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(AppRadii.lg),
             ),
             child: const ListTile(
               leading: Icon(LucideIcons.shield),
@@ -616,7 +616,9 @@ Future<void> _pickOne(
             ListTile(
               title: Text(
                 title,
-                style: const TextStyle(fontWeight: FontWeight.w700),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
               ),
             ),
             for (final v in values)
@@ -648,9 +650,11 @@ class _ProfilePickerSheet extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Profil principal',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 12),
             Wrap(
@@ -694,7 +698,12 @@ class _ThresholdSlider extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+        Text(
+          title,
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
+        ),
         Row(
           children: [
             Expanded(
@@ -851,7 +860,9 @@ class _AddOfflineZoneSheetState extends State<_AddOfflineZoneSheet> {
             const SizedBox(height: 10),
             Text(
               'Rayon: ${_radiusKm.toStringAsFixed(0)} km',
-              style: const TextStyle(fontWeight: FontWeight.w700),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
             ),
             Slider(
               value: _radiusKm,

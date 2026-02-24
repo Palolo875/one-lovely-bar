@@ -27,8 +27,8 @@ class AppShell extends StatelessWidget {
             label: 'Itinéraire',
           ),
           NavigationDestination(
-            icon: Icon(LucideIcons.calendar),
-            label: 'Planifier',
+            icon: Icon(LucideIcons.history),
+            label: 'Historique',
           ),
           NavigationDestination(icon: Icon(LucideIcons.user), label: 'Profil'),
         ],

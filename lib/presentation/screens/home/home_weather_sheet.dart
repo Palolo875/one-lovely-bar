@@ -8,10 +8,15 @@ import 'package:weathernav/domain/models/user_profile.dart';
 import 'package:weathernav/domain/models/weather_condition.dart';
 import 'package:weathernav/presentation/providers/cache_repository_provider.dart';
 import 'package:weathernav/presentation/providers/settings_repository_provider.dart';
+import 'package:weathernav/core/theme/app_tokens.dart';
 
 class HomePersistentWeatherSheet extends ConsumerWidget {
   const HomePersistentWeatherSheet({
-    required this.currentWeather, required this.forecast, required this.profile, required this.center, super.key,
+    required this.currentWeather,
+    required this.forecast,
+    required this.profile,
+    required this.center,
+    super.key,
   });
 
   final AsyncValue<WeatherCondition> currentWeather;
@@ -50,7 +55,9 @@ class HomePersistentWeatherSheet extends ConsumerWidget {
   List<WeatherCondition> _nextHours(List<WeatherCondition> items, int hours) {
     final now = DateTime.now();
     final future = items
-        .where((e) => e.timestamp.isAfter(now.subtract(const Duration(minutes: 1))))
+        .where(
+          (e) => e.timestamp.isAfter(now.subtract(const Duration(minutes: 1))),
+        )
         .toList();
     future.sort((a, b) => a.timestamp.compareTo(b.timestamp));
     if (future.length <= hours) return future;
@@ -86,7 +93,9 @@ class HomePersistentWeatherSheet extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
+        border: Border.all(
+          color: Theme.of(context).dividerColor.withOpacity(0.2),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,10 +104,9 @@ class HomePersistentWeatherSheet extends ConsumerWidget {
           const SizedBox(height: 6),
           Text(
             value,
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
         ],
       ),
@@ -136,7 +144,9 @@ class HomePersistentWeatherSheet extends ConsumerWidget {
         return Material(
           elevation: 12,
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(AppRadii.sheet),
+          ),
           child: ListView(
             controller: scrollController,
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
@@ -146,8 +156,10 @@ class HomePersistentWeatherSheet extends ConsumerWidget {
                   width: 44,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurfaceVariant.withOpacity(0.35),
+                    borderRadius: BorderRadius.circular(AppRadii.sm),
                   ),
                 ),
               ),
@@ -170,9 +182,7 @@ class HomePersistentWeatherSheet extends ConsumerWidget {
                           children: [
                             Text(
                               '${w.temperature.round()}°',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .displayLarge
+                              style: Theme.of(context).textTheme.displayLarge
                                   ?.copyWith(
                                     fontSize: 72,
                                     height: 0.9,
@@ -182,9 +192,7 @@ class HomePersistentWeatherSheet extends ConsumerWidget {
                             const SizedBox(height: 4),
                             Text(
                               _conditionLabel(w.weatherCode),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
+                              style: Theme.of(context).textTheme.titleMedium
                                   ?.copyWith(fontWeight: FontWeight.w700),
                             ),
                             const SizedBox(height: 2),
@@ -195,17 +203,21 @@ class HomePersistentWeatherSheet extends ConsumerWidget {
                           ],
                         ),
                       ),
-                      Text(_hhmm(w.timestamp),
-                          style: Theme.of(context).textTheme.bodySmall),
+                      Text(
+                        _hhmm(w.timestamp),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
                       if (cachedAt != null)
                         Padding(
                           padding: const EdgeInsets.only(left: 10, top: 2),
                           child: Text(
                             'Cache: ${_hhmm(cachedAt)}',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(color: Colors.grey),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
                           ),
                         ),
                     ],
@@ -216,13 +228,16 @@ class HomePersistentWeatherSheet extends ConsumerWidget {
                   child: Center(child: LinearProgressIndicator(minHeight: 2)),
                 ),
                 error: (err, st) {
-                  final msg =
-                      err is AppFailure ? err.message : 'Météo indisponible';
+                  final msg = err is AppFailure
+                      ? err.message
+                      : 'Météo indisponible';
                   return Row(
                     children: [
                       const Icon(LucideIcons.alertTriangle, size: 20),
                       const SizedBox(width: 8),
-                      Expanded(child: Text(msg, overflow: TextOverflow.ellipsis)),
+                      Expanded(
+                        child: Text(msg, overflow: TextOverflow.ellipsis),
+                      ),
                     ],
                   );
                 },
@@ -236,10 +251,9 @@ class HomePersistentWeatherSheet extends ConsumerWidget {
               const SizedBox(height: 18),
               Text(
                 'Prochaines 24h',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w700),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 10),
               forecast.when(
@@ -263,25 +277,24 @@ class HomePersistentWeatherSheet extends ConsumerWidget {
                             color: Theme.of(context).colorScheme.surface,
                             borderRadius: BorderRadius.circular(18),
                             border: Border.all(
-                              color: Theme.of(context)
-                                  .dividerColor
-                                  .withOpacity(0.2),
+                              color: Theme.of(
+                                context,
+                              ).dividerColor.withOpacity(0.2),
                             ),
                           ),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(_hhmm(h.timestamp),
-                                  style:
-                                      Theme.of(context).textTheme.bodySmall),
+                              Text(
+                                _hhmm(h.timestamp),
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
                               const SizedBox(height: 6),
                               Icon(_iconForCode(h.weatherCode), size: 18),
                               const SizedBox(height: 6),
                               Text(
                                 '${h.temperature.round()}°',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
+                                style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(fontWeight: FontWeight.w700),
                               ),
                             ],
@@ -305,10 +318,9 @@ class HomePersistentWeatherSheet extends ConsumerWidget {
               const SizedBox(height: 18),
               Text(
                 'Prévisions 7 jours',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w700),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 10),
               forecast.when(
@@ -335,10 +347,9 @@ class HomePersistentWeatherSheet extends ConsumerWidget {
               const SizedBox(height: 18),
               Text(
                 'Pour votre profil',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w700),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 10),
               currentWeather.when(
@@ -346,10 +357,12 @@ class HomePersistentWeatherSheet extends ConsumerWidget {
                   final line = profile.type == ProfileType.cyclist
                       ? 'Vent: ${w.windSpeed.round()} km/h (utile pour l’effort / vent de face)'
                       : profile.type == ProfileType.driver
-                          ? 'Précip.: ${w.precipitation.toStringAsFixed(1)} mm (adhérence / visibilité)'
-                          : 'Vent: ${w.windSpeed.round()} km/h • UV: ${w.uvIndex?.toStringAsFixed(0) ?? '—'}';
-                  return Text(line,
-                      style: Theme.of(context).textTheme.bodyLarge);
+                      ? 'Précip.: ${w.precipitation.toStringAsFixed(1)} mm (adhérence / visibilité)'
+                      : 'Vent: ${w.windSpeed.round()} km/h • UV: ${w.uvIndex?.toStringAsFixed(0) ?? '—'}';
+                  return Text(
+                    line,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  );
                 },
                 loading: () => const SizedBox.shrink(),
                 error: (_, __) => const SizedBox.shrink(),
@@ -372,7 +385,7 @@ class _WeatherMetricsRow extends StatelessWidget {
   final AsyncValue<WeatherCondition> currentWeather;
   final AsyncValue<List<WeatherCondition>> forecast;
   final Widget Function(BuildContext context, String label, String value)
-      metricTile;
+  metricTile;
 
   WeatherCondition? _nearestForecast(List<WeatherCondition> list) {
     if (list.isEmpty) return null;
