@@ -11,6 +11,7 @@ import 'package:geolocator_web/geolocator_web.dart';
 import 'package:maplibre_gl_web/maplibre_gl_web.dart';
 import 'package:package_info_plus/src/package_info_plus_web.dart';
 import 'package:permission_handler_html/permission_handler_html.dart';
+import 'package:rive_common/rive_web.dart';
 import 'package:sentry_flutter/sentry_flutter_web.dart';
 import 'package:wakelock_plus/src/wakelock_plus_web_plugin.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
@@ -22,6 +23,7 @@ void registerPlugins([final Registrar? pluginRegistrar]) {
   MapLibreMapPlugin.registerWith(registrar);
   PackageInfoPlusWebPlugin.registerWith(registrar);
   WebPermissionHandler.registerWith(registrar);
+  RivePlugin.registerWith(registrar);
   SentryFlutterWeb.registerWith(registrar);
   WakelockPlusWebPlugin.registerWith(registrar);
   registrar.registerMessageHandler();

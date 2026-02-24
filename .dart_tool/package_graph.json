@@ -11,6 +11,7 @@
         "flutter",
         "flutter_localizations",
         "flutter_riverpod",
+        "flutter_svg",
         "flutter_tts",
         "freezed_annotation",
         "geolocator",
@@ -21,10 +22,12 @@
         "intl",
         "json_annotation",
         "latlong2",
+        "lottie",
         "lucide_icons",
         "maplibre_gl",
         "path_provider",
         "permission_handler",
+        "rive",
         "riverpod_annotation",
         "sentry_flutter",
         "sqlite3",
@@ -356,6 +359,19 @@
         "flutter",
         "http",
         "path_provider"
+      ]
+    },
+    {
+      "name": "rive",
+      "version": "0.13.20",
+      "dependencies": [
+        "collection",
+        "flutter",
+        "flutter_web_plugins",
+        "http",
+        "meta",
+        "plugin_platform_interface",
+        "rive_common"
       ]
     },
     {
@@ -1050,6 +1066,28 @@
       ]
     },
     {
+      "name": "rive_common",
+      "version": "0.4.15",
+      "dependencies": [
+        "collection",
+        "ffi",
+        "flutter",
+        "flutter_web_plugins",
+        "graphs",
+        "http",
+        "meta",
+        "plugin_platform_interface",
+        "web"
+      ]
+    },
+    {
+      "name": "plugin_platform_interface",
+      "version": "2.1.8",
+      "dependencies": [
+        "meta"
+      ]
+    },
+    {
       "name": "permission_handler_platform_interface",
       "version": "4.3.0",
       "dependencies": [
@@ -1320,13 +1358,6 @@
         "meta",
         "path",
         "vm_service"
-      ]
-    },
-    {
-      "name": "plugin_platform_interface",
-      "version": "2.1.8",
-      "dependencies": [
-        "meta"
       ]
     },
     {
@@ -1614,6 +1645,62 @@
       "dependencies": [
         "args",
         "yaml"
+      ]
+    },
+    {
+      "name": "lottie",
+      "version": "3.3.2",
+      "dependencies": [
+        "archive",
+        "flutter",
+        "http",
+        "path",
+        "vector_math"
+      ]
+    },
+    {
+      "name": "flutter_svg",
+      "version": "2.2.3",
+      "dependencies": [
+        "flutter",
+        "http",
+        "vector_graphics",
+        "vector_graphics_codec",
+        "vector_graphics_compiler"
+      ]
+    },
+    {
+      "name": "vector_graphics_codec",
+      "version": "1.1.13",
+      "dependencies": []
+    },
+    {
+      "name": "vector_graphics",
+      "version": "1.1.19",
+      "dependencies": [
+        "flutter",
+        "http",
+        "vector_graphics_codec"
+      ]
+    },
+    {
+      "name": "vector_graphics_compiler",
+      "version": "1.2.0",
+      "dependencies": [
+        "args",
+        "meta",
+        "path",
+        "path_parsing",
+        "vector_graphics_codec",
+        "xml"
+      ]
+    },
+    {
+      "name": "path_parsing",
+      "version": "1.1.0",
+      "dependencies": [
+        "meta",
+        "vector_math"
       ]
     }
   ],
