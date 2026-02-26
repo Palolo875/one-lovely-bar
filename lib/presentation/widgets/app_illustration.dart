@@ -12,7 +12,10 @@ class AppIllustration extends StatelessWidget {
     this.height,
     this.fit = BoxFit.contain,
     this.semanticLabel,
-  }) : assert(assetName != null || kind != null);
+  }) : assert(
+         assetName != null || kind != null,
+         'Either assetName or kind must be provided.',
+       );
 
   final String? assetName;
   final AppIllustrationKind? kind;

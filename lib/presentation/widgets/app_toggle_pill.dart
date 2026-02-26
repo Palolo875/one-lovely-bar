@@ -20,9 +20,9 @@ class AppTogglePill extends StatelessWidget {
       borderRadius: BorderRadius.circular(999),
       child: AppPill(
         backgroundColor:
-            selected ? scheme.primary.withOpacity(0.14) : scheme.surface,
+            selected ? scheme.primary.withValues(alpha: 0.14) : scheme.surface,
         borderColor: selected
-            ? scheme.primary.withOpacity(0.28)
+            ? scheme.primary.withValues(alpha: 0.28)
             : scheme.outlineVariant,
         child: DefaultTextStyle.merge(
           style: Theme.of(context).textTheme.labelMedium?.copyWith(

@@ -21,7 +21,7 @@ class AppShadows {
   static List<BoxShadow> soft(Color color) {
     return [
       BoxShadow(
-        color: color.withOpacity(0.06),
+        color: color.withValues(alpha: 0.06),
         blurRadius: 14,
         offset: const Offset(0, 6),
       ),

@@ -156,30 +156,44 @@ void main() {
     expect(zones.first.name, 'Paris');
   });
 
-  test('add returns false on invalid values and does not modify state', () {
-    final repo = _InMemorySettingsRepository();
-    addTearDown(repo.dispose);
+  test(
+    'add returns false on invalid values and does not modify state',
+    () async {
+      final repo = _InMemorySettingsRepository();
+      addTearDown(repo.dispose);
 
-    final offlineRepo = _InMemoryOfflineZonesRepository(repo);
+      final offlineRepo = _InMemoryOfflineZonesRepository(repo);
 
-    final container = ProviderContainer(
-      overrides: [
-        offlineZonesRepositoryProvider.overrideWithValue(offlineRepo),
-      ],
-    );
-    addTearDown(container.dispose);
+      final container = ProviderContainer(
+        overrides: [
+          offlineZonesRepositoryProvider.overrideWithValue(offlineRepo),
+        ],
+      );
+      addTearDown(container.dispose);
 
-    final notifier = container.read(offlineZonesProvider.notifier);
+      await container.read(offlineZonesProvider.future);
+      final notifier = container.read(offlineZonesProvider.notifier);
 
-    container.read(offlineZonesProvider);
+      expect(
+        await notifier.add(name: ' ', lat: 0, lng: 0, radiusKm: 1),
+        isFalse,
+      );
+      expect(
+        await notifier.add(name: 'Ok', lat: 91, lng: 0, radiusKm: 1),
+        isFalse,
+      );
+      expect(
+        await notifier.add(name: 'Ok', lat: 0, lng: 181, radiusKm: 1),
+        isFalse,
+      );
+      expect(
+        await notifier.add(name: 'Ok', lat: 0, lng: 0, radiusKm: 0),
+        isFalse,
+      );
 
-    expect(notifier.add(name: ' ', lat: 0, lng: 0, radiusKm: 1), isFalse);
-    expect(notifier.add(name: 'Ok', lat: 91, lng: 0, radiusKm: 1), isFalse);
-    expect(notifier.add(name: 'Ok', lat: 0, lng: 181, radiusKm: 1), isFalse);
-    expect(notifier.add(name: 'Ok', lat: 0, lng: 0, radiusKm: 0), isFalse);
-
-    expect(container.read(offlineZonesProvider).requireValue.zones, isEmpty);
-  });
+      expect(container.read(offlineZonesProvider).requireValue.zones, isEmpty);
+    },
+  );
 
   test('remove updates state and persists', () async {
     final repo = _InMemorySettingsRepository();
@@ -228,7 +242,7 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    container.read(offlineZonesProvider);
+    await container.read(offlineZonesProvider.future);
 
     await repo.put('offline_zones', [
       {

@@ -15,7 +15,6 @@ void main() {
   group('OfflineZonesNotifier', () {
     late MockOfflineZonesRepository mockRepository;
     late ProviderContainer container;
-    late OfflineZonesNotifier notifier;
 
     setUp(() {
       mockRepository = MockOfflineZonesRepository();
@@ -24,7 +23,6 @@ void main() {
           offlineZonesRepositoryProvider.overrideWithValue(mockRepository),
         ],
       );
-      notifier = container.read(offlineZonesProvider.notifier);
     });
 
     tearDown(() {
@@ -72,7 +70,7 @@ void main() {
         expect(state.isLoading, false);
         expect(state.error, contains('Failed to load offline zones'));
         verify(mockRepository.read()).called(1);
-        verify(mockRepository.watch()).called(1);
+        verifyNever(mockRepository.watch());
       });
     });
 
@@ -95,6 +93,8 @@ void main() {
         // Initialize notifier
         await container.read(offlineZonesProvider.future);
 
+        final notifier = container.read(offlineZonesProvider.notifier);
+
         // Act
         final result = await notifier.add(
           name: 'New Zone',
@@ -105,11 +105,10 @@ void main() {
 
         // Assert
         expect(result, true);
-        verify(mockRepository.save(any)).called(1);
+        final captured = verify(mockRepository.save(captureAny)).captured;
+        expect(captured, hasLength(1));
 
-        final savedZones =
-            verify(mockRepository.save(captureAny)).captured.single
-                as List<OfflineZone>;
+        final savedZones = captured.single as List<OfflineZone>;
         expect(savedZones.length, 1);
         expect(savedZones.first.name, 'New Zone');
         expect(savedZones.first.lat, 48.8566);
@@ -127,6 +126,8 @@ void main() {
 
         // Initialize notifier
         await container.read(offlineZonesProvider.future);
+
+        final notifier = container.read(offlineZonesProvider.notifier);
 
         // Act
         final result = await notifier.add(
@@ -152,6 +153,8 @@ void main() {
         // Initialize notifier
         await container.read(offlineZonesProvider.future);
 
+        final notifier = container.read(offlineZonesProvider.notifier);
+
         // Act
         final result = await notifier.add(
           name: 'Invalid Zone',
@@ -176,6 +179,8 @@ void main() {
 
         // Initialize notifier
         await container.read(offlineZonesProvider.future);
+
+        final notifier = container.read(offlineZonesProvider.notifier);
 
         // Act
         final result = await notifier.add(
@@ -213,16 +218,17 @@ void main() {
         // Initialize notifier
         await container.read(offlineZonesProvider.future);
 
+        final notifier = container.read(offlineZonesProvider.notifier);
+
         // Act
         final result = await notifier.remove(zone.id);
 
         // Assert
         expect(result, true);
-        verify(mockRepository.save(any)).called(1);
+        final captured = verify(mockRepository.save(captureAny)).captured;
+        expect(captured, hasLength(1));
 
-        final savedZones =
-            verify(mockRepository.save(captureAny)).captured.single
-                as List<OfflineZone>;
+        final savedZones = captured.single as List<OfflineZone>;
         expect(savedZones.length, 0);
       });
 
@@ -234,6 +240,8 @@ void main() {
 
         // Initialize notifier
         await container.read(offlineZonesProvider.future);
+
+        final notifier = container.read(offlineZonesProvider.notifier);
 
         // Act
         final result = await notifier.remove('non-existent');
@@ -263,6 +271,8 @@ void main() {
         // Initialize notifier
         await container.read(offlineZonesProvider.future);
 
+        final notifier = container.read(offlineZonesProvider.notifier);
+
         // Act
         final result = await notifier.updateZone(
           zone.id,
@@ -272,11 +282,10 @@ void main() {
 
         // Assert
         expect(result, true);
-        verify(mockRepository.save(any)).called(1);
+        final captured = verify(mockRepository.save(captureAny)).captured;
+        expect(captured, hasLength(1));
 
-        final savedZones =
-            verify(mockRepository.save(captureAny)).captured.single
-                as List<OfflineZone>;
+        final savedZones = captured.single as List<OfflineZone>;
         expect(savedZones.length, 1);
         expect(savedZones.first.name, 'Updated Zone');
         expect(savedZones.first.radiusKm, 15.0);
@@ -291,6 +300,8 @@ void main() {
 
         // Initialize notifier
         await container.read(offlineZonesProvider.future);
+
+        final notifier = container.read(offlineZonesProvider.notifier);
 
         // Act
         final result = await notifier.updateZone(
@@ -331,6 +342,8 @@ void main() {
         // Initialize notifier
         await container.read(offlineZonesProvider.future);
 
+        final notifier = container.read(offlineZonesProvider.notifier);
+
         // Act
         await notifier.refresh();
 
@@ -352,6 +365,8 @@ void main() {
 
         // Initialize notifier with error
         await container.read(offlineZonesProvider.future);
+
+        final notifier = container.read(offlineZonesProvider.notifier);
 
         // Verify error state
         var currentState = container.read(offlineZonesProvider);

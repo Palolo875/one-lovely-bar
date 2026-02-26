@@ -7,11 +7,13 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'dart:async';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:weathernav/core/config/app_constants.dart';
 import 'package:weathernav/core/logging/app_logger.dart';
 import 'package:weathernav/domain/models/grid_point_weather.dart';
 import 'package:weathernav/domain/models/poi.dart';
 import 'package:weathernav/domain/models/place_suggestion.dart';
 import 'package:weathernav/domain/models/user_profile.dart';
+import 'package:weathernav/l10n/l10n_ext.dart';
 import 'package:weathernav/presentation/providers/profile_provider.dart';
 import 'package:weathernav/presentation/providers/current_weather_provider.dart';
 import 'package:weathernav/presentation/providers/forecast_provider.dart';
@@ -24,11 +26,13 @@ import 'package:weathernav/presentation/widgets/profile_switcher.dart';
 import 'package:weathernav/presentation/widgets/app_card.dart';
 import 'package:weathernav/presentation/widgets/app_pill.dart';
 import 'package:weathernav/presentation/widgets/app_toggle_pill.dart';
+import 'package:weathernav/presentation/widgets/weather_layers_sheet.dart';
+import 'package:weathernav/presentation/widgets/poi_filter_sheet.dart';
 import 'package:weathernav/presentation/screens/home/home_weather_sheet.dart';
 import 'package:weathernav/presentation/screens/home/home_map_overlays_controller.dart';
 import 'package:weathernav/presentation/map/maplibre_camera_utils.dart';
 import 'package:weathernav/core/theme/app_tokens.dart';
-import 'package:weathernav/l10n/app_localizations.dart';
+import 'package:weathernav/presentation/widgets/app_snackbar.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -40,8 +44,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   MapLibreMapController? mapController;
   final HomeMapOverlaysController _overlays = HomeMapOverlaysController();
-  LatLng _mapCenter = const LatLng(48.8566, 2.3522);
-  LatLng _debouncedCenter = const LatLng(48.8566, 2.3522);
+  LatLng _mapCenter = AppConstants.defaultCenter;
+  LatLng _debouncedCenter = AppConstants.defaultCenter;
   Timer? _cameraDebounce;
   String? _poiRequestKey;
   String? _gridRequestKey;
@@ -99,8 +103,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _openSearch() async {
+    final l = context.l10n;
     final result = await context.push<PlaceSuggestion>(
-      '/search?title=Destination',
+      '/search?title=${Uri.encodeComponent(l.arrival)}',
     );
     if (result == null) return;
 
@@ -245,7 +250,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       );
       final target = LatLng(pos.latitude, pos.longitude);
 
-      // Best-effort camera movement (dynamic to avoid compilation issues across maplibre_gl versions)
       final controller = mapController;
       if (controller != null) {
         try {
@@ -329,8 +333,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
+  String _buildOverlayStatusText(WeatherLayersState layers) {
+    final l = context.l10n;
+    final parts = <String>[];
+    if (layers.enabled.contains(WeatherLayer.wind)) parts.add(l.wind);
+    if (layers.enabled.contains(WeatherLayer.temperature))
+      parts.add(l.temperature);
+    return l.overlayStatusPrefix(parts.join(' + '));
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     final activeProfile = ref.watch(profileProvider);
     final center = _debouncedCenter;
@@ -356,8 +370,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           MapLibreMap(
             onMapCreated: _onMapCreated,
             onCameraIdle: _onCameraIdle,
-            initialCameraPosition: const CameraPosition(
-              target: LatLng(48.8566, 2.3522), // Paris
+            initialCameraPosition: CameraPosition(
+              target: AppConstants.defaultCenter,
               zoom: 12,
             ),
             styleString: mapStyle.styleUrl,
@@ -377,8 +391,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     horizontal: 12,
                     vertical: 10,
                   ),
-                  backgroundColor: scheme.surface.withOpacity(0.92),
-                  borderColor: scheme.outlineVariant.withOpacity(0.6),
+                  backgroundColor: scheme.surface.withValues(alpha: 0.92),
+                  borderColor: scheme.outlineVariant.withValues(alpha: 0.6),
                   child: Text(
                     _buildOverlayStatusText(layers),
                     style: Theme.of(
@@ -404,7 +418,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   vertical: 10,
                 ),
                 backgroundColor: scheme.surface,
-                borderColor: scheme.outlineVariant.withOpacity(0.6),
+                borderColor: scheme.outlineVariant.withValues(alpha: 0.6),
                 child: Row(
                   children: [
                     Expanded(
@@ -422,10 +436,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
-                                  AppLocalizations.of(
-                                        context,
-                                      )?.searchDestination ??
-                                      'Rechercher',
+                                  l.searchDestination,
                                   style: Theme.of(context).textTheme.bodyLarge
                                       ?.copyWith(
                                         color: scheme.onSurfaceVariant,
@@ -446,10 +457,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           horizontal: 10,
                           vertical: 8,
                         ),
-                        backgroundColor: scheme.primary.withOpacity(0.10),
-                        borderColor: scheme.primary.withOpacity(0.18),
+                        backgroundColor: scheme.primary.withValues(alpha: 0.10),
+                        borderColor: scheme.primary.withValues(alpha: 0.18),
                         child: Icon(
-                          _getProfileIcon(activeProfile.type),
+                          ProfileSwitcher.profileIcon(activeProfile.type),
                           size: 18,
                           color: scheme.primary,
                         ),
@@ -468,7 +479,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             right: 16,
             child: _ActiveLayerChips(
               layers: layers,
-              onToggle: (l) => layersNotifier.toggle(l),
+              onToggle: (l) {
+                final ok = layersNotifier.toggle(l);
+                if (!ok && context.mounted) {
+                  AppSnackbar.error(context, context.l10n.max3LayersError);
+                }
+              },
             ),
           ),
 
@@ -491,12 +507,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         '/itinerary?from=home&endLat=${end.latitude}&endLng=${end.longitude}',
                       );
                     },
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(LucideIcons.navigation),
-                        SizedBox(width: 6),
-                        Text('Itinéraire'),
+                        const Icon(LucideIcons.navigation),
+                        const SizedBox(width: 6),
+                        Text(l.itineraryButton),
                       ],
                     ),
                   ),
@@ -504,12 +520,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   AppTogglePill(
                     selected: false,
                     onPressed: () => context.go('/history'),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(LucideIcons.history),
-                        SizedBox(width: 6),
-                        Text('Historique'),
+                        const Icon(LucideIcons.history),
+                        const SizedBox(width: 6),
+                        Text(l.historyButton),
                       ],
                     ),
                   ),
@@ -526,19 +542,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 _buildFloatingButton(
                   icon: LucideIcons.layers,
-                  tooltip: 'Couches météo',
+                  tooltip: l.weatherLayersTooltip,
                   onPressed: () => _showLayersSheet(context),
                 ),
                 const SizedBox(height: 12),
                 _buildFloatingButton(
                   icon: LucideIcons.mapPin,
-                  tooltip: 'Points d’intérêt',
+                  tooltip: l.poisTooltip,
                   onPressed: () => _showPoiSheet(context),
                 ),
                 const SizedBox(height: 12),
                 _buildFloatingButton(
                   icon: LucideIcons.crosshair,
-                  tooltip: 'Centrer sur ma position',
+                  tooltip: l.centerOnPosition,
                   onPressed: _centerOnUser,
                 ),
               ],
@@ -580,18 +596,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  IconData _getProfileIcon(ProfileType type) {
-    return switch (type) {
-      ProfileType.universal => LucideIcons.user,
-      ProfileType.cyclist => LucideIcons.bike,
-      ProfileType.hiker => LucideIcons.footprints,
-      ProfileType.driver => LucideIcons.car,
-      ProfileType.nautical => LucideIcons.ship,
-      ProfileType.paraglider => LucideIcons.wind,
-      ProfileType.camper => LucideIcons.tent,
-    };
-  }
-
   void _showProfileSwitcher(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -602,190 +606,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _showLayersSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      builder: (context) {
-        return Consumer(
-          builder: (context, ref, _) {
-            final layers = ref.watch(weatherLayersProvider);
-            final notifier = ref.read(weatherLayersProvider.notifier);
-            final profile = ref.watch(profileProvider);
-            return Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Couches météo',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Max 3 couches actives pour garder la carte lisible.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () => notifier.resetToProfile(profile),
-                      child: const Text('Réinitialiser selon profil'),
-                    ),
-                  ),
-                  SwitchListTile(
-                    value: layers.enabled.contains(WeatherLayer.radar),
-                    onChanged: (_) => notifier.toggle(WeatherLayer.radar),
-                    title: const Text('Radar précipitations'),
-                    subtitle: const Text('RainViewer'),
-                  ),
-                  if (layers.enabled.contains(WeatherLayer.radar))
-                    Padding(
-                      padding: const EdgeInsets.only(
-                        left: 16,
-                        right: 16,
-                        bottom: 8,
-                      ),
-                      child: Row(
-                        children: [
-                          const Text('Opacité'),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Slider(
-                              value:
-                                  (layers.opacity[WeatherLayer.radar] ?? 0.65)
-                                      .clamp(0.0, 1.0),
-                              divisions: 10,
-                              label:
-                                  '${((layers.opacity[WeatherLayer.radar] ?? 0.65) * 100).round()}%',
-                              onChanged: (v) =>
-                                  notifier.setOpacity(WeatherLayer.radar, v),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  SwitchListTile(
-                    value: layers.enabled.contains(WeatherLayer.wind),
-                    onChanged: (_) => notifier.toggle(WeatherLayer.wind),
-                    title: const Text('Vent'),
-                    subtitle: const Text('Overlay simple (P0)'),
-                  ),
-                  SwitchListTile(
-                    value: layers.enabled.contains(WeatherLayer.temperature),
-                    onChanged: (_) => notifier.toggle(WeatherLayer.temperature),
-                    title: const Text('Température'),
-                    subtitle: const Text('Overlay simple (P0)'),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
+      builder: (context) => const WeatherLayersSheet(),
     );
-  }
-
-  String _buildOverlayStatusText(WeatherLayersState layers) {
-    final parts = <String>[];
-    if (layers.enabled.contains(WeatherLayer.wind)) parts.add('Vent');
-    if (layers.enabled.contains(WeatherLayer.temperature))
-      parts.add('Température');
-    return 'Overlays actifs: ${parts.join(' + ')}';
   }
 
   void _showPoiSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      builder: (context) {
-        return Consumer(
-          builder: (context, ref, _) {
-            final filter = ref.watch(poiFilterProvider);
-            final notifier = ref.read(poiFilterProvider.notifier);
-
-            return Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Points d’intérêt',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SwitchListTile(
-                    value: filter.enabled,
-                    onChanged: (_) => notifier.toggleEnabled(),
-                    title: const Text('Afficher les POIs'),
-                    subtitle: const Text('Source: OpenStreetMap (Overpass)'),
-                  ),
-                  if (filter.enabled) ...[
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: PoiCategory.values.map((c) {
-                        final selected = filter.categories.contains(c);
-                        return AppTogglePill(
-                          selected: selected,
-                          onPressed: () => notifier.toggleCategory(c),
-                          child: Text(_poiLabel(c)),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        const Text('Rayon'),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Slider(
-                            value: filter.radiusMeters
-                                .toDouble()
-                                .clamp(500.0, 10000.0)
-                                .toDouble(),
-                            min: 500,
-                            max: 10000,
-                            divisions: 19,
-                            label: '${filter.radiusMeters} m',
-                            onChanged: (v) => notifier.setRadius(v.round()),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Centre: ${_debouncedCenter.latitude.toStringAsFixed(4)}, ${_debouncedCenter.longitude.toStringAsFixed(4)}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            );
-          },
-        );
-      },
+      builder: (context) => PoiFilterSheet(center: _debouncedCenter),
     );
-  }
-
-  String _poiLabel(PoiCategory c) {
-    switch (c) {
-      case PoiCategory.shelter:
-        return 'Abris';
-      case PoiCategory.hut:
-        return 'Refuges';
-      case PoiCategory.weatherStation:
-        return 'Stations météo';
-      case PoiCategory.port:
-        return 'Ports';
-    }
   }
 }
 
@@ -794,26 +623,21 @@ class _ActiveLayerChips extends StatelessWidget {
   final WeatherLayersState layers;
   final void Function(WeatherLayer layer) onToggle;
 
-  String _label(WeatherLayer l) {
-    switch (l) {
-      case WeatherLayer.radar:
-        return 'Rain';
-      case WeatherLayer.wind:
-        return 'Wind';
-      case WeatherLayer.temperature:
-        return 'Temp';
-    }
+  String _label(BuildContext context, WeatherLayer l) {
+    final loc = context.l10n;
+    return switch (l) {
+      WeatherLayer.radar => loc.layerRain,
+      WeatherLayer.wind => loc.layerWind,
+      WeatherLayer.temperature => loc.layerTemp,
+    };
   }
 
   IconData _icon(WeatherLayer l) {
-    switch (l) {
-      case WeatherLayer.radar:
-        return LucideIcons.cloudRain;
-      case WeatherLayer.wind:
-        return LucideIcons.wind;
-      case WeatherLayer.temperature:
-        return LucideIcons.thermometer;
-    }
+    return switch (l) {
+      WeatherLayer.radar => LucideIcons.cloudRain,
+      WeatherLayer.wind => LucideIcons.wind,
+      WeatherLayer.temperature => LucideIcons.thermometer,
+    };
   }
 
   @override
@@ -836,7 +660,7 @@ class _ActiveLayerChips extends StatelessWidget {
                   children: [
                     Icon(_icon(l)),
                     const SizedBox(width: 6),
-                    Text(_label(l)),
+                    Text(_label(context, l)),
                   ],
                 ),
               ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:weathernav/core/theme/app_tokens.dart';
 import 'package:weathernav/domain/models/user_profile.dart';
+import 'package:weathernav/l10n/l10n_ext.dart';
 import 'package:weathernav/presentation/providers/profile_provider.dart';
 
 class ProfileSwitcher extends ConsumerWidget {
@@ -28,24 +29,24 @@ class ProfileSwitcher extends ConsumerWidget {
             child: Column(
               children: [
                 Tooltip(
-                  message: _getName(type),
+                  message: profileName(context, type),
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: isActive
                           ? scheme.primary
-                          : scheme.surfaceVariant.withOpacity(0.55),
+                          : scheme.surfaceContainerHighest.withValues(alpha: 0.55),
                       borderRadius: BorderRadius.circular(AppRadii.md),
                     ),
                     child: Icon(
-                      _getIcon(type),
+                      profileIcon(type),
                       color: isActive ? scheme.onPrimary : scheme.onSurface,
                     ),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _getName(type),
+                  profileName(context, type),
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
                   ),
@@ -59,41 +60,30 @@ class ProfileSwitcher extends ConsumerWidget {
     );
   }
 
-  IconData _getIcon(ProfileType type) {
-    switch (type) {
-      case ProfileType.universal:
-        return LucideIcons.globe;
-      case ProfileType.cyclist:
-        return LucideIcons.bike;
-      case ProfileType.hiker:
-        return LucideIcons.footprints;
-      case ProfileType.driver:
-        return LucideIcons.car;
-      case ProfileType.nautical:
-        return LucideIcons.ship;
-      case ProfileType.paraglider:
-        return LucideIcons.wind;
-      case ProfileType.camper:
-        return LucideIcons.tent;
-    }
+  /// Returns the icon for a given [ProfileType].
+  static IconData profileIcon(ProfileType type) {
+    return switch (type) {
+      ProfileType.universal => LucideIcons.globe,
+      ProfileType.cyclist => LucideIcons.bike,
+      ProfileType.hiker => LucideIcons.footprints,
+      ProfileType.driver => LucideIcons.car,
+      ProfileType.nautical => LucideIcons.ship,
+      ProfileType.paraglider => LucideIcons.wind,
+      ProfileType.camper => LucideIcons.tent,
+    };
   }
 
-  String _getName(ProfileType type) {
-    switch (type) {
-      case ProfileType.universal:
-        return 'Universel';
-      case ProfileType.cyclist:
-        return 'Cycliste';
-      case ProfileType.hiker:
-        return 'Randonneur';
-      case ProfileType.driver:
-        return 'Conducteur';
-      case ProfileType.nautical:
-        return 'Nautique';
-      case ProfileType.paraglider:
-        return 'Aéro';
-      case ProfileType.camper:
-        return 'Campeur';
-    }
+  /// Returns the localized name for a given [ProfileType].
+  static String profileName(BuildContext context, ProfileType type) {
+    final l = context.l10n;
+    return switch (type) {
+      ProfileType.universal => l.profileUniversal,
+      ProfileType.cyclist => l.profileCyclist,
+      ProfileType.hiker => l.profileHiker,
+      ProfileType.driver => l.profileDriver,
+      ProfileType.nautical => l.profileNautical,
+      ProfileType.paraglider => l.profileParaglider,
+      ProfileType.camper => l.profileCamper,
+    };
   }
 }

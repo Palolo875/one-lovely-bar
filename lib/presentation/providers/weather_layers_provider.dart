@@ -101,23 +101,24 @@ class WeatherLayersNotifier extends Notifier<WeatherLayersState> {
     return initialState;
   }
 
-  void toggle(WeatherLayer layer) {
+  bool toggle(WeatherLayer layer) {
     _hasExplicitSelection = true;
     final next = Set<WeatherLayer>.from(state.enabled);
     if (next.contains(layer)) {
       next.remove(layer);
     } else {
       if (next.length >= maxEnabled) {
-        return;
+        return false;
       }
       next.add(layer);
     }
     final nextOrder = _normalizeOrder(state.order, next);
     state = state.copyWith(enabled: next, order: nextOrder);
     _schedulePersist(state);
+    return true;
   }
 
-  void setEnabled(Set<WeatherLayer> enabled) {
+  bool setEnabled(Set<WeatherLayer> enabled) {
     _hasExplicitSelection = true;
     final next = enabled.length <= maxEnabled
         ? enabled
@@ -125,42 +126,46 @@ class WeatherLayersNotifier extends Notifier<WeatherLayersState> {
     final nextOrder = _normalizeOrder(state.order, next);
     state = state.copyWith(enabled: next, order: nextOrder);
     _schedulePersist(state);
+    return true;
   }
 
-  void moveLayer(WeatherLayer layer, int newIndex) {
+  bool moveLayer(WeatherLayer layer, int newIndex) {
     _hasExplicitSelection = true;
     final enabled = state.enabled;
-    if (!enabled.contains(layer)) return;
+    if (!enabled.contains(layer)) return false;
     final order = _normalizeOrder(state.order, enabled);
     final cur = order.indexOf(layer);
-    if (cur < 0) return;
+    if (cur < 0) return false;
     final next = List<WeatherLayer>.from(order);
     next.removeAt(cur);
     final idx = newIndex.clamp(0, next.length);
     next.insert(idx, layer);
     state = state.copyWith(order: next);
     _schedulePersist(state);
+    return true;
   }
 
-  void setOpacity(WeatherLayer layer, double value) {
+  bool setOpacity(WeatherLayer layer, double value) {
     _hasExplicitSelection = true;
     final next = Map<WeatherLayer, double>.from(state.opacity);
     next[layer] = value.clamp(0.0, maxOpacity);
     state = state.copyWith(opacity: next);
     _schedulePersist(state);
+    return true;
   }
 
-  void resetToProfile(UserProfile profile) {
+  bool resetToProfile(UserProfile profile) {
     _hasExplicitSelection = true;
-    setEnabled(_layersFromProfile(profile));
+    return setEnabled(_layersFromProfile(profile));
   }
 
-  void applyProfileDefaultsIfUnset(UserProfile profile) {
-    if (_hasExplicitSelection) return;
+  bool applyProfileDefaultsIfUnset(UserProfile profile) {
+    if (_hasExplicitSelection) return false;
     final nextEnabled = _layersFromProfile(profile);
     final nextOrder = _normalizeOrder(state.order, nextEnabled);
     state = state.copyWith(enabled: nextEnabled, order: nextOrder);
     _schedulePersist(state);
+    return true;
   }
 
   void _schedulePersist(WeatherLayersState snapshot) {

@@ -78,29 +78,29 @@ void main() {
     container.read(weatherLayersProvider);
     final notifier = container.read(weatherLayersProvider.notifier);
 
-    notifier.toggle(WeatherLayer.wind);
-    notifier.toggle(WeatherLayer.temperature);
+    expect(notifier.toggle(WeatherLayer.wind), isTrue);
+    expect(notifier.toggle(WeatherLayer.temperature), isTrue);
     expect(container.read(weatherLayersProvider).enabled.length, 3);
 
-    notifier.toggle(WeatherLayer.radar);
+    expect(notifier.toggle(WeatherLayer.radar), isTrue);
     expect(
       container.read(weatherLayersProvider).enabled,
       isNot(contains(WeatherLayer.radar)),
     );
 
-    notifier.toggle(WeatherLayer.radar);
+    expect(notifier.toggle(WeatherLayer.radar), isTrue);
     expect(
       container.read(weatherLayersProvider).enabled,
       contains(WeatherLayer.radar),
     );
 
-    notifier.toggle(WeatherLayer.radar);
+    expect(notifier.toggle(WeatherLayer.radar), isTrue);
     expect(
       container.read(weatherLayersProvider).enabled,
       isNot(contains(WeatherLayer.radar)),
     );
 
-    notifier.toggle(WeatherLayer.radar);
+    expect(notifier.toggle(WeatherLayer.radar), isTrue);
     expect(
       container.read(weatherLayersProvider).enabled,
       contains(WeatherLayer.radar),
@@ -128,13 +128,16 @@ void main() {
     container.read(weatherLayersProvider);
     final notifier = container.read(weatherLayersProvider.notifier);
 
-    notifier.resetToProfile(
-      const UserProfile(
-        id: 'p2',
-        name: 'P2',
-        type: ProfileType.universal,
-        defaultLayers: ['temp', 'wind', 'precipitation', 'temp'],
+    expect(
+      notifier.resetToProfile(
+        const UserProfile(
+          id: 'p2',
+          name: 'P2',
+          type: ProfileType.universal,
+          defaultLayers: ['temp', 'wind', 'precipitation', 'temp'],
+        ),
       ),
+      isTrue,
     );
 
     final enabled = container.read(weatherLayersProvider).enabled;
@@ -165,26 +168,32 @@ void main() {
       container.read(weatherLayersProvider);
       final notifier = container.read(weatherLayersProvider.notifier);
 
-      notifier.applyProfileDefaultsIfUnset(
-        const UserProfile(
-          id: 'p3',
-          name: 'P3',
-          type: ProfileType.universal,
-          defaultLayers: ['wind'],
+      expect(
+        notifier.applyProfileDefaultsIfUnset(
+          const UserProfile(
+            id: 'p3',
+            name: 'P3',
+            type: ProfileType.universal,
+            defaultLayers: ['wind'],
+          ),
         ),
+        isTrue,
       );
       expect(container.read(weatherLayersProvider).enabled, {
         WeatherLayer.wind,
       });
 
-      notifier.toggle(WeatherLayer.temperature);
-      notifier.applyProfileDefaultsIfUnset(
-        const UserProfile(
-          id: 'p4',
-          name: 'P4',
-          type: ProfileType.universal,
-          defaultLayers: ['precipitation'],
+      expect(notifier.toggle(WeatherLayer.temperature), isTrue);
+      expect(
+        notifier.applyProfileDefaultsIfUnset(
+          const UserProfile(
+            id: 'p4',
+            name: 'P4',
+            type: ProfileType.universal,
+            defaultLayers: ['precipitation'],
+          ),
         ),
+        isFalse,
       );
 
       final enabled = container.read(weatherLayersProvider).enabled;

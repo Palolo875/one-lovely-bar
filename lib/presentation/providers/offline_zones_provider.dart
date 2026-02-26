@@ -33,6 +33,7 @@ class OfflineZonesNotifier extends AsyncNotifier<OfflineZonesState> {
   late OfflineZonesRepository _repo;
   StreamSubscription<List<OfflineZone>>? _subscription;
   static final Random _rng = Random.secure();
+  Future<void> _persistQueue = Future<void>.value();
 
   @override
   Future<OfflineZonesState> build() async {
@@ -101,40 +102,49 @@ class OfflineZonesNotifier extends AsyncNotifier<OfflineZonesState> {
     return listEquals(a, b);
   }
 
-  Future<void> _persist(List<OfflineZone> zones) async {
-    try {
-      await _repo.save(zones);
-      AppLogger.info(
-        'Successfully persisted ${zones.length} offline zones',
-        name: 'OfflineZonesNotifier',
-      );
-    } catch (e, st) {
-      AppLogger.error(
-        'Failed to persist offline zones',
-        name: 'OfflineZonesNotifier',
-        error: e,
-        stackTrace: st,
-      );
-
+  Future<bool> _persist(List<OfflineZone> zones) async {
+    final op = _persistQueue.then((_) async {
+      var ok = true;
       try {
-        final currentZones = await _loadInitialZones();
-        final previousZones = state.value?.zones ?? const <OfflineZone>[];
-        if (!_same(currentZones, previousZones)) {
+        await _repo.save(zones);
+        AppLogger.info(
+          'Successfully persisted ${zones.length} offline zones',
+          name: 'OfflineZonesNotifier',
+        );
+      } catch (e, st) {
+        ok = false;
+        AppLogger.error(
+          'Failed to persist offline zones',
+          name: 'OfflineZonesNotifier',
+          error: e,
+          stackTrace: st,
+        );
+
+        try {
+          final currentZones = await _loadInitialZones();
+          final previousZones = state.value?.zones ?? const <OfflineZone>[];
+          if (!_same(currentZones, previousZones)) {
+            state = AsyncValue.data(
+              state.value?.copyWith(
+                    zones: currentZones,
+                    error: 'Failed to save changes',
+                  ) ??
+                  const OfflineZonesState(error: 'Failed to save changes'),
+            );
+          }
+        } catch (recoveryError) {
           state = AsyncValue.data(
-            state.value?.copyWith(
-                  zones: currentZones,
-                  error: 'Failed to save changes',
-                ) ??
-                const OfflineZonesState(error: 'Failed to save changes'),
+            state.value?.copyWith(error: 'Failed to save and sync data') ??
+                const OfflineZonesState(error: 'Failed to save and sync data'),
           );
         }
-      } catch (recoveryError) {
-        state = AsyncValue.data(
-          state.value?.copyWith(error: 'Failed to save and sync data') ??
-              const OfflineZonesState(error: 'Failed to save and sync data'),
-        );
       }
-    }
+
+      return ok;
+    });
+
+    _persistQueue = op.then((_) {});
+    return op;
   }
 
   Future<bool> add({
@@ -172,7 +182,14 @@ class OfflineZonesNotifier extends AsyncNotifier<OfflineZonesState> {
         ),
       );
 
-      await _persist(updatedZones);
+      final ok = await _persist(updatedZones);
+
+      if (!ok) {
+        state = AsyncValue.data(
+          state.value!.copyWith(isLoading: false, error: 'Failed to add zone'),
+        );
+        return false;
+      }
 
       state = AsyncValue.data(state.value!.copyWith(isLoading: false));
 
@@ -266,7 +283,17 @@ class OfflineZonesNotifier extends AsyncNotifier<OfflineZonesState> {
         ),
       );
 
-      await _persist(updatedZones);
+      final ok = await _persist(updatedZones);
+
+      if (!ok) {
+        state = AsyncValue.data(
+          state.value!.copyWith(
+            isLoading: false,
+            error: 'Failed to remove zone',
+          ),
+        );
+        return false;
+      }
 
       state = AsyncValue.data(state.value!.copyWith(isLoading: false));
 
@@ -351,7 +378,17 @@ class OfflineZonesNotifier extends AsyncNotifier<OfflineZonesState> {
         ),
       );
 
-      await _persist(updatedZones);
+      final ok = await _persist(updatedZones);
+
+      if (!ok) {
+        state = AsyncValue.data(
+          state.value!.copyWith(
+            isLoading: false,
+            error: 'Failed to update zone',
+          ),
+        );
+        return false;
+      }
 
       state = AsyncValue.data(state.value!.copyWith(isLoading: false));
 
